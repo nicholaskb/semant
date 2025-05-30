@@ -42,3 +42,6 @@ logs/
 # OS
 .DS_Store
 Thumbs.db 
+# Scratch space
+scratch_space/*
+!scratch_space/README.md

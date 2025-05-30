@@ -52,6 +52,19 @@ python scripts/chat_with_agent.py diary
 ```
 Replace `diary` with `finance`, `coaching`, `intelligence`, or `developer` to talk with another agent.
 
+## Graph Database with Docker
+
+To spin up a local Neo4j instance for experimenting with a graph database, a
+`docker-compose.yml` file is provided. Start the container with:
+
+```bash
+docker-compose up -d graphdb
+```
+
+The database will be available at <http://localhost:7474> and Bolt connections on
+port `7687`. Default credentials are `neo4j`/`password`. Data is persisted in the
+`neo4j_data` volume.
+
 ## Project Structure
 
 ```

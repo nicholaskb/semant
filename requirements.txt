@@ -26,4 +26,8 @@ mypy>=1.7.1
 # Utilities
 python-dotenv>=1.0.0
 pyyaml>=6.0.1
-loguru>=0.7.2 
+loguru>=0.7.2
+
+# Vector Database and Search
+qdrant-client>=1.7.0
+tavily-python>=0.2.6 

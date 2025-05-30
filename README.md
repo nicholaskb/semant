@@ -79,8 +79,14 @@ semant/
 │   └── schemas/          # RDF schemas
 ├── tests/                # Test suite
 ├── scripts/              # Utility scripts
+├── scratch_space/       # Local development and testing area
 └── docs/                # Documentation
-```
+``` 
+
+## Scratch Space
+The `scratch_space/` directory is provided for local experimentation. Any files
+or folders placed here are ignored by Git (except for `README.md`). Use it for
+temporary data, quick tests, or other work-in-progress artifacts.
 
 ## Development
 

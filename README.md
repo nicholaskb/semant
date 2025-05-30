@@ -46,6 +46,12 @@ python scripts/init_kg.py
 python scripts/start_agents.py
 ```
 
+5. Chat with an individual agent:
+```bash
+python scripts/chat_with_agent.py diary
+```
+Replace `diary` with `finance`, `coaching`, `intelligence`, or `developer` to talk with another agent.
+
 ## Project Structure
 
 ```

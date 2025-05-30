@@ -203,43 +203,26 @@ class KnowledgeGraphReasoner:
         return traversal
     
     async def find_related_concepts(self, concept: str, similarity_threshold: float = 0.7) -> List[Dict[str, Any]]:
-        """
-        Find concepts related to the given concept based on graph structure and content.
-        
-        Args:
-            concept: The concept to find relations for
-            similarity_threshold: Minimum similarity score (0.0 to 1.0)
-            
-        Returns:
-            List of related concepts with similarity scores
-        """
-        # For demo purposes, we'll find concepts that share topics or insights
-        query = f'''
+        """Find concepts related to the given concept based on similarity."""
+        related = []
+        # Example SPARQL query to find related concepts
+        query = f"""
             {self._get_prefixes()}
-            SELECT DISTINCT ?related ?score
+            SELECT ?related ?score
             WHERE {{
-                {{
-                    <{concept}> dm:hasTopic ?topic .
-                    ?related dm:hasTopic ?topic .
-                    BIND(0.8 as ?score)
-                }} UNION {{
-                    <{concept}> dm:hasInsight ?insight .
-                    ?related dm:hasInsight ?insight .
-                    BIND(0.7 as ?score)
-                }}
-                FILTER(<{concept}> != ?related)
+                <{concept}> dm:similarTo ?related .
+                ?related dm:similarityScore ?score .
             }}
-        '''
-        
-        results = []
+        """
         for row in self._query(query):
-            if float(row['score']['value']) >= similarity_threshold:
-                results.append({
-                    'concept': str(row['related']['value']),
-                    'similarity': float(row['score']['value'])
+            # Convert score to float if it's a string
+            score = float(row['score']) if isinstance(row['score'], str) else row['score']
+            if score >= similarity_threshold:
+                related.append({
+                    'concept': row['related'],
+                    'similarity': score
                 })
-        
-        return results
+        return related
     
     def _query(self, sparql_query: str) -> List[Dict[str, Any]]:
         """Execute a SPARQL query and return results."""

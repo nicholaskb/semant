@@ -2,94 +2,43 @@ import asyncio
 from rdflib import Graph, Namespace, Literal, URIRef
 from agents.core.reasoner import KnowledgeGraphReasoner
 
-async def setup_demo_graph():
+def setup_demo_graph():
     """Create a demo knowledge graph with sample research data."""
-    graph = Graph()
-    dm = Namespace('http://example.org/dMaster/')
+    g = Graph()
+    # Define namespaces
+    dMaster = Namespace("http://example.org/dMaster/")
+    g.bind("dMaster", dMaster)
     
-    # Add research papers
+    # Sample research papers
     papers = [
         {
-            'id': 'paper1',
-            'title': 'AI in Healthcare: A Comprehensive Review',
-            'author': 'Dr. Sarah Chen',
-            'year': '2024',
-            'topic': 'ai healthcare',
-            'insights': [
-                'AI can improve diagnosis accuracy by 30%',
-                'Machine learning models show promise in early disease detection',
-                'Data quality is critical for AI healthcare success'
-            ]
+            "id": "paper1",
+            "title": "AI in Healthcare: Current Trends",
+            "author": "Prof. James Wilson",
+            "year": 2023,
+            "topic": "ai healthcare",
+            "insights": "AI can improve diagnosis accuracy by 30%."
         },
         {
-            'id': 'paper2',
-            'title': 'Blockchain in Supply Chain: Current State and Future Directions',
-            'author': 'Prof. James Wilson',
-            'year': '2023',
-            'topic': 'blockchain supply chain',
-            'insights': [
-                'Blockchain can reduce supply chain costs by 20%',
-                'Smart contracts improve transparency in logistics'
-            ]
-        },
-        {
-            'id': 'paper3',
-            'title': 'AI for Medical Imaging',
-            'author': 'Dr. Maria Rodriguez',
-            'year': '2022',
-            'topic': 'ai healthcare',
-            'insights': [
-                'AI can improve diagnosis accuracy by 30%',
-                'AI models require large annotated datasets'
-            ]
-        }
-    ]
-    
-    # Add diary entries
-    entries = [
-        {
-            'agent': 'strategy_lead',
-            'message': 'Researching ai healthcare applications in diagnostics',
-            'timestamp': '2024-05-30',
-            'insights': ['AI shows potential for reducing diagnostic errors', 'Data quality is critical for AI healthcare success']
-        },
-        {
-            'agent': 'implementation_lead',
-            'message': 'Analyzing blockchain implementation in supply chain',
-            'timestamp': '2024-05-29',
-            'insights': ['Blockchain integration requires significant process changes']
-        },
-        {
-            'agent': 'analyst',
-            'message': 'ai healthcare is transforming medical imaging',
-            'timestamp': '2024-05-28',
-            'insights': ['AI can improve diagnosis accuracy by 30%']
+            "id": "paper2",
+            "title": "Blockchain in Supply Chain: Current State and Future Directions",
+            "author": "Dr. Sarah Lee",
+            "year": 2024,
+            "topic": "blockchain supply chain",
+            "insights": "Blockchain reduces fraud by 40% in supply chains."
         }
     ]
     
     # Add papers to graph
     for paper in papers:
-        paper_uri = dm[paper['id']]
-        graph.add((paper_uri, dm.title, Literal(paper['title'])))
-        graph.add((paper_uri, dm.author, Literal(paper['author'])))
-        graph.add((paper_uri, dm.year, Literal(paper['year'])))
-        graph.add((paper_uri, dm.hasTopic, Literal(paper['topic'])))
-        
-        for insight in paper['insights']:
-            graph.add((paper_uri, dm.hasInsight, Literal(insight)))
+        paper_uri = dMaster[paper["id"]]
+        g.add((paper_uri, dMaster.title, Literal(paper["title"])))
+        g.add((paper_uri, dMaster.author, Literal(paper["author"])))
+        g.add((paper_uri, dMaster.year, Literal(paper["year"])))
+        g.add((paper_uri, dMaster.topic, Literal(paper["topic"])))
+        g.add((paper_uri, dMaster.insights, Literal(paper["insights"])))
     
-    # Add diary entries to graph
-    for i, entry in enumerate(entries, 1):
-        entry_uri = dm[f'entry{i}']
-        agent_uri = dm[entry['agent']]
-        graph.add((agent_uri, dm.hasDiaryEntry, entry_uri))
-        graph.add((entry_uri, dm.message, Literal(entry['message'])))
-        graph.add((entry_uri, dm.timestamp, Literal(entry['timestamp'])))
-        
-        for insight in entry['insights']:
-            graph.add((entry_uri, dm.hasInsight, Literal(insight)))
-    
-    return graph
+    return g
 
 async def run_demo():
     """Run the research investigation demo."""
@@ -97,7 +46,7 @@ async def run_demo():
     
     # Setup the knowledge graph
     print("Setting up demo knowledge graph...")
-    graph = await setup_demo_graph()
+    graph = setup_demo_graph()
     reasoner = KnowledgeGraphReasoner(graph)
     
     # Demo 1: Investigate ai healthcare (lowercase, matches data)

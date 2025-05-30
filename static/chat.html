@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Semant Chat Agent</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    #chatbox { width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 20px; }
+    #messages { height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 10px; background: #fafafa; }
+    .user { color: #0074D9; }
+    .agent { color: #2ECC40; }
+    #input { width: 80%; padding: 8px; }
+    #send { padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <div id="chatbox">
+    <h2>Semant Chat Agent</h2>
+    <div id="messages"></div>
+    <input id="input" type="text" placeholder="Type your message..." autofocus />
+    <button id="send">Send</button>
+  </div>
+  <script>
+    let history = [];
+    const messagesDiv = document.getElementById('messages');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
+
+    function addMessage(message, isUser) {
+      const chatMessages = document.getElementById('chat-messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = isUser ? 'user-message' : 'agent-message';
+      messageDiv.innerHTML = `<strong>${isUser ? 'You' : 'Agent'}:</strong> ${message.content}`;
+      if (message.chain_of_thought) {
+        const thoughtDiv = document.createElement('div');
+        thoughtDiv.className = 'chain-of-thought';
+        thoughtDiv.innerHTML = '<strong>Chain of Thought:</strong><ul>' + message.chain_of_thought.map(thought => `<li>${thought}</li>`).join('') + '</ul>';
+        messageDiv.appendChild(thoughtDiv);
+      }
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    send.onclick = async function() {
+      const msg = input.value.trim();
+      if (!msg) return;
+      addMessage('user', msg);
+      input.value = '';
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history })
+      });
+      const data = await response.json();
+      addMessage('agent', data.response, data.agent);
+      history = data.history;
+    };
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') send.onclick();
+    });
+  </script>
+</body>
+</html> 

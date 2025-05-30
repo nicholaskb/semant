@@ -6,6 +6,8 @@ from .simple_agents import (
     IntelligenceAgent,
     DeveloperAgent,
 )
+from .vertex_email_agent import VertexEmailAgent
+from .judge_agent import JudgeAgent
 
 __all__ = [
     "CorporateKnowledgeAgent",
@@ -14,4 +16,6 @@ __all__ = [
     "CoachingAgent",
     "IntelligenceAgent",
     "DeveloperAgent",
+    "VertexEmailAgent",
+    "JudgeAgent",
 ]

@@ -102,6 +102,18 @@ Run the test suite:
 pytest tests/
 ```
 
+### Judge Agent Demo
+
+To demonstrate diary logging and knowledge graph updates, run:
+
+```bash
+python scripts/demo_judge_review.py
+```
+
+This script sends a sample email using `VertexEmailAgent`, runs `JudgeAgent` to
+verify the entry, prints triple counts before and after, and shows the judge's
+diary entries.
+
 ## License
 
 MIT License - see LICENSE file for details

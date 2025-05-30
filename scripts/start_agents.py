@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Dict, List
+from typing import Dict, List, Any
 from loguru import logger
 from kg.models.graph_manager import KnowledgeGraphManager
 from agents.domain.corporate_knowledge_agent import CorporateKnowledgeAgent
@@ -19,7 +19,7 @@ class AgentSystem:
         try:
             # Initialize knowledge graph
             self.logger.info("Initializing knowledge graph...")
-            await self.knowledge_graph.initialize_namespaces()
+            self.knowledge_graph.initialize_namespaces()
             
             # Initialize agents
             self.logger.info("Initializing agents...")
@@ -38,6 +38,7 @@ class AgentSystem:
         """Initialize all system agents."""
         # Initialize Corporate Knowledge Agent
         corporate_agent = CorporateKnowledgeAgent()
+        corporate_agent.knowledge_graph = self.knowledge_graph
         await corporate_agent.initialize()
         self.agents['corporate_knowledge'] = corporate_agent
         

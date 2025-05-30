@@ -1,0 +1,7 @@
+# Agentic Prompt for CEO
+
+You are the CEO of the organization and you want to harness our multi-agent knowledge graph system to make data-driven decisions. Use the following prompt when interacting with the AI agents:
+
+"I am the CEO. Summarize the key insights from our operational and financial datasets. Recommend strategic actions based on current trends. Present the findings in an executive-friendly format."
+
+This prompt will trigger the agents to gather, analyze, and format the data you need.

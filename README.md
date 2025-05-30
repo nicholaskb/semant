@@ -17,11 +17,14 @@ A hierarchical multi-agent system with a shared knowledge graph for enterprise i
 
 2. **Domain Agents**
    - Corporate Knowledge Agent
-   - Advisory Agent
-   - Psychology/Coaching Agent
-   - Financial Agent
-   - External Intelligence Agent
+   - Diary Agent
+   - Finance Agent
+   - Coaching Agent
+   - Intelligence Agent
    - Developer Agent
+   - Knowledge Graph Consultant
+   - OpenAI Knowledge Graph Engineer
+   - Knowledge Graph VP Lead
 
 ## Setup and Installation
 

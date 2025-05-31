@@ -1,0 +1,176 @@
+import pytest
+import pytest_asyncio
+from typing import Dict, Any, List, Set
+from agents.core.base_agent import BaseAgent, AgentMessage
+from agents.core.agent_registry import AgentRegistry
+from tests.utils.test_agents import TestAgent
+from agents.core.capability_types import Capability, CapabilityType
+
+@pytest_asyncio.fixture(scope="function")
+async def registry():
+    """Create a fresh AgentRegistry instance for each test."""
+    registry = AgentRegistry()
+    await registry._auto_discover_agents()
+    return registry
+
+@pytest_asyncio.fixture(scope="function")
+async def test_agent():
+    """Create a test agent with mixed capability types."""
+    return TestAgent(
+        agent_id="test_agent",
+        agent_type="test",
+        capabilities={
+            Capability(CapabilityType.RESEARCH, "1.0"),
+            Capability(CapabilityType.DATA_PROCESSING, "1.0"),
+            Capability(CapabilityType.SENSOR_DATA, "1.0")
+        }
+    )
+
+@pytest.mark.asyncio
+async def test_capability_type_conversion():
+    """Test that capabilities are properly handled."""
+    # Test with multiple capabilities
+    capabilities = {
+        Capability(CapabilityType.RESEARCH, "1.0"),
+        Capability(CapabilityType.DATA_PROCESSING, "1.0"),
+        Capability(CapabilityType.SENSOR_DATA, "1.0")
+    }
+    agent1 = TestAgent(
+        agent_id="agent1",
+        capabilities=capabilities
+    )
+    agent_capabilities = await agent1.capabilities
+    assert isinstance(agent_capabilities, set)
+    assert len(agent_capabilities) == 3
+    assert all(isinstance(cap, Capability) for cap in agent_capabilities)
+    
+    # Test empty capabilities
+    agent2 = TestAgent(
+        agent_id="agent2",
+        capabilities=None
+    )
+    agent_capabilities = await agent2.capabilities
+    assert isinstance(agent_capabilities, set)
+    assert len(agent_capabilities) == 0
+
+@pytest.mark.asyncio
+async def test_capability_operations():
+    """Test capability operations."""
+    agent = TestAgent(
+        agent_id="test_agent",
+        capabilities={
+            Capability(CapabilityType.RESEARCH, "1.0"),
+            Capability(CapabilityType.DATA_PROCESSING, "1.0")
+        }
+    )
+    
+    # Test has_capability
+    assert await agent.has_capability(CapabilityType.RESEARCH)
+    assert await agent.has_capability(CapabilityType.DATA_PROCESSING)
+    assert not await agent.has_capability(CapabilityType.SENSOR_DATA)
+    
+    # Test get_capability
+    research_cap = await agent.get_capability(CapabilityType.RESEARCH)
+    assert isinstance(research_cap, Capability)
+    assert research_cap.type == CapabilityType.RESEARCH
+    assert research_cap.version == "1.0"
+    
+    # Test add_capability
+    new_cap = Capability(CapabilityType.SENSOR_DATA, "1.0")
+    await agent.add_capability(new_cap)
+    assert await agent.has_capability(CapabilityType.SENSOR_DATA)
+    
+    # Test remove_capability
+    await agent.remove_capability(new_cap)
+    assert not await agent.has_capability(CapabilityType.SENSOR_DATA)
+
+@pytest.mark.asyncio
+async def test_registry_capability_handling(registry, test_agent):
+    """Test capability handling in the registry."""
+    # Register agent
+    await registry.register_agent(test_agent, await test_agent.capabilities)
+    
+    # Test get_agent_capabilities
+    capabilities = await registry.get_agent_capabilities(test_agent.agent_id)
+    assert isinstance(capabilities, set)
+    assert all(isinstance(cap, Capability) for cap in capabilities)
+    assert len(capabilities) == 3
+    
+    # Test update with new capabilities
+    new_capabilities = {
+        Capability(CapabilityType.RESEARCH, "2.0"),
+        Capability(CapabilityType.DATA_PROCESSING, "2.0")
+    }
+    await registry.update_agent_capabilities(
+        test_agent.agent_id,
+        new_capabilities
+    )
+    updated_capabilities = await registry.get_agent_capabilities(test_agent.agent_id)
+    assert len(updated_capabilities) == 2
+    assert all(isinstance(cap, Capability) for cap in updated_capabilities)
+
+@pytest.mark.asyncio
+async def test_capability_consistency(registry):
+    """Test that capabilities remain consistent across operations."""
+    # Create agents with overlapping capabilities
+    agent1 = TestAgent(
+        agent_id="agent1",
+        capabilities={
+            Capability(CapabilityType.RESEARCH, "1.0"),
+            Capability(CapabilityType.DATA_PROCESSING, "1.0")
+        }
+    )
+    agent2 = TestAgent(
+        agent_id="agent2",
+        capabilities={
+            Capability(CapabilityType.DATA_PROCESSING, "1.0"),
+            Capability(CapabilityType.SENSOR_DATA, "1.0")
+        }
+    )
+    
+    # Register agents
+    await registry.register_agent(agent1, await agent1.capabilities)
+    await registry.register_agent(agent2, await agent2.capabilities)
+    
+    # Test capability-based lookup
+    research_agents = await registry.get_agents_by_capability(CapabilityType.RESEARCH)
+    assert len(research_agents) == 1
+    assert research_agents[0].agent_id == "agent1"
+    
+    data_processing_agents = await registry.get_agents_by_capability(CapabilityType.DATA_PROCESSING)
+    assert len(data_processing_agents) == 2
+    assert {a.agent_id for a in data_processing_agents} == {"agent1", "agent2"}
+    
+    # Test capability updates
+    await registry.update_agent_capabilities(
+        "agent1",
+        {Capability(CapabilityType.RESEARCH, "2.0")}
+    )
+    data_processing_agents = await registry.get_agents_by_capability(CapabilityType.DATA_PROCESSING)
+    assert len(data_processing_agents) == 1
+    assert data_processing_agents[0].agent_id == "agent2"
+
+@pytest.mark.asyncio
+async def test_capability_edge_cases(registry):
+    """Test edge cases in capability handling."""
+    agent = TestAgent(
+        agent_id="test_agent",
+        capabilities={
+            Capability(CapabilityType.RESEARCH, "1.0"),
+            Capability(CapabilityType.RESEARCH, "1.0"),  # Duplicate capability
+            Capability(CapabilityType.RESEARCH, "1.0")   # Duplicate capability
+        }
+    )
+    
+    # Register agent
+    await registry.register_agent(agent, await agent.capabilities)
+    
+    # Verify duplicates are removed
+    capabilities = await registry.get_agent_capabilities(agent.agent_id)
+    assert len(capabilities) == 1
+    assert all(isinstance(cap, Capability) for cap in capabilities)
+    
+    # Test empty capability updates
+    await registry.update_agent_capabilities(agent.agent_id, set())
+    capabilities = await registry.get_agent_capabilities(agent.agent_id)
+    assert len(capabilities) == 0 

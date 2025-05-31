@@ -34,4 +34,7 @@ loguru>=0.7.2
 qdrant-client>=1.7.0
 tavily-python>=0.2.6
 
+# Backoff library
+backoff==2.2.1
+
 # ... existing code ... 

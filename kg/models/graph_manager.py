@@ -49,12 +49,16 @@ class KnowledgeGraphManager:
             raise
             
     async def query_graph(self, sparql_query: str) -> List[Dict[str, Any]]:
-        """Execute a SPARQL query on the knowledge graph."""
+        """Execute a SPARQL query on the graph and return results as a list of dictionaries with string keys."""
         try:
             results = self.graph.query(sparql_query)
-            return [dict(row) for row in results]
+            # Convert each row to a dict with string keys
+            return [
+                {str(var): val for var, val in zip(results.vars, row)}
+                for row in results
+            ]
         except Exception as e:
-            self.logger.error(f"Error executing SPARQL query: {str(e)}")
+            self.logger.error(f"Error executing SPARQL query: {e}")
             raise
             
     async def update_graph(self, update_data: Dict[str, Any]) -> None:

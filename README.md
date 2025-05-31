@@ -52,6 +52,14 @@ python scripts/chat_with_agent.py diary
 ```
 Replace `diary` with `finance`, `coaching`, `intelligence`, or `developer` to talk with another agent.
 
+6. Run the main agent chain example:
+```bash
+python scripts/run_main_chain.py "Is AI useful in diagnosing rare diseases?"
+```
+This launches the sequential agent workflow defined in `main.py` and prints each agent's contribution.
+
+Additional details are provided in `scripts/README_WRITTEN_BY_ANOTHER_AGENT_IMPORTANT.md`.
+
 ## Graph Database with Docker
 
 To spin up a local Neo4j instance for experimenting with a graph database, a

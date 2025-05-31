@@ -45,3 +45,4 @@ Thumbs.db
 # Scratch space
 scratch_space/*
 !scratch_space/README.md
+**/__pycache__/

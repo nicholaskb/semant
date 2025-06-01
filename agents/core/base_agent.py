@@ -53,15 +53,20 @@ class BaseAgent(ABC):
         self.agent_id = agent_id
         self.agent_type = agent_type
         self._capabilities = CapabilitySet()
-        if capabilities:
-            for capability in capabilities:
-                self._capabilities.add(capability)
+        self._initial_capabilities = capabilities or set()
         self.config: Dict[str, Any] = config or {}
         self.knowledge_graph = None  # Will be set during initialization
         self.logger = logger.bind(agent_id=agent_id, agent_type=agent_type)
         self.diary: List[Dict[str, Any]] = []  # Each entry: {timestamp, message, [optional] details}
         self.status = AgentStatus.IDLE
         self._lock = asyncio.Lock()
+        
+    async def initialize(self) -> None:
+        """Initialize the agent and its resources."""
+        # Initialize capabilities
+        for capability in self._initial_capabilities:
+            await self._capabilities.add(capability)
+        self._initial_capabilities = set()  # Clear initial capabilities after initialization
         
     @property
     async def capabilities(self) -> Set[Capability]:
@@ -83,11 +88,6 @@ class BaseAgent(ABC):
     async def get_capability(self, capability_type: CapabilityType) -> Optional[Capability]:
         """Get a specific capability by type."""
         return await self._capabilities.get_capability(capability_type)
-    
-    @abstractmethod
-    async def initialize(self) -> None:
-        """Initialize the agent and its resources."""
-        pass
     
     @abstractmethod
     async def process_message(self, message: AgentMessage) -> AgentMessage:

@@ -224,16 +224,27 @@ class KnowledgeGraphReasoner:
                 })
         return related
     
-    def _query(self, sparql_query: str) -> List[Dict[str, Any]]:
+    def _query(self, sparql_query: str) -> List[Dict[str, str]]:
         """Execute a SPARQL query and return results."""
         if self.graphdb:
             return self.graphdb.query(sparql_query)
         else:
-            # For rdflib, convert ResultRow to dict with variable names as keys
+            # For rdflib, convert ResultRow to dict with string keys and values
             results = []
             qres = self.graph.query(sparql_query)
             for row in qres:
                 # row.labels gives the variable names
-                row_dict = {str(var): row[var] if row[var] is None else str(row[var]) for var in row.labels}
-                results.append(row_dict)
+                result = {}
+                for var in row.labels:
+                    # Convert variable name to string
+                    key = str(var)
+                    # Convert value to string, handling None and URIRef/Literal objects
+                    value = row[var]
+                    if value is None:
+                        result[key] = ""
+                    elif isinstance(value, (URIRef, Literal)):
+                        result[key] = str(value)
+                    else:
+                        result[key] = str(value)
+                results.append(result)
             return results 

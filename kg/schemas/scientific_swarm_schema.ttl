@@ -1,0 +1,151 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix swarm: <http://example.org/swarm#> .
+@prefix code: <http://example.org/code#> .
+@prefix review: <http://example.org/review#> .
+
+# Agent Types
+swarm:ScientificSwarmAgent rdf:type rdfs:Class ;
+    rdfs:label "Scientific Swarm Agent" ;
+    rdfs:comment "Base class for all scientific coding swarm agents" .
+
+swarm:CodeReviewAgent rdf:type rdfs:Class ;
+    rdfs:subClassOf swarm:ScientificSwarmAgent ;
+    rdfs:label "Code Review Agent" .
+
+swarm:TestGenerationAgent rdf:type rdfs:Class ;
+    rdfs:subClassOf swarm:ScientificSwarmAgent ;
+    rdfs:label "Test Generation Agent" .
+
+swarm:DocumentationAgent rdf:type rdfs:Class ;
+    rdfs:subClassOf swarm:ScientificSwarmAgent ;
+    rdfs:label "Documentation Agent" .
+
+swarm:PerformanceAnalysisAgent rdf:type rdfs:Class ;
+    rdfs:subClassOf swarm:ScientificSwarmAgent ;
+    rdfs:label "Performance Analysis Agent" .
+
+swarm:SecurityAnalysisAgent rdf:type rdfs:Class ;
+    rdfs:subClassOf swarm:ScientificSwarmAgent ;
+    rdfs:label "Security Analysis Agent" .
+
+swarm:ArchitectureReviewAgent rdf:type rdfs:Class ;
+    rdfs:subClassOf swarm:ScientificSwarmAgent ;
+    rdfs:label "Architecture Review Agent" .
+
+# Properties
+swarm:hasCapability rdf:type rdf:Property ;
+    rdfs:label "has capability" ;
+    rdfs:domain swarm:ScientificSwarmAgent ;
+    rdfs:range swarm:Capability .
+
+swarm:hasReview rdf:type rdf:Property ;
+    rdfs:label "has review" ;
+    rdfs:domain code:CodeArtifact ;
+    rdfs:range review:Review .
+
+swarm:requiresConsensus rdf:type rdf:Property ;
+    rdfs:label "requires consensus" ;
+    rdfs:domain code:CodeArtifact ;
+    rdfs:range xsd:boolean .
+
+swarm:hasConsensus rdf:type rdf:Property ;
+    rdfs:label "has consensus" ;
+    rdfs:domain code:CodeArtifact ;
+    rdfs:range xsd:boolean .
+
+swarm:reviewedBy rdf:type rdf:Property ;
+    rdfs:label "reviewed by" ;
+    rdfs:domain review:Review ;
+    rdfs:range swarm:ScientificSwarmAgent .
+
+swarm:hasStatus rdf:type rdf:Property ;
+    rdfs:label "has status" ;
+    rdfs:domain code:CodeArtifact ;
+    rdfs:range swarm:Status .
+
+# Code Artifacts
+code:CodeArtifact rdf:type rdfs:Class ;
+    rdfs:label "Code Artifact" .
+
+code:File rdf:type rdfs:Class ;
+    rdfs:subClassOf code:CodeArtifact ;
+    rdfs:label "Code File" .
+
+code:Test rdf:type rdfs:Class ;
+    rdfs:subClassOf code:CodeArtifact ;
+    rdfs:label "Test" .
+
+code:Documentation rdf:type rdfs:Class ;
+    rdfs:subClassOf code:CodeArtifact ;
+    rdfs:label "Documentation" .
+
+# Review Types
+review:Review rdf:type rdfs:Class ;
+    rdfs:label "Review" .
+
+review:CodeReview rdf:type rdfs:Class ;
+    rdfs:subClassOf review:Review ;
+    rdfs:label "Code Review" .
+
+review:TestReview rdf:type rdfs:Class ;
+    rdfs:subClassOf review:Review ;
+    rdfs:label "Test Review" .
+
+review:DocumentationReview rdf:type rdfs:Class ;
+    rdfs:subClassOf review:Review ;
+    rdfs:label "Documentation Review" .
+
+review:PerformanceReview rdf:type rdfs:Class ;
+    rdfs:subClassOf review:Review ;
+    rdfs:label "Performance Review" .
+
+review:SecurityReview rdf:type rdfs:Class ;
+    rdfs:subClassOf review:Review ;
+    rdfs:label "Security Review" .
+
+review:ArchitectureReview rdf:type rdfs:Class ;
+    rdfs:subClassOf review:Review ;
+    rdfs:label "Architecture Review" .
+
+# Status Types
+swarm:Status rdf:type rdfs:Class ;
+    rdfs:label "Status" .
+
+swarm:Pending rdf:type swarm:Status ;
+    rdfs:label "Pending" .
+
+swarm:InReview rdf:type swarm:Status ;
+    rdfs:label "In Review" .
+
+swarm:Approved rdf:type swarm:Status ;
+    rdfs:label "Approved" .
+
+swarm:Rejected rdf:type swarm:Status ;
+    rdfs:label "Rejected" .
+
+swarm:NeedsRevision rdf:type swarm:Status ;
+    rdfs:label "Needs Revision" .
+
+# Capabilities
+swarm:Capability rdf:type rdfs:Class ;
+    rdfs:label "Capability" .
+
+swarm:CodeReviewCapability rdf:type swarm:Capability ;
+    rdfs:label "Code Review Capability" .
+
+swarm:TestGenerationCapability rdf:type swarm:Capability ;
+    rdfs:label "Test Generation Capability" .
+
+swarm:DocumentationCapability rdf:type swarm:Capability ;
+    rdfs:label "Documentation Capability" .
+
+swarm:PerformanceAnalysisCapability rdf:type swarm:Capability ;
+    rdfs:label "Performance Analysis Capability" .
+
+swarm:SecurityAnalysisCapability rdf:type swarm:Capability ;
+    rdfs:label "Security Analysis Capability" .
+
+swarm:ArchitectureReviewCapability rdf:type swarm:Capability ;
+    rdfs:label "Architecture Review Capability" . 

@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+scratch_space/kg_diagnosis.py 
+
+
+scratch_space/kg_diagnosis.py
+
+
+The kg_diagnosis.py script in your scratch_space directory is designed to diagnose the state of agent capabilities in your knowledge graph. Here’s a breakdown of what it does and how to use it:
+What does kg_diagnosis.py do?
+It performs a series of SPARQL queries against your knowledge graph to:
+List all agents and their capabilities.
+Show the distribution of capabilities (i.e., how many agents have each capability).
+Identify agents missing required capabilities (specifically, CAP_A, CAP_B, CAP_C).
+Detect potential capability conflicts (cases where multiple agents have the same capability, which may or may not be an issue depending on your design).
+All results are logged using the loguru logger and returned as a dictionary.
+How to use it
+1. Make sure your environment is set up:
+The script expects the knowledge graph to be accessible via the KnowledgeGraphManager.
+Any required environment variables or configuration for the knowledge graph should be set.
+2. Run the script from your terminal:
+Apply to knowledgegra...
+Run
+py
+3. What you’ll see:
+The script will log information about:
+The initialization of the knowledge graph.
+The results of each diagnostic query (number of agent-capability pairs, capability distribution, missing required capabilities, and potential conflicts).
+If you want to use the results programmatically, you can import and call diagnose_agent_capabilities() from another Python script.
+Typical Output (in logs):
+Number of agent-capability pairs found.
+Capability distribution (how many agents have each capability).
+List of agents missing required capabilities.
+List of potential capability conflicts.
+Summary Table
+| Query/Check | What it Finds |
+|----------------------------|-----------------------------------------------------------|
+| Agent Capabilities | Which agents have which capabilities |
+| Capability Distribution | How many agents have each capability |
+| Missing Required Capabilities | Agents missing CAP_A, CAP_B, or CAP_C |
+| Capability Conflicts | Multiple agents with the same capability (potential issue)|
+In short:
+Run python scratch_space/kg_diagnosis.py to get a diagnostic overview of agent capabilities in your knowledge graph, with results logged for review and further action.
+If you want to see example output or need help interpreting the results, let me know!
+
+
+***** scratch_space/kg_diagnosis.py *******

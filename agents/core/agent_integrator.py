@@ -42,7 +42,7 @@ class AgentIntegrator:
                 agent = agent_or_id
                 agent.knowledge_graph = self.knowledge_graph
                 self.agents[agent.agent_id] = agent
-                await self.registry.register_agent(agent, agent.capabilities)
+                await self.registry.register_agent(agent)
             else:
                 if not agent_type or not capabilities:
                     raise ValueError("agent_type and capabilities are required when registering with an ID")
@@ -52,13 +52,13 @@ class AgentIntegrator:
             self.logger.error(f"Failed to register agent: {e}")
             raise
             
-    async def route_message(self, message: AgentMessage) -> AgentMessage:
+    async def route_message(self, message: AgentMessage) -> List[AgentMessage]:
         """Route a message to the appropriate agent based on capabilities."""
         try:
             if "required_capability" in message.content:
                 return await self.registry.route_message_by_capability(
-                    message.content["required_capability"],
-                    message
+                    message,
+                    message.content["required_capability"]
                 )
             else:
                 # Route to specific agent if recipient is specified

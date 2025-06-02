@@ -17,7 +17,7 @@ class RemoteKnowledgeGraphManager:
         self.store.open((self.query_endpoint, self.update_endpoint))
         self.graph = Graph(store=self.store)
 
-    async def query_graph(self, sparql_query: str) -> List[Dict[str, Any]]:
+    async def query_graph(self, sparql_query: str) -> List[Dict[str, str]]:
         """Execute a SPARQL query on the remote knowledge graph using SPARQLWrapper for better compatibility. SSL verification is disabled for testing purposes."""
         try:
             sparql = SPARQLWrapper(self.query_endpoint)
@@ -32,10 +32,19 @@ class RemoteKnowledgeGraphManager:
             sparql._SPARQLWrapper__custom_context = ctx
             results = sparql.query().convert()
             bindings = results.get('results', {}).get('bindings', [])
-            # Convert bindings to a list of dicts with variable names as keys
+            # Convert bindings to a list of dicts with string keys and values
             output = []
             for row in bindings:
-                output.append({k: v['value'] for k, v in row.items()})
+                result = {}
+                for key, value in row.items():
+                    # Ensure key is string
+                    str_key = str(key)
+                    # Convert value to string, handling None and missing values
+                    if value is None or 'value' not in value:
+                        result[str_key] = ""
+                    else:
+                        result[str_key] = str(value['value'])
+                output.append(result)
             return output
         except Exception as e:
             self.logger.error(f"Error executing SPARQL query: {str(e)}")

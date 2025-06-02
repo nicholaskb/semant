@@ -1,0 +1,287 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ag: <http://example.org/agentKG#> .
+@prefix fhir: <http://hl7.org/fhir/> .
+@prefix snomed: <http://snomed.info/id/> .
+@prefix omop: <http://ohdsi.github.io/OMOP_vocab.owl#> .
+
+# Classes
+ag:Agent a owl:Class ;
+    rdfs:label "Agent" ;
+    rdfs:comment "An autonomous computational actor in the system, processing information and making decisions to perform tasks" .
+
+ag:KnowledgeGraph a owl:Class ;
+    rdfs:label "Knowledge Graph" ;
+    rdfs:comment "A semantic data layer storing entities (nodes) and relationships (edges) that agents use for reasoning and coordination" .
+
+ag:CoordinationPattern a owl:Class ;
+    rdfs:label "Coordination Pattern" ;
+    rdfs:comment "A recurring scheme of interactions among agents (e.g., blackboard, hierarchical, self-organizing) to coordinate behaviors" .
+
+ag:SelfAssemblingPattern a owl:Class ;
+    rdfs:label "Self-Assembling Pattern" ;
+    rdfs:subClassOf ag:CoordinationPattern ;
+    rdfs:comment "A dynamic coordination pattern where agents autonomously form new multi-agent configurations without centralized control" .
+
+ag:BlackboardCoordination a owl:Class ;
+    rdfs:label "Blackboard Coordination" ;
+    rdfs:subClassOf ag:CoordinationPattern ;
+    rdfs:comment "A coordination pattern where agents communicate indirectly via a shared knowledge graph (blackboard)" .
+
+ag:HierarchicalCoordination a owl:Class ;
+    rdfs:label "Hierarchical Coordination" ;
+    rdfs:subClassOf ag:CoordinationPattern ;
+    rdfs:comment "A coordination pattern where a central controller assigns tasks to other agents" .
+
+ag:ContractNetPattern a owl:Class ;
+    rdfs:label "Contract Net Pattern" ;
+    rdfs:subClassOf ag:CoordinationPattern ;
+    rdfs:comment "A market-based coordination protocol where agents advertise tasks and delegate them to bidding agents" .
+
+ag:PeerCoordination a owl:Class ;
+    rdfs:label "Peer Coordination" ;
+    rdfs:subClassOf ag:CoordinationPattern ;
+    rdfs:comment "A decentralized coordination pattern where agents collaborate as equals without a central controller" .
+
+ag:Role a owl:Class ;
+    rdfs:label "Agent Role" ;
+    rdfs:comment "An abstract role that an agent can assume in the system (e.g., Orchestrator, Task Executor)" .
+
+ag:OrchestratorRole a owl:Class ;
+    rdfs:label "Orchestrator" ;
+    rdfs:subClassOf ag:Role ;
+    rdfs:comment "A specialized agent role that composes and coordinates multi-agent systems dynamically" .
+
+ag:TaskExecutionAgent a owl:Class ;
+    rdfs:label "Task Execution Agent" ;
+    rdfs:subClassOf ag:Role ;
+    rdfs:comment "An agent role responsible for executing specific tasks, such as data processing or interacting with users" .
+
+ag:RecommendationAgent a owl:Class ;
+    rdfs:label "Recommendation Agent" ;
+    rdfs:subClassOf ag:Role ;
+    rdfs:comment "An agent role that queries the knowledge graph to suggest items based on user preferences or context" .
+
+ag:ConversationalAgent a owl:Class ;
+    rdfs:label "Conversational Agent" ;
+    rdfs:subClassOf ag:Role ;
+    rdfs:comment "An agent role that handles natural language queries and retrieves or generates information from the knowledge graph" .
+
+ag:MonitoringAgent a owl:Class ;
+    rdfs:label "Monitoring Agent" ;
+    rdfs:subClassOf ag:Role ;
+    rdfs:comment "An agent role that monitors system metrics, logs, and performance, providing diagnostics and alerts for reliability and compliance" .
+
+ag:Capability a owl:Class ;
+    rdfs:label "Capability" ;
+    rdfs:comment "A functional skill or ability that an agent can perform (e.g., reasoning, NLP, data processing)" .
+
+ag:Workflow a owl:Class ;
+    rdfs:label "Workflow" ;
+    rdfs:comment "An ordered sequence of tasks or actions coordinated by agents to achieve a specific objective" .
+
+ag:StateMachine a owl:Class ;
+    rdfs:label "State Machine" ;
+    rdfs:comment "A formal model of states and transitions governing an agent's or system's behavior based on events" .
+
+ag:State a owl:Class ;
+    rdfs:label "State" ;
+    rdfs:comment "A discrete condition or situation in which an agent or process can exist, part of a state machine" .
+
+ag:Metric a owl:Class ;
+    rdfs:label "Metric" ;
+    rdfs:comment "A quantifiable measure of system or agent performance (e.g., latency, accuracy, throughput)" .
+
+ag:Observability a owl:Class ;
+    rdfs:label "Observability" ;
+    rdfs:comment "The practice of instrumenting agents and workflows with monitoring, logging, and tracing to ensure transparency, traceability, and trust" ;
+    rdfs:seeAlso <https://www.truefoundry.com/blog/observability-in-llm-workflows> .
+
+ag:StructuredLog a owl:Class ;
+    rdfs:label "Structured Log" ;
+    rdfs:comment "An audit record of agent interactions and decisions in a machine-readable format to support explainability and compliance" .
+
+ag:SPARQLQuery a owl:Class ;
+    rdfs:label "SPARQL Query" ;
+    rdfs:comment "A structured query executed against the knowledge graph by agents to retrieve or monitor semantic data" .
+
+ag:CommunicationProtocol a owl:Class ;
+    rdfs:label "Communication Protocol" ;
+    rdfs:comment "A standard or language (e.g., FIPA ACL, REST) used for messaging between agents" .
+
+ag:FIPA_ACL a owl:Class ;
+    rdfs:label "FIPA ACL" ;
+    rdfs:subClassOf ag:CommunicationProtocol ;
+    rdfs:comment "The FIPA Agent Communication Language, a standard for inter-agent messaging" .
+
+ag:AgenticGraphSystem a owl:Class ;
+    rdfs:label "Agentic Graph System" ;
+    rdfs:comment "An integrated architecture combining autonomous agents, a shared knowledge graph, and orchestration to handle dynamic workflows" .
+
+ag:KnowledgeGraphLayer a owl:Class ;
+    rdfs:label "Knowledge Graph Layer" ;
+    rdfs:subClassOf ag:AgenticGraphSystem ;
+    rdfs:comment "The system layer where structured data (nodes and edges) are stored; it is used by agents for reasoning and decision-making" .
+
+ag:AgentLayer a owl:Class ;
+    rdfs:label "Agent Layer" ;
+    rdfs:subClassOf ag:AgenticGraphSystem ;
+    rdfs:comment "The system layer consisting of autonomous agents that operate on tasks and interact with the knowledge graph" .
+
+ag:IntegrationLayer a owl:Class ;
+    rdfs:label "Integration Layer" ;
+    rdfs:subClassOf ag:AgenticGraphSystem ;
+    rdfs:comment "The system layer responsible for orchestration of tasks, APIs, and connecting agents with external systems and the knowledge graph" .
+
+ag:UseCase a owl:Class ;
+    rdfs:label "Use Case" ;
+    rdfs:comment "A specific enterprise or research scenario where the agentic knowledge graph system is applied" .
+
+ag:ClinicalResearchUseCase a owl:Class ;
+    rdfs:label "Clinical Research Use Case" ;
+    rdfs:subClassOf ag:UseCase ;
+    rdfs:comment "Example use case in clinical research, involving cohort definitions and integration with standards like FHIR and OMOP" .
+
+ag:SupplyChainUseCase a owl:Class ;
+    rdfs:label "Supply Chain Use Case" ;
+    rdfs:subClassOf ag:UseCase ;
+    rdfs:comment "Example enterprise use case in supply chain management or business analytics leveraging a shared knowledge graph for data integration and decision support" .
+
+# Study Cohort Ontology (SCO) classes
+ag:ResearchStudy a owl:Class ;
+    rdfs:label "Research Study" ;
+    rdfs:comment "A scientific investigation involving hypothesis testing" .
+
+ag:ClinicalTrial a owl:Class ;
+    rdfs:label "Clinical Trial" ;
+    rdfs:subClassOf ag:ResearchStudy ;
+    rdfs:comment "A prospective study designed to evaluate the effect of one or more interventions on outcomes" .
+
+ag:Cohort a owl:Class ;
+    rdfs:label "Cohort" ;
+    rdfs:comment "A group of subjects enrolled in a study" ;
+    rdfs:subClassOf fhir:Group .
+
+ag:StudyArm a owl:Class ;
+    rdfs:label "Study Arm" ;
+    rdfs:subClassOf ag:Cohort ;
+    rdfs:comment "A subgroup of participants in a clinical trial receiving a specific intervention" .
+
+ag:StudySubject a owl:Class ;
+    rdfs:label "Study Subject" ;
+    rdfs:comment "A person who participates in a study and receives medical attention or treatment" ;
+    rdfs:subClassOf fhir:Patient .
+
+ag:StudyIntervention a owl:Class ;
+    rdfs:label "Study Intervention" ;
+    rdfs:comment "A medical product or procedure tested in a clinical study (e.g., drug, device)" .
+
+ag:SubjectCharacteristic a owl:Class ;
+    rdfs:label "Subject Characteristic" ;
+    rdfs:comment "An attribute of study participants (e.g., age, gender) summarized in study analyses" .
+
+ag:StatisticalMeasure a owl:Class ;
+    rdfs:label "Statistical Measure" ;
+    rdfs:comment "A standard unit of measure (e.g., mean, median) used to express study results" .
+
+# Object Properties
+ag:hasRole a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:Role ;
+    rdfs:comment "Links an agent to a role it assumes in the system" .
+
+ag:hasCapability a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:Capability ;
+    rdfs:comment "Associates an agent with a functional capability or skill" .
+
+ag:executesWorkflow a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:Workflow ;
+    rdfs:comment "Indicates that an agent executes a particular workflow to perform tasks" .
+
+ag:delegatesTo a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:Agent ;
+    rdfs:comment "Indicates that one agent delegates a task or responsibility to another agent" .
+
+ag:communicatesVia a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:CommunicationProtocol ;
+    rdfs:comment "Specifies the communication protocol (e.g., FIPA ACL) used by an agent" .
+
+ag:queriesGraph a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:SPARQLQuery ;
+    rdfs:comment "Denotes that an agent executes a SPARQL query against the knowledge graph" .
+
+ag:contributesTo a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:KnowledgeGraph ;
+    rdfs:comment "Indicates the agent adds or updates information in the shared knowledge graph" .
+
+ag:usesDataFrom a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:KnowledgeGraph ;
+    rdfs:comment "Indicates the agent retrieves or uses information from the shared knowledge graph for reasoning" .
+
+ag:hasStateMachine a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:StateMachine ;
+    rdfs:comment "Associates an agent with a state machine that models its internal state and transitions" .
+
+ag:hasStateTransition a owl:ObjectProperty ;
+    rdfs:domain ag:StateMachine ;
+    rdfs:range ag:State ;
+    rdfs:comment "Links a state machine to its possible state transitions" .
+
+ag:generatesMetric a owl:ObjectProperty ;
+    rdfs:domain ag:Agent, ag:KnowledgeGraph ;
+    rdfs:range ag:Metric ;
+    rdfs:comment "Indicates that an entity (agent or system) produces a given metric (e.g., throughput, latency)" .
+
+ag:monitors a owl:ObjectProperty ;
+    rdfs:domain ag:Agent ;
+    rdfs:range ag:Metric ;
+    rdfs:comment "Indicates that an agent measures or tracks a particular performance metric" .
+
+ag:usesOntology a owl:ObjectProperty ;
+    rdfs:domain ag:KnowledgeGraph ;
+    rdfs:range rdfs:Class ;
+    rdfs:comment "Indicates that the knowledge graph schema uses external ontology classes (e.g., OMOP, FHIR, SNOMED) for semantic linking" .
+
+# External Ontology Links
+ag:OMOP_CohortDefinition a owl:Class ;
+    rdfs:label "OMOP CohortDefinition" ;
+    rdfs:subClassOf ag:Cohort ;
+    rdfs:comment "OMOP CDM concept for cohort definitions" .
+
+ag:FHIR_Group a owl:Class ;
+    rdfs:label "FHIR Group" ;
+    rdfs:subClassOf ag:Cohort ;
+    rdfs:comment "FHIR resource representing a group of entities (e.g., cohort of patients)" .
+
+ag:SNOMED_Concept a owl:Class ;
+    rdfs:label "SNOMED Concept" ;
+    rdfs:comment "A concept in the SNOMED CT clinical terminology used for semantic annotation" .
+
+ag:FHIR_Patient a owl:Class ;
+    rdfs:label "FHIR Patient" ;
+    rdfs:subClassOf ag:StudySubject ;
+    rdfs:comment "FHIR resource representing a patient, linked here as a superclass of study subjects" .
+
+# Examples of Specific Agents
+ag:AgentJudge a owl:Class ;
+    rdfs:label "Agent Judge" ;
+    rdfs:comment "A specialized agent role that evaluates and scores outputs of other agents, providing feedback" ;
+    rdfs:seeAlso <https://docs.swarms.world/en/latest/swarms/agents/agent_judge/> .
+
+ag:SelfImprovingAgent a owl:Class ;
+    rdfs:label "Self-Improving Agent" ;
+    rdfs:comment "An agent that can self-evaluate, learn from feedback, and autonomously enhance its capabilities" .
+
+ag:AgentConfig a owl:Class ;
+    rdfs:label "Agent Configuration" ;
+    rdfs:comment "Metadata and initialization prompt defining an agent's persona, capabilities, and initial knowledge (e.g., seed prompt or updated from logs)" . 

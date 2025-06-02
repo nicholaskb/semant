@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from agents.core.capability_types import Capability, CapabilityType
 
-class TestAgent(BaseAgent):
+class BaseTestAgent(BaseAgent):
     """Base test agent with message history tracking."""
     
     def __init__(
@@ -23,19 +23,11 @@ class TestAgent(BaseAgent):
         self.knowledge_graph_updates: List[Dict[str, Any]] = []
         self.knowledge_graph_queries: List[Dict[str, Any]] = []
         
-    @property
-    def capabilities(self) -> Set[Capability]:
-        """Get capabilities as a set."""
-        return self._capabilities
-        
-    @capabilities.setter
-    def capabilities(self, value: Union[Set[Capability], List[Capability]]):
-        """Set capabilities, converting list to set if needed."""
-        self._capabilities = set(value) if value else set()
-        
     def get_capabilities_list(self) -> List[str]:
         """Get capabilities as a sorted list for external use."""
-        return sorted(list(self._capabilities))
+        # This helper can be used in tests if needed
+        # Note: This is not async and should not be used in async registry logic
+        return []
         
     async def initialize(self) -> None:
         """Initialize the test agent."""
@@ -55,17 +47,14 @@ class TestAgent(BaseAgent):
         return self.default_response
         
     async def process_message(self, message: AgentMessage) -> AgentMessage:
-        """Process a message and track history."""
-        self.message_history.append({
-            "timestamp": time.time(),
-            "sender": message.sender,
-            "content": message.content
-        })
+        """Process a message and return a response."""
+        self.message_history.append(message)
         return AgentMessage(
             sender=self.agent_id,
             recipient=message.sender,
             content=self.default_response,
-            timestamp=time.time()
+            timestamp=message.timestamp,
+            message_type="response"
         )
         
     def get_message_history(self) -> List[Dict[str, Any]]:
@@ -74,17 +63,11 @@ class TestAgent(BaseAgent):
         
     async def update_knowledge_graph(self, update_data: Dict[str, Any]) -> None:
         """Track knowledge graph updates."""
-        self.knowledge_graph_updates.append({
-            "timestamp": time.time(),
-            "data": update_data
-        })
+        self.knowledge_graph_updates.append(update_data)
         
     async def query_knowledge_graph(self, query: Dict[str, Any]) -> Dict[str, Any]:
         """Track knowledge graph queries."""
-        self.knowledge_graph_queries.append({
-            "timestamp": time.time(),
-            "query": query
-        })
+        self.knowledge_graph_queries.append(query)
         return {"result": "test_result"}
         
     def get_knowledge_graph_updates(self) -> List[Dict[str, Any]]:
@@ -101,18 +84,108 @@ class TestAgent(BaseAgent):
         self.knowledge_graph_updates.clear()
         self.knowledge_graph_queries.clear()
 
-class MockAgent(TestAgent):
-    """Mock agent for basic testing."""
+class TestAgent(BaseTestAgent):
+    """Test agent for workflow testing with simplified interface."""
     
-    def __init__(self, agent_id: str = "test_agent"):
+    def __init__(
+        self,
+        agent_id: str,
+        capabilities: Optional[Union[Set[Capability], Set[str]]] = None,
+        agent_type: str = "test",
+        default_response: Optional[Dict] = None,
+        dependencies: Optional[List[str]] = None
+    ):
+        # Convert string capabilities to Capability objects if needed
+        if capabilities and isinstance(next(iter(capabilities)), str):
+            capabilities = {Capability(CapabilityType(cap), "1.0") for cap in capabilities}
+            
         super().__init__(
             agent_id=agent_id,
-            agent_type="mock",
-            capabilities={Capability(CapabilityType.DATA_PROCESSING, "1.0")},
-            default_response={"status": "processed"}
+            agent_type=agent_type,
+            capabilities=capabilities,
+            default_response=default_response,
+            dependencies=dependencies
+        )
+        self.processed_messages: List[Dict[str, Any]] = []
+        
+    async def process_message(self, message: AgentMessage) -> AgentMessage:
+        """Process a message and track it in processed_messages."""
+        self.message_history.append(message)
+        self.processed_messages.append({
+            "timestamp": message.timestamp,
+            "sender": message.sender,
+            "content": message.content
+        })
+        return AgentMessage(
+            sender=self.agent_id,
+            recipient=message.sender,
+            content=self.default_response,
+            timestamp=message.timestamp,
+            message_type="response"
         )
 
-class ResearchTestAgent(TestAgent):
+class MockAgent(BaseAgent):
+    """Mock agent for testing."""
+    
+    def __init__(
+        self,
+        agent_id: str = "test_agent",
+        agent_type: str = "mock",
+        capabilities: Optional[Set[Capability]] = None,
+        default_response: Optional[Dict[str, Any]] = None
+    ):
+        super().__init__(agent_id, agent_type, capabilities)
+        self._message_history: List[AgentMessage] = []
+        self._knowledge_graph_updates: List[Dict[str, Any]] = []
+        self._knowledge_graph_queries: List[Dict[str, Any]] = []
+        self._default_response = default_response or {"status": "processed"}
+        
+    async def process_message(self, message: AgentMessage) -> AgentMessage:
+        """Process a message and return a response."""
+        self._message_history.append(message)
+        return AgentMessage(
+            sender=self.agent_id,
+            recipient=message.sender,
+            content=self._default_response,
+            timestamp=message.timestamp,
+            message_type="response"
+        )
+        
+    def get_message_history(self) -> List[AgentMessage]:
+        """Get the message history."""
+        return self._message_history
+        
+    async def update_knowledge_graph(self, update_data: Dict[str, Any]) -> None:
+        """Update the knowledge graph and log the update."""
+        self._knowledge_graph_updates.append({
+            'data': update_data,
+            'timestamp': datetime.now().isoformat()
+        })
+        # Actually update the shared knowledge graph if available
+        if self.knowledge_graph and all(k in update_data for k in ("subject", "predicate", "object")):
+            await self.knowledge_graph.add_triple(
+                update_data["subject"],
+                update_data["predicate"],
+                update_data["object"]
+            )
+        
+    def get_knowledge_graph_updates(self) -> List[Dict[str, Any]]:
+        """Get the knowledge graph updates."""
+        return self._knowledge_graph_updates
+        
+    async def query_knowledge_graph(self, query: Dict[str, Any]) -> Dict[str, Any]:
+        """Query the knowledge graph."""
+        self._knowledge_graph_queries.append({
+            'query': query,
+            'timestamp': datetime.now().isoformat()
+        })
+        return {"results": []}
+        
+    def get_knowledge_graph_queries(self) -> List[Dict[str, Any]]:
+        """Get the knowledge graph queries."""
+        return self._knowledge_graph_queries
+
+class ResearchTestAgent(BaseTestAgent):
     """Test agent for research capabilities."""
     
     def __init__(
@@ -123,7 +196,10 @@ class ResearchTestAgent(TestAgent):
         super().__init__(
             agent_id=agent_id,
             agent_type="research",
-            capabilities={"research", "reasoning"},
+            capabilities={
+                Capability(CapabilityType.RESEARCH, "1.0"),
+                Capability(CapabilityType.REASONING, "1.0")
+            },
             dependencies=dependencies
         )
         
@@ -141,7 +217,7 @@ class ResearchTestAgent(TestAgent):
         self.message_history.append(message)
         return message["response"]
 
-class DataProcessorTestAgent(TestAgent):
+class DataProcessorTestAgent(BaseTestAgent):
     """Test agent for data processing capabilities."""
     
     def __init__(
@@ -152,7 +228,7 @@ class DataProcessorTestAgent(TestAgent):
         super().__init__(
             agent_id=agent_id,
             agent_type="data_processing",
-            capabilities={"data_processing"},
+            capabilities={Capability(CapabilityType.DATA_PROCESSING, "1.0")},
             dependencies=dependencies
         )
         
@@ -170,7 +246,7 @@ class DataProcessorTestAgent(TestAgent):
         self.message_history.append(message)
         return message["response"]
 
-class SensorTestAgent(TestAgent):
+class SensorTestAgent(BaseTestAgent):
     """Test agent for sensor data capabilities."""
     
     def __init__(
@@ -181,7 +257,7 @@ class SensorTestAgent(TestAgent):
         super().__init__(
             agent_id=agent_id,
             agent_type="sensor",
-            capabilities={"sensor_data"},
+            capabilities={Capability(CapabilityType.SENSOR_DATA, "1.0")},
             dependencies=dependencies
         )
         

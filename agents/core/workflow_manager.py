@@ -27,6 +27,7 @@ class WorkflowStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    ASSEMBLED = "assembled"
 
 @dataclass
 class WorkflowStep:
@@ -62,7 +63,32 @@ class WorkflowManager(RegistryObserver):
         self._capability_cache: Dict[str, List[BaseAgent]] = {}
         self._cache_ttl = 60  # Cache TTL in seconds
         self._last_cache_update = time.time()
+        self.metrics = {
+            "workflow_count": 0,
+            "active_workflows": 0,
+            "completed_workflows": 0,
+            "failed_workflows": 0,
+            "total_execution_time": 0.0,
+            "average_execution_time": 0.0
+        }
         
+    async def initialize(self) -> None:
+        """Initialize the workflow manager."""
+        # Initialize metrics
+        self.metrics = {
+            "workflow_count": 0,
+            "active_workflows": 0,
+            "completed_workflows": 0,
+            "failed_workflows": 0,
+            "total_execution_time": 0.0,
+            "average_execution_time": 0.0
+        }
+        
+        # Clear any existing workflows
+        async with self._lock:
+            self.workflows.clear()
+            self._capability_cache.clear()
+            
     async def create_workflow(self, steps: List[Dict]) -> Workflow:
         """Create a new workflow."""
         workflow_id = str(uuid.uuid4())
@@ -83,6 +109,8 @@ class WorkflowManager(RegistryObserver):
         async with self._lock:
             self.workflows[workflow_id] = workflow
             self.logger.info(f"Created workflow {workflow_id} with {len(steps)} steps")
+            self.metrics["workflow_count"] += 1
+            self.metrics["active_workflows"] += 1
             
         return workflow
         
@@ -103,17 +131,20 @@ class WorkflowManager(RegistryObserver):
                     
                 workflow.status = WorkflowStatus.COMPLETED
                 workflow.updated_at = time.time()
+                self.metrics["completed_workflows"] += 1
+                self.metrics["active_workflows"] -= 1
                 
             except Exception as e:
                 self.logger.exception(f"Workflow {workflow_id} failed: {str(e)}")
                 workflow.status = WorkflowStatus.FAILED
                 workflow.error = str(e)
                 workflow.updated_at = time.time()
+                self.metrics["failed_workflows"] += 1
+                self.metrics["active_workflows"] -= 1
                 raise
             
-    @lru_cache(maxsize=100)
     async def get_workflow(self, workflow_id: str) -> Optional[Workflow]:
-        """Get a workflow by ID with caching."""
+        """Get a workflow by ID."""
         async with self._lock:
             return self.workflows.get(workflow_id)
             
@@ -346,4 +377,49 @@ class WorkflowManager(RegistryObserver):
         
     async def get_system_health(self) -> Dict[str, Any]:
         """Get overall system health metrics."""
-        return await self.monitor.get_system_health() 
+        return await self.monitor.get_system_health()
+
+    async def shutdown(self) -> None:
+        """Shutdown the workflow manager."""
+        async with self._lock:
+            self.workflows.clear()
+            self.metrics = {
+                "workflow_count": 0,
+                "active_workflows": 0,
+                "completed_workflows": 0,
+                "failed_workflows": 0,
+                "total_execution_time": 0.0,
+                "average_execution_time": 0.0
+            } 
+
+    async def assemble_workflow(self, workflow_id: str) -> Dict[str, Any]:
+        """Assemble a workflow by assigning agents to each step based on their capabilities."""
+        async with self._lock:
+            workflow = self.workflows.get(workflow_id)
+            if not workflow:
+                return {"status": "error", "message": "Workflow not found"}
+            
+            assembled_agents = []
+            for step in workflow.steps:
+                capability = step.capability
+                print(f"[DEBUG] Required capability for step: {capability}")
+                agents = await self.agent_registry.get_agents_by_capability(capability)
+                print(f"[DEBUG] Agents found for capability {capability}: {[a.agent_id for a in agents]}")
+                for agent in agents:
+                    agent_caps = await agent.capabilities if hasattr(agent, 'capabilities') else None
+                    print(f"[DEBUG] Agent {agent.agent_id} capabilities: {agent_caps}")
+                if not agents:
+                    print(f"[DEBUG] No agents available for capability {capability}")
+                    return {"status": "error", "message": f"No agents available for capability {capability}"}
+                # Assign the first available agent for now
+                agent = agents[0]
+                assembled_agents.append(agent.agent_id)
+            
+            # Update workflow status
+            workflow.status = WorkflowStatus.ASSEMBLED
+            workflow.updated_at = time.time()
+            
+            # Track assembly metrics
+            await self.monitor.track_workflow_assembly(workflow_id, assembled_agents)
+            
+            return {"status": "success", "agents": assembled_agents} 

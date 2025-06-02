@@ -8,6 +8,7 @@ from datetime import datetime
 import time
 from .cache import AsyncLRUCache
 from .indexing import TripleIndex
+import re
 
 T = TypeVar('T')
 
@@ -113,17 +114,10 @@ class KnowledgeGraphManager:
         self.version_tracker = GraphVersion()
         self.security = GraphSecurity()
         self.lock = asyncio.Lock()
-        self.metrics = {
-            'query_count': 0,
-            'cache_hits': 0,
-            'cache_misses': 0,
-            'key_conversion_time': 0.0,
-            'total_query_time': 0.0,
-            'validation_errors': 0,
-            'security_violations': 0,
-            'version_count': 0
-        }
+        self._initialize_metrics()
         self.validation_rules = []
+        self._cache_ttl = 60  # Cache TTL in seconds
+        self._last_cache_update = time.time()
         
     def initialize_namespaces(self) -> None:
         """Initialize standard and custom namespaces."""
@@ -142,20 +136,51 @@ class KnowledgeGraphManager:
             'domain': Namespace('http://example.org/domain/'),
             'system': Namespace('http://example.org/system/'),
             'core': Namespace('http://example.org/core#'),
+            'swarm': Namespace('http://example.org/swarm#'),
+            'swarm-ex': Namespace('http://example.org/swarm-ex#'),
             '': Namespace('http://example.org/core#')  # Default namespace
         })
         
         # Bind namespaces to graph
         for prefix, namespace in self.namespaces.items():
-            self.graph.bind(prefix, namespace)
+            self.graph.bind(prefix, namespace, override=True)
             
         # Ensure default namespace is bound for SPARQL queries
-        self.graph.bind('', self.namespaces[''])
+        self.graph.bind('', self.namespaces[''], override=True)
             
+    def _initialize_metrics(self):
+        """Initialize metrics with consistent structure."""
+        self.metrics = {
+            'query_count': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'key_conversion_time': 0.0,
+            'total_query_time': 0.0,
+            'validation_errors': 0,
+            'security_violations': 0,
+            'version_count': 0,
+            'update_count': 0,
+            'triple_count': 0
+        }
+
     def add_validation_rule(self, rule: Dict[str, Any]) -> None:
         """Add a validation rule for the graph."""
         self.validation_rules.append(rule)
         
+    async def initialize(self) -> None:
+        """Initialize the knowledge graph manager."""
+        self._initialize_metrics()
+        # Clear graph and cache
+        async with self.lock:
+            self.graph = Graph()
+            self.initialize_namespaces()
+            await self.cache.clear()
+            self.index.clear()
+            self.timestamp_tracker.clear()
+            self.version_tracker.clear()
+            self.security.clear()
+            self._last_cache_update = time.time()
+            
     async def add_triple(self, subject: str, predicate: str, object: Any, role: str = 'admin') -> None:
         """Add a triple to the graph with security checks."""
         async with self.lock:
@@ -197,14 +222,15 @@ class KnowledgeGraphManager:
             await self._invalidate_cache_selective(subject, predicate)
             
     async def _invalidate_cache_selective(self, subject: str, predicate: str) -> None:
-        """Invalidate only cache entries affected by the update."""
-        # Get all cached queries
-        cached_queries = await self.cache.keys()
-        
-        # Check each query to see if it's affected
-        for query in cached_queries:
-            if subject in query or predicate in query:
-                await self.cache.delete(query)
+        """Invalidate cache entries that might be affected by the update."""
+        cache_keys = await self.cache.keys()
+        for key in cache_keys:
+            if key.startswith('query:'):
+                query = key[6:]
+                # Use normalized subject/predicate for robust matching
+                if subject in query or predicate in query:
+                    self.logger.debug(f"Cache INVALIDATE for key: {key} due to subject: {subject} or predicate: {predicate}")
+                    await self.cache.remove(key)
                 
     async def rollback(self, version_id: int) -> None:
         """Rollback to a specific version of the graph."""
@@ -218,59 +244,86 @@ class KnowledgeGraphManager:
             else:
                 raise ValueError(f"Version {version_id} not found")
                 
-    def get_stats(self) -> Dict[str, Any]:
-        """Get statistics about the graph and its components."""
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get graph statistics."""
         return {
-            'triple_count': len(self.graph),
-            'cache_stats': self.cache.get_stats(),
-            'index_stats': self.index.get_stats(),
-            'timestamp_count': sum(len(timestamps) for timestamps in self.timestamp_tracker.timestamps.values()),
-            'version_count': self.version_tracker.current_version + 1,
-            'security_stats': {
-                'access_rules': len(self.security.access_rules),
-                'audit_log_entries': len(self.security.audit_log),
-                'security_violations': self.metrics['security_violations']
+            "metrics": {
+                "triple_count": len(self.graph),
+                "query_count": self.metrics["query_count"],
+                "update_count": self.metrics.get("update_count", 0),
+                "cache_hits": self.metrics["cache_hits"],
+                "cache_misses": self.metrics["cache_misses"],
+                "security_violations": self.metrics["security_violations"],
+                "validation_errors": self.metrics.get("validation_errors", 0),
+                "version_count": self.metrics.get("version_count", 0),
+                "key_conversion_time": self.metrics.get("key_conversion_time", 0.0),
+                "total_query_time": self.metrics.get("total_query_time", 0.0)
             },
-            'metrics': self.metrics
+            "cache_stats": {
+                "size": len(await self.cache.keys()),
+                "maxsize": self.cache.maxsize,
+                "hits": self.metrics["cache_hits"],
+                "misses": self.metrics["cache_misses"]
+            },
+            "index_stats": self.index.get_stats(),
+            "timestamp_count": len(self.timestamp_tracker.timestamps),
+            "version_count": self.metrics.get("version_count", 0),
+            "security_stats": {
+                "access_rules": len(self.security.access_rules),
+                "audit_log_entries": len(self.security.audit_log),
+                "security_violations": self.metrics["security_violations"]
+            }
         }
         
-    async def query_graph(self, query: str) -> List[Dict[str, Any]]:
-        """Execute a SPARQL query with caching and performance tracking."""
-        start_time = time.time()
-        self.metrics['query_count'] += 1
+    def _normalize_query(self, query: str) -> str:
+        """Normalize a SPARQL query string for cache key consistency."""
+        # Remove leading/trailing whitespace and collapse all whitespace to a single space
+        return re.sub(r'\s+', ' ', query.strip())
         
-        try:
-            # Check cache first
-            cached_result = await self.cache.get(query)
-            if cached_result is not None:
-                self.metrics['cache_hits'] += 1
-                return cached_result
-            
-            self.metrics['cache_misses'] += 1
-            
-            # Execute query
-            results = []
-            for row in self.graph.query(query):
-                # Convert row to dict using row.labels for variable names
-                result = {}
-                for var in row.labels:
-                    try:
-                        value = row[var]
-                        result[str(var)] = self._convert_value(value)
-                    except Exception as e:
-                        self.logger.warning(f"Error processing variable {var}: {str(e)}")
-                        result[str(var)] = None
-                results.append(result)
-            
-            # Cache result
-            await self.cache.set(query, results)
-            return results
-        except Exception as e:
-            self.logger.error(f"Error executing SPARQL query: {str(e)}")
-            raise
-        finally:
-            self.metrics['total_query_time'] += time.time() - start_time
-            
+    async def query_graph(self, sparql_query: str) -> List[Dict[str, str]]:
+        """Execute a SPARQL query on the graph."""
+        normalized_query = self._normalize_query(sparql_query)
+        cache_key = f"query:{normalized_query}"
+        cached_result = await self.cache.get(cache_key)
+        if cached_result:
+            self.logger.debug(f"Cache HIT for key: {cache_key}")
+            self.metrics["cache_hits"] += 1
+            return cached_result
+        self.logger.debug(f"Cache MISS for key: {cache_key}")
+        self.metrics["cache_misses"] += 1
+        self.metrics["query_count"] += 1
+        start_time = time.time()
+        results = []
+        for row in self.graph.query(sparql_query):
+            result = {}
+            for var in row.labels:
+                key = str(var)
+                value = row[var]
+                if value is None:
+                    result[key] = None
+                elif isinstance(value, Literal):
+                    if value.datatype:
+                        if value.datatype == XSD.integer:
+                            result[key] = int(value)
+                        elif value.datatype == XSD.float:
+                            result[key] = float(value)
+                        elif value.datatype == XSD.boolean:
+                            result[key] = bool(value)
+                        else:
+                            result[key] = str(value)
+                    else:
+                        result[key] = str(value)
+                elif isinstance(value, URIRef):
+                    result[key] = str(value)
+                else:
+                    result[key] = str(value)
+            results.append(result)
+        query_time = time.time() - start_time
+        self.metrics["total_query_time"] += query_time
+        self.logger.debug(f"Cache SET for key: {cache_key}")
+        await self.cache.set(cache_key, results, ttl=self._cache_ttl)
+        return results
+        
     async def _invalidate_cache(self, subject: str, predicate: str) -> None:
         """Invalidate all cache entries after an update for correctness."""
         await self.cache.clear()
@@ -327,16 +380,20 @@ class KnowledgeGraphManager:
                 'subjects': len(set(self.graph.subjects())),
                 'predicates': len(set(self.graph.predicates())),
                 'objects': len(set(self.graph.objects())),
-                'metrics': self.metrics,
                 'validation_errors': [],
                 'security_violations': []
             }
-            
+            # Always ensure validation_errors is present
+            if 'validation_errors' not in validation_results:
+                validation_results['validation_errors'] = []
             # Apply validation rules
             for rule in self.validation_rules:
                 try:
                     if not await self._apply_validation_rule(rule):
-                        validation_results['validation_errors'].append(rule)
+                        validation_results['validation_errors'].append({
+                            'rule': rule,
+                            'error': 'Validation rule failed'
+                        })
                         self.metrics['validation_errors'] += 1
                 except Exception as e:
                     self.logger.error(f"Error applying validation rule: {str(e)}")
@@ -344,7 +401,7 @@ class KnowledgeGraphManager:
                         'rule': rule,
                         'error': str(e)
                     })
-                    
+                    self.metrics['validation_errors'] += 1
             return validation_results
         except Exception as e:
             self.logger.error(f"Error validating graph: {str(e)}")
@@ -367,13 +424,7 @@ class KnowledgeGraphManager:
             self.index.clear()
             self.timestamp_tracker.clear()
             await self.cache.clear()
-            self.metrics = {
-                'query_count': 0,
-                'cache_hits': 0,
-                'cache_misses': 0,
-                'key_conversion_time': 0.0,
-                'total_query_time': 0.0
-            }
+            self._initialize_metrics()
             
     def _convert_value(self, value: Any) -> Any:
         """Convert RDF value to appropriate Python type with timing."""
@@ -432,4 +483,30 @@ class KnowledgeGraphManager:
                         await self.add_triple(subject, str(predicates), predicates)
         except Exception as e:
             self.logger.error(f"Error updating graph: {str(e)}")
-            raise 
+            raise
+            
+    async def shutdown(self) -> None:
+        """Shutdown the knowledge graph manager."""
+        async with self.lock:
+            self.graph = Graph()
+            await self.cache.clear()
+            self._initialize_metrics()
+            
+    async def remove_triple(
+        self,
+        subject: str,
+        predicate: str,
+        object_: str
+    ) -> None:
+        """Remove a triple from the graph."""
+        async with self.lock:
+            self.graph.remove((URIRef(subject), URIRef(predicate), URIRef(object_)))
+            self.metrics["triple_count"] -= 1
+            self.metrics["update_count"] += 1
+            
+    async def shutdown(self) -> None:
+        """Shutdown the knowledge graph manager."""
+        async with self.lock:
+            self.graph = Graph()
+            await self.cache.clear()
+            self._initialize_metrics() 

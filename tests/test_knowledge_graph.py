@@ -205,6 +205,31 @@ async def test_load_ontology(graph_initializer):
     assert any("Machine" in str(r['class']) for r in results)
     assert any("Sensor" in str(r['class']) for r in results)
     assert any("Task" in str(r['class']) for r in results)
+    
+    # Verify design ontology classes
+    design_results = await graph_initializer.graph_manager.query_graph("""
+        PREFIX design: <http://example.org/design#>
+        SELECT ?class WHERE {
+            ?class rdf:type owl:Class .
+            FILTER(STRSTARTS(STR(?class), STR(design:)))
+        }
+    """)
+    assert len(design_results) > 0
+    assert any("DesignPrinciple" in str(r['class']) for r in design_results)
+    assert any("StateMachine" in str(r['class']) for r in design_results)
+    assert any("Pattern" in str(r['class']) for r in design_results)
+    
+    # Verify design principles
+    principle_results = await graph_initializer.graph_manager.query_graph("""
+        PREFIX design: <http://example.org/design#>
+        SELECT ?principle WHERE {
+            ?principle rdf:type design:DesignPrinciple .
+        }
+    """)
+    assert len(principle_results) > 0
+    assert any("Modularity" in str(r['principle']) for r in principle_results)
+    assert any("LooseCoupling" in str(r['principle']) for r in principle_results)
+    assert any("Scalability" in str(r['principle']) for r in principle_results)
 
 @pytest.mark.asyncio
 async def test_load_sample_data(graph_initializer):
@@ -362,7 +387,7 @@ async def test_performance_metrics(graph_manager):
     """)
     
     # Get stats
-    stats = graph_manager.get_stats()
+    stats = await graph_manager.get_stats()
     metrics = stats['metrics']
     
     # Verify metrics
@@ -448,7 +473,7 @@ async def test_cache_metrics(graph_manager):
     """)
     
     # Get stats
-    stats = graph_manager.get_stats()
+    stats = await graph_manager.get_stats()
     metrics = stats['metrics']
     
     # Verify cache metrics
@@ -469,7 +494,7 @@ async def test_clear_metrics(graph_manager):
     await graph_manager.clear()
     
     # Get stats
-    stats = graph_manager.get_stats()
+    stats = await graph_manager.get_stats()
     metrics = stats['metrics']
     
     # Verify metrics are reset
@@ -712,13 +737,19 @@ async def test_graph_security(graph_manager):
 @pytest.mark.asyncio
 async def test_graph_validation(graph_manager):
     """Test graph validation functionality."""
+    # Initialize test namespace
+    test_ns = Namespace('http://example.org/test/')
+    graph_manager.namespaces['test'] = test_ns
+    graph_manager.graph.bind('test', test_ns)
+    
     # Add validation rule
     graph_manager.add_validation_rule({
         'type': 'sparql',
         'query': """
+            PREFIX test: <http://example.org/test/>
             SELECT ?machine WHERE {
-                ?machine rdf:type <http://example.org/core#Machine> .
-                ?machine <http://example.org/core#hasStatus> ?status .
+                ?machine rdf:type test:Machine .
+                ?machine test:hasStatus ?status .
                 FILTER(?status = "Nominal")
             }
         """
@@ -726,13 +757,13 @@ async def test_graph_validation(graph_manager):
     
     # Add data that should pass validation
     await graph_manager.add_triple(
-        "test:machine1",
-        "rdf:type",
-        "http://example.org/core#Machine"
+        str(test_ns['machine1']),
+        str(RDF.type),
+        str(test_ns['Machine'])
     )
     await graph_manager.add_triple(
-        "test:machine1",
-        "http://example.org/core#hasStatus",
+        str(test_ns['machine1']),
+        str(test_ns['hasStatus']),
         "Nominal"
     )
     
@@ -742,13 +773,13 @@ async def test_graph_validation(graph_manager):
     
     # Add data that should fail validation
     await graph_manager.add_triple(
-        "test:machine2",
-        "rdf:type",
-        "http://example.org/core#Machine"
+        str(test_ns['machine2']),
+        str(RDF.type),
+        str(test_ns['Machine'])
     )
     await graph_manager.add_triple(
-        "test:machine2",
-        "http://example.org/core#hasStatus",
+        str(test_ns['machine2']),
+        str(test_ns['hasStatus']),
         "Warning"
     )
     
@@ -759,11 +790,21 @@ async def test_graph_validation(graph_manager):
 @pytest.mark.asyncio
 async def test_selective_cache_invalidation(graph_manager):
     """Test selective cache invalidation."""
+    # Initialize test namespace
+    test_ns = Namespace('http://example.org/test/')
+    graph_manager.namespaces['test'] = test_ns
+    graph_manager.graph.bind('test', test_ns)
+    
     # Add initial data
-    await graph_manager.add_triple("test:subject1", "test:predicate1", "test:object1")
+    await graph_manager.add_triple(
+        str(test_ns['subject1']),
+        str(test_ns['predicate1']),
+        str(test_ns['object1'])
+    )
     
     # Query and cache result
     query1 = """
+        PREFIX test: <http://example.org/test/>
         SELECT ?object WHERE {
             test:subject1 test:predicate1 ?object .
         }
@@ -772,7 +813,11 @@ async def test_selective_cache_invalidation(graph_manager):
     assert len(results1) == 1
     
     # Add unrelated data
-    await graph_manager.add_triple("test:subject2", "test:predicate2", "test:object2")
+    await graph_manager.add_triple(
+        str(test_ns['subject2']),
+        str(test_ns['predicate2']),
+        str(test_ns['object2'])
+    )
     
     # Query again - should use cache
     results2 = await graph_manager.query_graph(query1)
@@ -780,12 +825,16 @@ async def test_selective_cache_invalidation(graph_manager):
     assert graph_manager.metrics['cache_hits'] > 0
     
     # Add related data
-    await graph_manager.add_triple("test:subject1", "test:predicate1", "test:object3")
+    await graph_manager.add_triple(
+        str(test_ns['subject1']),
+        str(test_ns['predicate1']),
+        str(test_ns['object3'])
+    )
     
     # Query again - should not use cache
     results3 = await graph_manager.query_graph(query1)
     assert len(results3) == 1
-    assert results3[0]['object'] == 'test:object3'
+    assert results3[0]['object'] == str(test_ns['object3'])
 
 @pytest.mark.asyncio
 async def test_enhanced_metrics(graph_manager):
@@ -819,7 +868,7 @@ async def test_enhanced_metrics(graph_manager):
         pass
     
     # Get stats
-    stats = graph_manager.get_stats()
+    stats = await graph_manager.get_stats()
     
     # Verify metrics
     assert stats['version_count'] > 0
@@ -827,3 +876,104 @@ async def test_enhanced_metrics(graph_manager):
     assert stats['security_stats']['audit_log_entries'] > 0
     assert stats['security_stats']['security_violations'] > 0
     assert 'validation_errors' in stats['metrics'] 
+
+@pytest.mark.asyncio
+async def test_agentic_ontology_loading(graph_initializer):
+    """Test that the agentic ontology classes and relationships are loaded correctly."""
+    # Load the core ontology which will trigger loading of agentic ontology
+    await graph_initializer.load_ontology("kg/schemas/core.ttl")
+    
+    # Query 1: Verify core agent classes exist
+    agent_classes_query = """
+    PREFIX ag: <http://example.org/agentKG#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?class ?label ?comment
+    WHERE {
+        ?class rdf:type owl:Class .
+        ?class rdfs:label ?label .
+        ?class rdfs:comment ?comment .
+        FILTER(?class IN (ag:Agent, ag:KnowledgeGraph, ag:CoordinationPattern))
+    }
+    """
+    
+    results = await graph_initializer.graph_manager.query_graph(agent_classes_query)
+    assert len(results) == 3, "Should find Agent, KnowledgeGraph, and CoordinationPattern classes"
+    
+    # Query 2: Verify coordination pattern subclasses
+    pattern_subclasses_query = """
+    PREFIX ag: <http://example.org/agentKG#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?subclass ?label
+    WHERE {
+        ?subclass rdfs:subClassOf ag:CoordinationPattern .
+        ?subclass rdfs:label ?label .
+    }
+    """
+    
+    results = await graph_initializer.graph_manager.query_graph(pattern_subclasses_query)
+    expected_patterns = {
+        "Self-Assembling Pattern",
+        "Blackboard Coordination",
+        "Hierarchical Coordination",
+        "Contract Net Pattern",
+        "Peer Coordination"
+    }
+    found_patterns = {result['label'] for result in results}
+    assert found_patterns == expected_patterns, "Should find all coordination pattern subclasses"
+    
+    # Query 3: Verify agent roles
+    role_query = """
+    PREFIX ag: <http://example.org/agentKG#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?role ?label
+    WHERE {
+        ?role rdfs:subClassOf ag:Role .
+        ?role rdfs:label ?label .
+    }
+    """
+    
+    results = await graph_initializer.graph_manager.query_graph(role_query)
+    expected_roles = {
+        "Orchestrator",
+        "Task Execution Agent",
+        "Recommendation Agent",
+        "Conversational Agent",
+        "Monitoring Agent"
+    }
+    found_roles = {result['label'] for result in results}
+    assert found_roles == expected_roles, "Should find all agent roles"
+    
+    # Query 4: Verify object properties
+    properties_query = """
+    PREFIX ag: <http://example.org/agentKG#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    
+    SELECT ?property ?domain ?range
+    WHERE {
+        ?property rdf:type owl:ObjectProperty .
+        ?property rdfs:domain ?domain .
+        ?property rdfs:range ?range .
+    }
+    """
+    
+    results = await graph_initializer.graph_manager.query_graph(properties_query)
+    assert len(results) > 0, "Should find object properties"
+    
+    # Verify specific properties exist
+    property_names = {str(result['property']).split('#')[-1] for result in results}
+    expected_properties = {
+        'hasRole',
+        'hasCapability',
+        'executesWorkflow',
+        'delegatesTo',
+        'communicatesVia',
+        'queriesGraph',
+        'contributesTo',
+        'usesDataFrom'
+    }
+    assert expected_properties.issubset(property_names), "Should find all expected object properties" 

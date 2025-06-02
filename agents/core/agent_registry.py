@@ -320,19 +320,38 @@ class AgentRegistry:
             self._is_initialized = True
             logger.debug(f"AgentRegistry initialized. _agents: {self._agents}, _capability_map: {self._capability_map}")
             
-    async def cleanup(self):
-        """Cleanup the agent registry."""
-        if self._is_initialized:
-            if self._discovery_task:
-                self._discovery_task.cancel()
+    async def cleanup(self) -> None:
+        """Clean up resources and cancel pending tasks."""
+        self.logger.info("Starting cleanup of AgentRegistry")
+        
+        # Cancel all tasks
+        tasks = []
+        if hasattr(self, '_discovery_task'):
+            tasks.append(self._discovery_task)
+            
+        # Cancel tasks
+        for task in tasks:
+            if task and not task.done():
+                task.cancel()
                 try:
-                    await self._discovery_task
+                    await task
                 except asyncio.CancelledError:
                     pass
-            await self._workflow_notifier.shutdown()
-            self._is_initialized = False
-            logger.debug("AgentRegistry cleaned up")
+                    
+        # Clear collections
+        self._agents.clear()
+        self._capability_map.clear()
+        self._agent_locks.clear()
+        self._capability_locks.clear()
+        
+        # Shutdown notifier
+        try:
+            await self._workflow_notifier.cleanup()
+        except Exception as e:
+            self.logger.error(f"Error during notifier cleanup: {e}")
             
+        self.logger.info("AgentRegistry cleanup completed")
+
     def __del__(self):
         """Cleanup when the object is destroyed."""
         if self._discovery_task and not self._discovery_task.done():
@@ -607,38 +626,6 @@ class AgentRegistry:
             self._agents.clear()
             self._capability_map.clear()
             self.logger.info("Cleared all registered agents")
-
-    async def cleanup(self) -> None:
-        """Clean up resources and cancel pending tasks."""
-        self.logger.info("Starting cleanup of AgentRegistry")
-        
-        # Cancel all tasks
-        tasks = []
-        if hasattr(self, '_discovery_task'):
-            tasks.append(self._discovery_task)
-            
-        # Cancel tasks
-        for task in tasks:
-            if task and not task.done():
-                task.cancel()
-                try:
-                    await task
-                except asyncio.CancelledError:
-                    pass
-                    
-        # Clear collections
-        self._agents.clear()
-        self._capability_map.clear()
-        self._agent_locks.clear()
-        self._capability_locks.clear()
-        
-        # Shutdown notifier
-        try:
-            await self._workflow_notifier.shutdown()
-        except Exception as e:
-            self.logger.error(f"Error during notifier shutdown: {e}")
-            
-        self.logger.info("AgentRegistry cleanup completed")
 
     async def recover_agent(self, agent_id: str) -> bool:
         """Recover an agent from error state."""

@@ -5,21 +5,24 @@ from agents.core.agent_integrator import AgentIntegrator
 from agents.core.base_agent import AgentMessage
 from tests.utils.test_agents import MockAgent
 from kg.models.graph_manager import KnowledgeGraphManager
+from agents.core.capability_types import Capability, CapabilityType
 
 @pytest_asyncio.fixture
 async def integrator():
     """Create an AgentIntegrator instance for testing."""
     kg = KnowledgeGraphManager()
-    kg.initialize_namespaces()
+    await kg.initialize()
     integrator = AgentIntegrator(kg)
+    await integrator.initialize()
     yield integrator
     # Clean up background tasks
-    await integrator.registry.shutdown()
+    # await integrator.registry.shutdown()  # Removed, not implemented
 
 @pytest_asyncio.fixture
 async def mock_agent():
-    """Create a mock agent for testing."""
-    agent = MockAgent()
+    """Create a mock agent for testing with at least one capability."""
+    capabilities = {Capability(CapabilityType.DATA_PROCESSING, "1.0")}
+    agent = MockAgent(capabilities=capabilities)
     await agent.initialize()
     return agent
 
@@ -29,7 +32,8 @@ async def test_register_agent(integrator, mock_agent):
     await integrator.register_agent(mock_agent)
     assert mock_agent.agent_id in integrator.agents
     assert mock_agent.knowledge_graph is not None
-    assert mock_agent.capabilities == ["mock"]
+    capabilities = await mock_agent.capabilities
+    assert capabilities == {Capability(CapabilityType.DATA_PROCESSING, "1.0")}
     
     # Verify knowledge graph integration
     assert mock_agent.knowledge_graph == integrator.knowledge_graph
@@ -38,22 +42,43 @@ async def test_register_agent(integrator, mock_agent):
 @pytest.mark.asyncio
 async def test_route_message(integrator, mock_agent):
     """Test routing a message to an agent."""
+    # Initialize agent first
+    await mock_agent.initialize()
+    
+    # Register agent with explicit capabilities
     await integrator.register_agent(mock_agent)
+    
+    # Verify capabilities are registered
+    capabilities = await mock_agent.capabilities
+    assert capabilities == {Capability(CapabilityType.DATA_PROCESSING, "1.0")}
+    
+    # Create and send a test message
     message = AgentMessage(
         sender="sender",
         recipient="test_agent",
         content={
-            "required_capability": "mock",
+            "required_capability": CapabilityType.DATA_PROCESSING,
             "test": "data"
         },
         timestamp=time.time(),
         message_type="test"
     )
-    response = await integrator.route_message(message)
-    assert response.sender == "test_agent"
-    assert response.content["status"] == "processed"
-    assert len(mock_agent.get_message_history()) == 1
-    assert mock_agent.get_message_history()[0] == message
+    
+    # Route the message
+    responses = await integrator.route_message(message)
+    
+    # Verify responses
+    assert isinstance(responses, list)
+    assert len(responses) > 0
+    assert responses[0].sender == "test_agent"
+    assert responses[0].recipient == "sender"
+    assert responses[0].content == {"status": "processed"}
+    assert responses[0].message_type == "response"
+    
+    # Verify message was processed
+    message_history = mock_agent.get_message_history()
+    assert len(message_history) == 1
+    assert message_history[0] == message
 
 @pytest.mark.asyncio
 async def test_broadcast_message(integrator, mock_agent):
@@ -81,7 +106,8 @@ async def test_get_agent_status(integrator, mock_agent):
     assert status["agent_id"] == "test_agent"
     assert status["agent_type"] == "mock"
     assert status["knowledge_graph_connected"] is True
-    assert status["capabilities"] == ["mock"]
+    capabilities = await mock_agent.capabilities
+    assert status["capabilities"] == list(capabilities)
 
 @pytest.mark.asyncio
 async def test_get_all_agent_statuses(integrator, mock_agent):
@@ -90,7 +116,8 @@ async def test_get_all_agent_statuses(integrator, mock_agent):
     statuses = await integrator.get_all_agent_statuses()
     assert "test_agent" in statuses
     assert statuses["test_agent"]["agent_type"] == "mock"
-    assert statuses["test_agent"]["capabilities"] == ["mock"]
+    capabilities = await mock_agent.capabilities
+    assert statuses["test_agent"]["capabilities"] == list(capabilities)
 
 @pytest.mark.asyncio
 async def test_knowledge_graph_updates(integrator, mock_agent):
@@ -102,8 +129,10 @@ async def test_knowledge_graph_updates(integrator, mock_agent):
         "object": "test_object"
     }
     await mock_agent.update_knowledge_graph(update_data)
-    assert len(mock_agent.get_knowledge_graph_updates()) == 1
-    assert mock_agent.get_knowledge_graph_updates()[0] == update_data
+    updates = mock_agent.get_knowledge_graph_updates()
+    assert len(updates) == 1
+    assert updates[0]["data"] == update_data
+    assert "timestamp" in updates[0]
     
     # Verify the update was applied to the shared knowledge graph
     query = {"sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o }"}
@@ -122,5 +151,38 @@ async def test_knowledge_graph_queries(integrator, mock_agent):
     await integrator.register_agent(mock_agent)
     query = {"sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o }"}
     result = await mock_agent.query_knowledge_graph(query)
-    assert len(mock_agent.get_knowledge_graph_queries()) == 1
-    assert mock_agent.get_knowledge_graph_queries()[0] == query 
+    queries = mock_agent.get_knowledge_graph_queries()
+    assert len(queries) == 1
+    assert queries[0]["query"] == query
+    assert "timestamp" in queries[0]
+
+@pytest.mark.asyncio
+async def test_process_message_called_during_routing(integrator, mock_agent):
+    """Test that process_message is called when routing messages."""
+    await integrator.register_agent(mock_agent)
+    
+    # Clear any existing message history
+    mock_agent._message_history.clear()
+    
+    # Create and send a test message
+    message = AgentMessage(
+        sender="sender",
+        recipient="test_agent",
+        content={"test": "data"},
+        timestamp=time.time(),
+        message_type="test"
+    )
+    
+    # Route the message
+    response = await integrator.route_message(message)
+    
+    # Verify process_message was called
+    message_history = mock_agent.get_message_history()
+    assert len(message_history) == 1
+    assert message_history[0] == message
+    
+    # Verify response
+    assert response.sender == "test_agent"
+    assert response.recipient == "sender"
+    assert response.content == {"status": "processed"}
+    assert response.message_type == "response" 

@@ -1,0 +1,240 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix core: <http://example.org/core#> .
+@prefix design: <http://example.org/design#> .
+
+# Design Principles
+design:DesignPrinciple rdf:type owl:Class ;
+    rdfs:label "Design Principle"@en ;
+    rdfs:comment "A fundamental design principle for system architecture"@en .
+
+design:Modularity rdf:type design:DesignPrinciple ;
+    rdfs:label "Modularity"@en ;
+    rdfs:comment "Principle of modular system design"@en .
+
+design:LooseCoupling rdf:type design:DesignPrinciple ;
+    rdfs:label "Loose Coupling"@en ;
+    rdfs:comment "Principle of loose coupling between components"@en .
+
+design:Scalability rdf:type design:DesignPrinciple ;
+    rdfs:label "Scalability"@en ;
+    rdfs:comment "Principle of system scalability"@en .
+
+design:Extensibility rdf:type design:DesignPrinciple ;
+    rdfs:label "Extensibility"@en ;
+    rdfs:comment "Principle of system extensibility"@en .
+
+design:FaultTolerance rdf:type design:DesignPrinciple ;
+    rdfs:label "Fault Tolerance"@en ;
+    rdfs:comment "Principle of fault tolerance"@en .
+
+design:EventDriven rdf:type design:DesignPrinciple ;
+    rdfs:label "Event-Driven Architecture"@en ;
+    rdfs:comment "Principle of event-driven architecture"@en .
+
+# State Machines
+design:StateMachine rdf:type owl:Class ;
+    rdfs:label "State Machine"@en ;
+    rdfs:comment "A state machine defining system behavior"@en .
+
+design:State rdf:type owl:Class ;
+    rdfs:label "State"@en ;
+    rdfs:comment "A state in a state machine"@en .
+
+design:Transition rdf:type owl:Class ;
+    rdfs:label "Transition"@en ;
+    rdfs:comment "A transition between states"@en .
+
+# Agent Lifecycle States
+design:InitializedState rdf:type design:State ;
+    rdfs:label "Initialized"@en .
+
+design:PlanningState rdf:type design:State ;
+    rdfs:label "Planning"@en .
+
+design:ExecutingState rdf:type design:State ;
+    rdfs:label "Executing"@en .
+
+design:IdleState rdf:type design:State ;
+    rdfs:label "Idle"@en .
+
+design:ErrorState rdf:type design:State ;
+    rdfs:label "Error"@en .
+
+design:TerminatedState rdf:type design:State ;
+    rdfs:label "Terminated"@en .
+
+# Graph Operation States
+design:GraphBuildingState rdf:type design:State ;
+    rdfs:label "BuildingGraph"@en .
+
+design:GraphQueryingState rdf:type design:State ;
+    rdfs:label "QueryingGraph"@en .
+
+design:GraphUpdatingState rdf:type design:State ;
+    rdfs:label "UpdatingGraph"@en .
+
+design:GraphIdleState rdf:type design:State ;
+    rdfs:label "IdleGraph"@en .
+
+# Transitions
+design:T_InitToIdle rdf:type design:Transition ;
+    design:fromState design:InitializedState ;
+    design:toState design:IdleState .
+
+design:T_IdleToPlan rdf:type design:Transition ;
+    design:fromState design:IdleState ;
+    design:toState design:PlanningState .
+
+design:T_PlanToExec rdf:type design:Transition ;
+    design:fromState design:PlanningState ;
+    design:toState design:ExecutingState .
+
+design:T_ExecToIdle rdf:type design:Transition ;
+    design:fromState design:ExecutingState ;
+    design:toState design:IdleState .
+
+design:T_AnyToError rdf:type design:Transition ;
+    design:fromState design:IdleState, design:PlanningState, design:ExecutingState ;
+    design:toState design:ErrorState .
+
+design:T_ErrorToIdle rdf:type design:Transition ;
+    design:fromState design:ErrorState ;
+    design:toState design:IdleState .
+
+design:T_Terminate rdf:type design:Transition ;
+    design:fromState design:IdleState, design:PlanningState, design:ExecutingState ;
+    design:toState design:TerminatedState .
+
+# Diagnostic Patterns
+design:Pattern rdf:type owl:Class ;
+    rdfs:label "Pattern"@en ;
+    rdfs:comment "A diagnostic or design pattern"@en .
+
+design:Evidence rdf:type owl:Class ;
+    rdfs:label "Evidence"@en ;
+    rdfs:comment "Evidence supporting a pattern"@en .
+
+design:ValidationCriterion rdf:type owl:Class ;
+    rdfs:label "Validation Criterion"@en ;
+    rdfs:comment "A criterion for validating a pattern"@en .
+
+design:SwarmHealthPattern rdf:type design:Pattern ;
+    rdfs:label "Swarm Health Monitoring Pattern"@en .
+
+design:GraphIntegrityPattern rdf:type design:Pattern ;
+    rdfs:label "Graph Integrity Validation Pattern"@en .
+
+design:ResourceConstraintPattern rdf:type design:Pattern ;
+    rdfs:label "Resource Constraint Pattern"@en .
+
+design:LogEvidence rdf:type design:Evidence ;
+    rdfs:label "Log Analysis Evidence"@en .
+
+design:MetricsEvidence rdf:type design:Evidence ;
+    rdfs:label "Metrics Monitoring Evidence"@en .
+
+design:GraphSchemaEvidence rdf:type design:Evidence ;
+    rdfs:label "Schema Validation Evidence"@en .
+
+design:ThresholdCheck rdf:type design:ValidationCriterion ;
+    rdfs:label "Threshold Check"@en .
+
+design:SchemaCompliance rdf:type design:ValidationCriterion ;
+    rdfs:label "Schema Compliance"@en .
+
+design:ResourceThreshold rdf:type design:ValidationCriterion ;
+    rdfs:label "Resource Threshold"@en .
+
+# Performance Metrics and Constraints
+design:PerformanceConstraint rdf:type owl:Class ;
+    rdfs:label "Performance Constraint"@en ;
+    rdfs:comment "A constraint on system performance"@en .
+
+design:MaxCPUConstraint rdf:type design:PerformanceConstraint ;
+    design:hasMetric core:CPUUsage ;
+    design:value "0.85"^^xsd:double ;
+    rdfs:label "Max CPU Utilization"@en .
+
+design:MaxLatencyConstraint rdf:type design:PerformanceConstraint ;
+    design:hasMetric core:QueryLatency ;
+    design:value "500.0"^^xsd:double ;
+    rdfs:label "Max Query Latency (ms)"@en .
+
+design:MinThroughputConstraint rdf:type design:PerformanceConstraint ;
+    design:hasMetric core:Throughput ;
+    design:value "100.0"^^xsd:double ;
+    rdfs:label "Min Throughput"@en .
+
+# Migration and Scaling
+design:ScalingStrategy rdf:type owl:Class ;
+    rdfs:label "Scaling Strategy"@en ;
+    rdfs:comment "A strategy for system scaling"@en .
+
+design:MigrationPlan rdf:type owl:Class ;
+    rdfs:label "Migration Plan"@en ;
+    rdfs:comment "A plan for system migration"@en .
+
+design:HorizontalScaling rdf:type design:ScalingStrategy ;
+    rdfs:label "Horizontal Scaling"@en .
+
+design:VerticalScaling rdf:type design:ScalingStrategy ;
+    rdfs:label "Vertical Scaling"@en .
+
+# Object Properties
+design:adheresTo rdf:type owl:ObjectProperty ;
+    rdfs:label "adheres to"@en ;
+    rdfs:domain core:Workflow ;
+    rdfs:range design:DesignPrinciple ;
+    rdfs:comment "Links a workflow to design principles it adheres to"@en .
+
+design:hasState rdf:type owl:ObjectProperty ;
+    rdfs:label "has state"@en ;
+    rdfs:domain design:StateMachine ;
+    rdfs:range design:State ;
+    rdfs:comment "Links a state machine to its states"@en .
+
+design:fromState rdf:type owl:ObjectProperty ;
+    rdfs:label "from state"@en ;
+    rdfs:domain design:Transition ;
+    rdfs:range design:State ;
+    rdfs:comment "Links a transition to its source state"@en .
+
+design:toState rdf:type owl:ObjectProperty ;
+    rdfs:label "to state"@en ;
+    rdfs:domain design:Transition ;
+    rdfs:range design:State ;
+    rdfs:comment "Links a transition to its target state"@en .
+
+design:hasEvidence rdf:type owl:ObjectProperty ;
+    rdfs:label "has evidence"@en ;
+    rdfs:domain design:Pattern ;
+    rdfs:range design:Evidence ;
+    rdfs:comment "Links a pattern to its evidence"@en .
+
+design:hasCriterion rdf:type owl:ObjectProperty ;
+    rdfs:label "has criterion"@en ;
+    rdfs:domain design:Pattern ;
+    rdfs:range design:ValidationCriterion ;
+    rdfs:comment "Links a pattern to its validation criteria"@en .
+
+design:subPattern rdf:type owl:ObjectProperty ;
+    rdfs:label "sub pattern"@en ;
+    rdfs:domain design:Pattern ;
+    rdfs:range design:Pattern ;
+    rdfs:comment "Links a pattern to its sub-patterns"@en .
+
+design:hasConstraint rdf:type owl:ObjectProperty ;
+    rdfs:label "has constraint"@en ;
+    rdfs:domain core:Metric ;
+    rdfs:range design:PerformanceConstraint ;
+    rdfs:comment "Links a metric to its performance constraints"@en .
+
+# Data Properties
+design:value rdf:type owl:DatatypeProperty ;
+    rdfs:label "value"@en ;
+    rdfs:domain design:PerformanceConstraint ;
+    rdfs:range xsd:double ;
+    rdfs:comment "The value of a performance constraint"@en . 

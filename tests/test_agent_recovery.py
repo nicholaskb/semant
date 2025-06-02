@@ -49,6 +49,7 @@ class TestRecoveryAgent(BaseAgent):
         self._lock = asyncio.Lock()
         self._should_fail = False  # Flag to control recovery success/failure
         self._tasks = set()  # Track pending tasks
+        self._loop = None  # Store event loop reference
         
     def agent_uri(self):
         return f"{self.AGENT_NS}{self.agent_id}"
@@ -56,6 +57,7 @@ class TestRecoveryAgent(BaseAgent):
     async def initialize(self):
         """Initialize the agent."""
         try:
+            self._loop = asyncio.get_running_loop()
             async with asyncio.timeout(2.0):  # Add timeout
                 await super().initialize()
                 if self.knowledge_graph:
@@ -242,8 +244,10 @@ class TestRecoveryAgent(BaseAgent):
             if not task.done():
                 task.cancel()
         # Wait for tasks to complete
-        await asyncio.gather(*self._tasks, return_exceptions=True)
+        if self._tasks:
+            await asyncio.gather(*self._tasks, return_exceptions=True)
         self._tasks.clear()
+        self._loop = None
         self.logger.debug("Cleanup completed")
 
     def set_should_fail(self, should_fail: bool):
@@ -251,68 +255,67 @@ class TestRecoveryAgent(BaseAgent):
         self._should_fail = should_fail
 
 @pytest_asyncio.fixture(scope="function")
-async def setup_recovery_test(event_loop):
-    """Set up test environment for recovery testing."""
+async def setup_recovery_test():
+    """Set up the test environment for agent recovery tests."""
+    # Create new event loop for this test
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
     registry = AgentRegistry()
-    knowledge_graph = KnowledgeGraphManager()
-    await knowledge_graph.initialize()
-    factory = AgentFactory(registry, knowledge_graph)
-    
-    # Register recovery_test agent template
-    await factory.register_agent_template(
-        "recovery_test",
-        TestRecoveryAgent,
-        {CapabilityType.TASK_EXECUTION}
-    )
-    
-    # Create and register test agent
-    agent = TestRecoveryAgent("test_agent")
-    agent.knowledge_graph = knowledge_graph
-    await agent.initialize()
-    await registry.register_agent(agent, await agent.capabilities)
+    kg = KnowledgeGraphManager()
+    factory = AgentFactory()
+    notifier = WorkflowNotifier()
     
     try:
-        yield registry, knowledge_graph, factory
+        # Initialize components
+        await notifier.initialize()
+        await registry.initialize()
+        await factory.initialize()
+        await kg.initialize()
+        await registry.register_agent_template(TestRecoveryAgent)
+        
+        yield registry, kg, factory, notifier
     finally:
-        # Cleanup
-        if hasattr(knowledge_graph, 'shutdown'):
-            await knowledge_graph.shutdown()
+        # Cleanup in reverse order
         await registry.cleanup()
-        # Cancel any pending tasks
-        for task in asyncio.all_tasks(event_loop):
-            if not task.done():
-                task.cancel()
-        # Wait for tasks to complete
-        await asyncio.gather(*asyncio.all_tasks(event_loop), return_exceptions=True)
+        await factory.cleanup()
+        await kg.cleanup()
+        await notifier.cleanup()
+        
+        # Clean up event loop
+        loop.close()
 
 @pytest_asyncio.fixture(scope="function")
-async def agent_registry(event_loop):
+async def agent_registry():
     """Create a fresh agent registry for each test."""
+    # Create new event loop for this test
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
     registry = AgentRegistry()
     notifier = WorkflowNotifier()
-    await notifier.initialize()
-    registry.notifier = notifier
     
     try:
+        await notifier.initialize()
+        registry.notifier = notifier
         yield registry
     finally:
         await registry.cleanup()
-        # Cancel any pending tasks
-        for task in asyncio.all_tasks(event_loop):
-            if not task.done():
-                task.cancel()
-        # Wait for tasks to complete
-        await asyncio.gather(*asyncio.all_tasks(event_loop), return_exceptions=True)
+        await notifier.cleanup()
+        
+        # Clean up event loop
+        loop.close()
 
 @pytest.mark.asyncio
 async def test_agent_recovery(agent_registry):
     """Test basic agent recovery functionality."""
     agent = TestRecoveryAgent("test_agent")
     agent.set_should_fail(False)  # Ensure recovery succeeds
-    await agent_registry.register_agent(agent)
     
     try:
         async with asyncio.timeout(2.0):  # Add timeout
+            await agent_registry.register_agent(agent)
+            
             # Test successful recovery
             success = await agent_registry.recover_agent("test_agent")
             assert success
@@ -333,6 +336,8 @@ async def test_agent_recovery(agent_registry):
             assert int(kg_state[0]["recovery_attempts"]) == 1
     except asyncio.TimeoutError:
         pytest.fail("Test timed out")
+    finally:
+        await agent.cleanup()
 
 @pytest.mark.asyncio
 async def test_max_recovery_attempts(agent_registry):

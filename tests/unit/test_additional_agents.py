@@ -4,7 +4,8 @@ import pytest_asyncio
 from agents.domain.diary_agent import DiaryAgent
 from agents.domain.simple_agents import FinanceAgent, CoachingAgent, IntelligenceAgent, DeveloperAgent
 from agents.core.base_agent import AgentMessage
-from tests.utils.test_agents import TestAgent
+from tests.utils.test_agents import BaseTestAgent, TestAgent
+from agents.core.capability_types import CapabilityType
 
 
 @pytest_asyncio.fixture
@@ -21,25 +22,25 @@ async def test_agents():
         "finance": TestAgent(
             agent_id="finance_agent",
             agent_type="finance",
-            capabilities=["finance"],
+            capabilities=[CapabilityType.CODE_REVIEW],
             default_response={"status": "finance_processed", "result": "Financial analysis complete"}
         ),
         "coaching": TestAgent(
             agent_id="coaching_agent",
             agent_type="coaching",
-            capabilities=["coaching"],
+            capabilities=[CapabilityType.CODE_REVIEW],
             default_response={"status": "coaching_processed", "result": "Coaching session complete"}
         ),
         "intelligence": TestAgent(
             agent_id="intelligence_agent",
             agent_type="intelligence",
-            capabilities=["intelligence"],
+            capabilities=[CapabilityType.CODE_REVIEW],
             default_response={"status": "intelligence_processed", "result": "Intelligence analysis complete"}
         ),
         "developer": TestAgent(
             agent_id="developer_agent",
             agent_type="developer",
-            capabilities=["development"],
+            capabilities=[CapabilityType.CODE_REVIEW],
             default_response={"status": "development_processed", "result": "Development task complete"}
         )
     }

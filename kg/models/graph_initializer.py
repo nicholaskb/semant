@@ -23,6 +23,21 @@ class GraphInitializer:
             await self.graph_manager.import_graph(ontology_file.read_text(), format='turtle')
             self.logger.info("Ontology loaded successfully")
             
+            # Load design ontology if core ontology is loaded
+            if "core.ttl" in ontology_path:
+                design_ontology_path = Path("kg/schemas/design_ontology.ttl")
+                if design_ontology_path.exists():
+                    self.logger.info("Loading design ontology")
+                    await self.graph_manager.import_graph(design_ontology_path.read_text(), format='turtle')
+                    self.logger.info("Design ontology loaded successfully")
+                    
+                # Load agentic ontology
+                agentic_ontology_path = Path("kg/schemas/agentic_ontology.ttl")
+                if agentic_ontology_path.exists():
+                    self.logger.info("Loading agentic ontology")
+                    await self.graph_manager.import_graph(agentic_ontology_path.read_text(), format='turtle')
+                    self.logger.info("Agentic ontology loaded successfully")
+            
         except Exception as e:
             self.logger.error(f"Error loading ontology: {str(e)}")
             raise

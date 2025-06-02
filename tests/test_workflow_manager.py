@@ -5,6 +5,7 @@ from agents.core.workflow_manager import WorkflowManager
 from agents.core.base_agent import AgentMessage, BaseAgent
 from agents.core.agent_registry import AgentRegistry
 from tests.utils.test_agents import (
+    BaseTestAgent,
     ResearchTestAgent,
     DataProcessorTestAgent,
     SensorTestAgent,
@@ -20,7 +21,8 @@ async def registry():
     """Create a fresh AgentRegistry instance for each test."""
     registry = AgentRegistry()
     await registry._auto_discover_agents()
-    return registry
+    yield registry
+    await registry.cleanup()  # Clean up after test
 
 @pytest_asyncio.fixture(scope="function")
 async def workflow_manager(registry):
@@ -29,32 +31,22 @@ async def workflow_manager(registry):
     await manager.initialize()
     return manager
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture
 async def setup_agents(registry):
-    """Set up test agents with capabilities."""
+    """Set up test agents with their capabilities."""
     agents = {
-        "test_research_agent": ResearchTestAgent(),
-        "test_data_processor": DataProcessorTestAgent(),
-        "test_sensor": SensorTestAgent(),
-        "feature_z_agent": TestAgent(
-            agent_id="feature_z_agent",
-            agent_type="feature_processing",
-            capabilities={"feature_processing"},
-            default_response={"status": "feature_processed", "result": "Test feature"}
-        )
+        "research": ResearchTestAgent(),
+        "data_processor": DataProcessorTestAgent(),
+        "sensor": SensorTestAgent()
     }
     
     # Register agents with their capabilities
     for agent in agents.values():
-        await registry.register_agent(agent, agent.capabilities)
+        capabilities = await agent.capabilities
+        await registry.register_agent(agent, capabilities)
         await agent.initialize()
-        
-    yield agents
     
-    # Cleanup after test
-    for agent in agents.values():
-        await registry.unregister_agent(agent.agent_id)
-        agent.clear_history()
+    return agents
 
 @pytest.fixture
 def test_capabilities():
@@ -78,22 +70,27 @@ async def test_agent_registration(registry, setup_agents):
     # Verify capabilities are registered
     for agent in agents.values():
         agent_capabilities = await registry.get_agent_capabilities(agent.agent_id)
-        assert set(agent_capabilities) == agent.capabilities
+        agent_actual_capabilities = await agent.capabilities
+        assert set(agent_capabilities) == agent_actual_capabilities
         
     # Test capability-based agent lookup
-    research_agents = await registry.get_agents_by_capability("test_research_agent")
+    research_agents = await registry.get_agents_by_capability(CapabilityType.RESEARCH)
     assert len(research_agents) == 1
     assert research_agents[0].agent_id == "test_research_agent"
     
     # Test capability update
-    await registry.update_agent_capabilities("test_research_agent", {"research", "new_capability"})
+    new_capabilities = {
+        Capability(CapabilityType.RESEARCH, "1.0"),
+        Capability(CapabilityType.NEW_CAPABILITY, "1.0")
+    }
+    await registry.update_agent_capabilities("test_research_agent", new_capabilities)
     updated_capabilities = await registry.get_agent_capabilities("test_research_agent")
-    assert set(updated_capabilities) == {"research", "new_capability"}
+    assert set(updated_capabilities) == new_capabilities
     
     # Test agent unregistration
     await registry.unregister_agent("test_research_agent")
     assert "test_research_agent" not in registry.agents
-    research_agents = await registry.get_agents_by_capability("test_research_agent")
+    research_agents = await registry.get_agents_by_capability(CapabilityType.RESEARCH)
     assert len(research_agents) == 0
 
 @pytest.mark.asyncio
@@ -140,9 +137,9 @@ async def test_workflow_assembly(workflow_manager, registry, test_capabilities):
 @pytest.mark.asyncio
 async def test_workflow_execution(workflow_manager, registry, test_capabilities):
     # Create agents with capabilities
-    agent1 = TestAgent("agent1", {test_capabilities[0]})
-    agent2 = TestAgent("agent2", {test_capabilities[1]})
-    agent3 = TestAgent("agent3", {test_capabilities[2]})
+    agent1 = TestAgent("agent1", capabilities={test_capabilities[0]})
+    agent2 = TestAgent("agent2", capabilities={test_capabilities[1]})
+    agent3 = TestAgent("agent3", capabilities={test_capabilities[2]})
     
     await registry.register_agent(agent1)
     await registry.register_agent(agent2)
@@ -301,7 +298,7 @@ async def test_workflow_error_handling(workflow_manager, registry, test_capabili
             raise Exception("Test error")
     
     # Create error agent
-    agent = ErrorAgent("agent1", test_capabilities)
+    agent = ErrorAgent("agent1", capabilities=test_capabilities)
     await registry.register_agent(agent)
     
     # Create and execute workflow
@@ -444,7 +441,7 @@ async def test_dynamic_agent_registration(workflow_manager, registry):
     workflow_id = await workflow_manager.create_workflow(
         name="Dynamic Workflow",
         description="Test dynamic agent registration",
-        required_capabilities=["test_research_agent"]
+        required_capabilities={Capability(CapabilityType.RESEARCH, "1.0")}
     )
     
     # First assembly should fail (no agents)
@@ -453,7 +450,7 @@ async def test_dynamic_agent_registration(workflow_manager, registry):
     
     # Register agent
     research_agent = ResearchTestAgent()
-    await registry.register_agent(research_agent, research_agent.capabilities)
+    await registry.register_agent(research_agent)
     await research_agent.initialize()
     
     # Second assembly should succeed
@@ -465,27 +462,34 @@ async def test_dynamic_agent_registration(workflow_manager, registry):
 @pytest.mark.asyncio
 async def test_late_capability_change(workflow_manager, registry):
     """Test that agents gaining capabilities at runtime are discovered."""
+    print("[DEBUG] Starting test_late_capability_change")
     class MutableAgent(TestAgent):
         def __init__(self, agent_id, capabilities):
-            super().__init__(agent_id, "dynamic_capability")
-    agent = MutableAgent("mutable_agent", ["initial_capability"])
-    await registry.register_agent(agent)
+            super().__init__(agent_id, agent_type="dynamic_capability", capabilities=capabilities)
+    agent = MutableAgent("mutable_agent", {Capability(CapabilityType.CAP_A, "1.0")})
+    await agent.initialize()  # Initialize agent before registration
+    print(f"[DEBUG] Initial agent capabilities: {await agent.capabilities}")
+    await registry.register_agent(agent, await agent.capabilities)
+    print(f"[DEBUG] Registry agents after registration: {list(registry.agents.keys())}")
+    
     # Create workflow requiring new capability
-    workflow_id = await workflow_manager.create_workflow(
-        name="Late Capability Workflow",
-        description="Test late capability change",
-        required_capabilities=["new_capability"]
-    )
+    steps = [
+        {"capability": CapabilityType.NEW_CAPABILITY.value, "parameters": {}}
+    ]
+    workflow = await workflow_manager.create_workflow(steps)
+    workflow_id = workflow.id
+    
     # Should fail initially
     assembly_result = await workflow_manager.assemble_workflow(workflow_id)
-    print(f"[DEBUG] Capabilities before change: {registry.capabilities if hasattr(registry, 'capabilities') else registry.capability_map}")
     assert assembly_result["status"] == "error"
+    
     # Add new capability to agent
-    if hasattr(agent, 'capabilities'):
-        agent.capabilities.add("new_capability")
-    else:
-        await registry.update_agent_capabilities(agent.agent_id, {"new_capability"})
-        
+    new_capability = Capability(CapabilityType.NEW_CAPABILITY, "1.0")
+    await agent.add_capability(new_capability)
+    print(f"[DEBUG] Agent capabilities after add: {await agent.capabilities}")
+    # Also update registry to ensure cache invalidation
+    await registry.update_agent_capabilities(agent.agent_id, await agent.capabilities)
+    
     # Should succeed after capability change
     assembly_result = await workflow_manager.assemble_workflow(workflow_id)
     assert assembly_result["status"] == "success"
@@ -510,19 +514,25 @@ async def test_multiple_agents_per_capability(workflow_manager, registry):
     """Test that multiple agents with the same capability are all considered."""
     class MultiAgent(TestAgent):
         def __init__(self, agent_id):
-            super().__init__(agent_id, "multi_capability")
+            super().__init__(
+                agent_id,
+                agent_type="multi_capability",
+                capabilities={Capability(CapabilityType.DATA_PROCESSING, "1.0")}
+            )
+    
     agent1 = MultiAgent("multi_agent_1")
     agent2 = MultiAgent("multi_agent_2")
     await registry.register_agent(agent1)
     await registry.register_agent(agent2)
+    
     workflow_id = await workflow_manager.create_workflow(
         name="Multi-Agent Workflow",
         description="Test multiple agents per capability",
-        required_capabilities=["multi_capability"],
+        required_capabilities={Capability(CapabilityType.DATA_PROCESSING, "1.0")},
         max_agents_per_capability=2
     )
+    
     assembly_result = await workflow_manager.assemble_workflow(workflow_id)
-    print(f"[DEBUG] Agents for 'multi_capability': {assembly_result['agents']}")
     assert assembly_result["status"] == "success"
     assert len(assembly_result["agents"]) == 2
     assert "multi_agent_1" in assembly_result["agents"]
@@ -599,21 +609,21 @@ async def test_registry_recovery(workflow_manager, registry):
     # Register agents
     agent1 = ResearchTestAgent(agent_id="research_1")
     agent2 = ResearchTestAgent(agent_id="research_2")
-    await registry.register_agent(agent1, agent1.capabilities)
-    await registry.register_agent(agent2, agent2.capabilities)
+    await registry.register_agent(agent1)
+    await registry.register_agent(agent2)
     
     # Create workflow
     workflow_id = await workflow_manager.create_workflow(
         name="Recovery Test",
         description="Test registry recovery",
-        required_capabilities=["test_research_agent"]
+        required_capabilities={Capability(CapabilityType.RESEARCH, "1.0")}
     )
     
     # Simulate agent failure
     await registry.unregister_agent("research_1")
     
     # Verify registry state
-    agents = await registry.get_agents_by_capability("test_research_agent")
+    agents = await registry.get_agents_by_capability(CapabilityType.RESEARCH)
     assert len(agents) == 1
     assert agents[0].agent_id == "research_2"
     
@@ -624,39 +634,55 @@ async def test_registry_recovery(workflow_manager, registry):
     assert assembly_result["agents"][0] == "research_2"
     
     # Re-register failed agent
-    await registry.register_agent(agent1, agent1.capabilities)
+    await registry.register_agent(agent1)
     
     # Verify registry recovery
-    agents = await registry.get_agents_by_capability("test_research_agent")
+    agents = await registry.get_agents_by_capability(CapabilityType.RESEARCH)
     assert len(agents) == 2
     assert set(a.agent_id for a in agents) == {"research_1", "research_2"}
 
 @pytest.mark.asyncio
 async def test_capability_conflicts(workflow_manager, registry):
     """Test handling of conflicting capabilities between agents."""
+    print("[DEBUG] Starting test_capability_conflicts")
     # Create agents with overlapping capabilities
     agent1 = TestAgent(
         agent_id="agent_1",
         agent_type="multi_capability",
-        capabilities=["cap_a", "cap_b"],
+        capabilities={
+            Capability(CapabilityType.CAP_A, "1.0"),
+            Capability(CapabilityType.CAP_B, "1.0")
+        },
         default_response={"status": "processed"}
     )
     agent2 = TestAgent(
         agent_id="agent_2",
         agent_type="multi_capability",
-        capabilities=["cap_b", "cap_c"],
+        capabilities={
+            Capability(CapabilityType.CAP_B, "1.0"),
+            Capability(CapabilityType.CAP_C, "1.0")
+        },
         default_response={"status": "processed"}
     )
     
-    await registry.register_agent(agent1, agent1.capabilities)
-    await registry.register_agent(agent2, agent2.capabilities)
+    # Initialize agents before registration
+    await agent1.initialize()
+    await agent2.initialize()
+    
+    print(f"[DEBUG] Initial agent1 capabilities: {await agent1.capabilities}")
+    print(f"[DEBUG] Initial agent2 capabilities: {await agent2.capabilities}")
+    await registry.register_agent(agent1, await agent1.capabilities)
+    await registry.register_agent(agent2, await agent2.capabilities)
+    print(f"[DEBUG] Registry agents after registration: {list(registry.agents.keys())}")
     
     # Create workflow requiring conflicting capabilities
-    workflow_id = await workflow_manager.create_workflow(
-        name="Conflict Test",
-        description="Test capability conflicts",
-        required_capabilities=["cap_a", "cap_b", "cap_c"]
-    )
+    steps = [
+        {"capability": CapabilityType.CAP_A.value, "parameters": {}},
+        {"capability": CapabilityType.CAP_B.value, "parameters": {}},
+        {"capability": CapabilityType.CAP_C.value, "parameters": {}}
+    ]
+    workflow = await workflow_manager.create_workflow(steps)
+    workflow_id = workflow.id
     
     # Assemble workflow
     assembly_result = await workflow_manager.assemble_workflow(workflow_id)
@@ -666,12 +692,12 @@ async def test_capability_conflicts(workflow_manager, registry):
     assert "agent_2" in assembly_result["agents"]
     
     # Verify capability assignments
-    workflow = await workflow_manager.get_workflow(workflow_id)
-    assert "capability_assignments" in workflow
-    assignments = workflow["capability_assignments"]
-    assert assignments["cap_a"] == "agent_1"
-    assert assignments["cap_b"] in ["agent_1", "agent_2"]
-    assert assignments["cap_c"] == "agent_2"
+    workflow_obj = await workflow_manager.get_workflow(workflow_id)
+    assert "capability_assignments" in workflow_obj
+    assignments = workflow_obj["capability_assignments"]
+    assert assignments[CapabilityType.CAP_A] == "agent_1"
+    assert assignments[CapabilityType.CAP_B] in ["agent_1", "agent_2"]
+    assert assignments[CapabilityType.CAP_C] == "agent_2"
 
 @pytest.mark.asyncio
 async def test_registry_persistence(workflow_manager, registry):

@@ -3,7 +3,7 @@ import pytest_asyncio
 from typing import Dict, Any, List, Set
 from agents.core.base_agent import BaseAgent, AgentMessage
 from agents.core.agent_registry import AgentRegistry
-from tests.utils.test_agents import TestAgent
+from tests.utils.test_agents import BaseTestAgent
 from agents.core.capability_types import Capability, CapabilityType
 
 @pytest_asyncio.fixture(scope="function")
@@ -16,7 +16,7 @@ async def registry():
 @pytest_asyncio.fixture(scope="function")
 async def test_agent():
     """Create a test agent with mixed capability types."""
-    return TestAgent(
+    return BaseTestAgent(
         agent_id="test_agent",
         agent_type="test",
         capabilities={
@@ -35,7 +35,7 @@ async def test_capability_type_conversion():
         Capability(CapabilityType.DATA_PROCESSING, "1.0"),
         Capability(CapabilityType.SENSOR_DATA, "1.0")
     }
-    agent1 = TestAgent(
+    agent1 = BaseTestAgent(
         agent_id="agent1",
         capabilities=capabilities
     )
@@ -45,7 +45,7 @@ async def test_capability_type_conversion():
     assert all(isinstance(cap, Capability) for cap in agent_capabilities)
     
     # Test empty capabilities
-    agent2 = TestAgent(
+    agent2 = BaseTestAgent(
         agent_id="agent2",
         capabilities=None
     )
@@ -56,7 +56,7 @@ async def test_capability_type_conversion():
 @pytest.mark.asyncio
 async def test_capability_operations():
     """Test capability operations."""
-    agent = TestAgent(
+    agent = BaseTestAgent(
         agent_id="test_agent",
         capabilities={
             Capability(CapabilityType.RESEARCH, "1.0"),
@@ -113,14 +113,14 @@ async def test_registry_capability_handling(registry, test_agent):
 async def test_capability_consistency(registry):
     """Test that capabilities remain consistent across operations."""
     # Create agents with overlapping capabilities
-    agent1 = TestAgent(
+    agent1 = BaseTestAgent(
         agent_id="agent1",
         capabilities={
             Capability(CapabilityType.RESEARCH, "1.0"),
             Capability(CapabilityType.DATA_PROCESSING, "1.0")
         }
     )
-    agent2 = TestAgent(
+    agent2 = BaseTestAgent(
         agent_id="agent2",
         capabilities={
             Capability(CapabilityType.DATA_PROCESSING, "1.0"),
@@ -153,7 +153,7 @@ async def test_capability_consistency(registry):
 @pytest.mark.asyncio
 async def test_capability_edge_cases(registry):
     """Test edge cases in capability handling."""
-    agent = TestAgent(
+    agent = BaseTestAgent(
         agent_id="test_agent",
         capabilities={
             Capability(CapabilityType.RESEARCH, "1.0"),

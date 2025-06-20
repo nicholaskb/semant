@@ -9,7 +9,7 @@ from kg.models.graph_manager import KnowledgeGraphManager
 async def knowledge_graph():
     """Fixture for knowledge graph manager."""
     kg = KnowledgeGraphManager()
-    kg.initialize_namespaces()
+    await kg.initialize()
     return kg
 
 @pytest_asyncio.fixture
@@ -44,8 +44,8 @@ async def test_document_ingest(corporate_agent):
     
     # Create message
     message = AgentMessage(
-        sender='test_sender',
-        recipient=corporate_agent.agent_id,
+        sender_id='test_sender',
+        recipient_id=corporate_agent.agent_id,
         content=test_doc,
         timestamp=1234567890.0,
         message_type='document_ingest'
@@ -76,8 +76,8 @@ async def test_knowledge_query(corporate_agent):
     }
     
     ingest_message = AgentMessage(
-        sender='test_sender',
-        recipient=corporate_agent.agent_id,
+        sender_id='test_sender',
+        recipient_id=corporate_agent.agent_id,
         content=test_doc,
         timestamp=1234567890.0,
         message_type='document_ingest'
@@ -92,8 +92,8 @@ async def test_knowledge_query(corporate_agent):
     }
     
     query_message = AgentMessage(
-        sender='test_sender',
-        recipient=corporate_agent.agent_id,
+        sender_id='test_sender',
+        recipient_id=corporate_agent.agent_id,
         content=query,
         timestamp=1234567890.0,
         message_type='knowledge_query'
@@ -119,8 +119,8 @@ async def test_document_update(corporate_agent):
     }
     
     ingest_message = AgentMessage(
-        sender='test_sender',
-        recipient=corporate_agent.agent_id,
+        sender_id='test_sender',
+        recipient_id=corporate_agent.agent_id,
         content=test_doc,
         timestamp=1234567890.0,
         message_type='document_ingest'
@@ -141,8 +141,8 @@ async def test_document_update(corporate_agent):
     }
     
     update_message = AgentMessage(
-        sender='test_sender',
-        recipient=corporate_agent.agent_id,
+        sender_id='test_sender',
+        recipient_id=corporate_agent.agent_id,
         content=update_data,
         timestamp=1234567890.0,
         message_type='document_update'
@@ -165,8 +165,8 @@ async def test_document_update(corporate_agent):
 async def test_unknown_message_type(corporate_agent):
     """Test handling of unknown message types."""
     message = AgentMessage(
-        sender='test_sender',
-        recipient=corporate_agent.agent_id,
+        sender_id='test_sender',
+        recipient_id=corporate_agent.agent_id,
         content={},
         timestamp=1234567890.0,
         message_type='unknown_type'

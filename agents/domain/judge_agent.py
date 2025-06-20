@@ -1,39 +1,66 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Set
 from datetime import datetime
 
 from agents.core.base_agent import BaseAgent, AgentMessage
 from kg.models.graph_manager import KnowledgeGraphManager
 from loguru import logger
+import uuid
+from agents.core.capability_types import Capability, CapabilityType
 
 
 class JudgeAgent(BaseAgent):
-    """Agent that evaluates whether actions were properly logged."""
+    """Agent that evaluates and makes decisions."""
 
-    def __init__(self, agent_id: str = "judge_agent", kg: KnowledgeGraphManager | None = None):
-        super().__init__(agent_id, "judge")
+    def __init__(
+        self,
+        agent_id: str,
+        agent_type: str = "judge",
+        capabilities: Optional[Set[Capability]] = None,
+        knowledge_graph: Optional[Any] = None,
+        config: Optional[Dict[str, Any]] = None
+    ):
+        default_capabilities = {
+            Capability(CapabilityType.MESSAGE_PROCESSING, "1.0"),
+            Capability(CapabilityType.DECISION_MAKING, "1.0")
+        }
+        super().__init__(
+            agent_id=agent_id,
+            agent_type=agent_type,
+            capabilities=capabilities or default_capabilities,
+            knowledge_graph=knowledge_graph,
+            config=config
+        )
+        self._decisions = []
         self.logger = logger.bind(agent_id=agent_id)
-        self.knowledge_graph = kg
 
-    async def initialize(self) -> None:  # pragma: no cover - simple init
+    async def initialize(self) -> None:
+        """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Judge Agent initialized")
 
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
-        if message.message_type == "evaluate_challenge":
-            decision = await self.evaluate_challenge(message.content.get("challenge", ""))
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        """Process an incoming message."""
+        if message.message_type == "evaluate":
+            decision = await self.evaluate_challenge(message.content["data"])
+            self._decisions.append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "decision": decision
+            })
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
-                content={"decision": decision},
-                timestamp=message.timestamp,
-                message_type="judge_response",
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={"status": "success", "decision": decision},
+                timestamp=datetime.utcnow(),
+                message_type="evaluation_response"
             )
-        return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
-            content={"status": "error", "message": "Unknown message type"},
-            timestamp=message.timestamp,
-            message_type="error_response",
-        )
+        else:
+            return AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={"status": "error", "message": "Unknown message type"},
+                timestamp=datetime.utcnow(),
+                message_type="error"
+            )
 
     async def update_knowledge_graph(self, update_data: Dict[str, Any]) -> None:  # pragma: no cover - not used
         if self.knowledge_graph:
@@ -54,8 +81,16 @@ class JudgeAgent(BaseAgent):
             )
             decision = "Approved" if results else "Rejected"
 
-        diary_entry = (
-            f"{self.agent_id} evaluated challenge as {decision} at {datetime.utcnow().isoformat()}"
-        )
-        self.write_diary(diary_entry)
+        # Log the decision
+        self._decisions.append({
+            "timestamp": datetime.utcnow().isoformat(),
+            "decision": decision,
+            "data": challenge_data
+        })
+
         return decision
+
+    def get_decisions(self) -> list:
+        """Get all decisions made by this agent."""
+        return self._decisions
+

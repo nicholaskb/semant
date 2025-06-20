@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Any
 from loguru import logger
 import asyncio
 from contextlib import asynccontextmanager
-from .workflow_types import Workflow, WorkflowStep, WorkflowStatus
+from agents.core.workflow_types import Workflow, WorkflowStep, WorkflowStatus
 
 class WorkflowTransaction:
     """Handles workflow state transactions with rollback support."""

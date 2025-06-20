@@ -1,5 +1,8 @@
 from typing import Any, Dict
 from agents.core.base_agent import BaseAgent, AgentMessage
+import uuid
+from datetime import datetime
+from agents.core.message_types import AgentMessage
 
 
 class SimpleResponderAgent(BaseAgent):
@@ -12,7 +15,7 @@ class SimpleResponderAgent(BaseAgent):
     async def initialize(self) -> None:  # pragma: no cover - no setup needed
         pass
 
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         return AgentMessage(
             sender=self.agent_id,
             recipient=message.sender,
@@ -29,6 +32,32 @@ class SimpleResponderAgent(BaseAgent):
         if not self.knowledge_graph:
             return {}
         return await self.knowledge_graph.query_graph(query.get("sparql", ""))
+
+
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        """Process incoming messages - REQUIRED IMPLEMENTATION."""
+        try:
+            # Process the message based on its type and content
+            response_content = f"Agent {self.agent_id} processed: {message.content}"
+            
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=response_content,
+                message_type=getattr(message, 'message_type', 'response'),
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            # Error handling
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=f"Error processing message: {str(e)}",
+                message_type="error",
+                timestamp=datetime.now()
+            )
 
 
 class FinanceAgent(SimpleResponderAgent):

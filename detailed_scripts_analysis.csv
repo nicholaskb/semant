@@ -1,0 +1,89 @@
+File_Path,Lines_of_Code,Purpose,Category,Key_Connections,Reusability_Level
+main.py,134,Simple multi-agent coordination demonstration,Core_Application,Standalone demo,Medium
+main_api.py,76,FastAPI web interface for agent orchestration,Core_Application,main_agent.py → agents/core/reasoner.py,High
+main_agent.py,222,Main agent orchestration controller with Tavily integration,Core_Application,agents/core/reasoner.py → artifact.py → Tavily API,High
+setup.py,20,Package installation configuration,Configuration,Package management,Low
+agents/__init__.py,3,Package initialization,Package_Structure,agents/ namespace,Low
+agents/core/__init__.py,3,Core package initialization,Package_Structure,agents/core/ namespace,Low
+agents/core/base_agent.py,460,Universal async agent foundation with lifecycle management,Agent_Foundation,ALL agents inherit from this,HIGHEST
+agents/core/agent_factory.py,309,Dynamic agent creation with template management,Agent_Management,agent_registry.py → base_agent.py,HIGHEST
+agents/core/agent_registry.py,884,Central agent management with observer patterns,Agent_Management,Hub connecting all agents,HIGHEST
+agents/core/scientific_swarm_agent.py,280,Enhanced base class for research operations,Agent_Foundation,base_agent.py → kg/models/graph_manager.py,High
+agents/core/capability_types.py,288,70+ predefined capability types with version management,Type_System,Used by all agents for capabilities,HIGHEST
+agents/core/workflow_manager.py,479,Transaction-based workflow orchestration with ACID compliance,Workflow_Management,agent_registry.py → workflow_monitor.py,High
+agents/core/workflow_monitor.py,539,Real-time workflow monitoring and analytics,Workflow_Management,workflow_manager.py → workflow_persistence.py,High
+agents/core/reasoner.py,249,Knowledge graph reasoning and inference,Knowledge_Processing,kg/models/graph_manager.py → main_agent.py,High
+agents/core/agentic_prompt_agent.py,275,Dynamic prompt engineering and review orchestration,Specialized_Agent,scientific_swarm_agent.py → kg/,Medium
+agents/core/research_agent.py,273,Specialized research operations agent,Specialized_Agent,scientific_swarm_agent.py → main_agent.py,Medium
+agents/core/supervisor_agent.py,214,Multi-agent coordination and management,Agent_Management,agent_registry.py → workflow_manager.py,Medium
+agents/core/agent_health.py,126,Agent health monitoring and diagnostics,Monitoring,agent_registry.py → workflow_monitor.py,Medium
+agents/core/agent_integrator.py,108,Agent integration and coordination utilities,Agent_Management,agent_factory.py → agent_registry.py,Medium
+agents/core/recovery_strategies.py,106,Error recovery and resilience patterns,Error_Handling,Used by all agents,HIGHEST
+agents/core/remote_kg_agent.py,106,Remote knowledge graph agent operations,Knowledge_Processing,kg/models/graph_manager.py,Medium
+agents/core/workflow_persistence.py,147,Workflow state persistence and recovery,Workflow_Management,workflow_manager.py,Medium
+agents/core/workflow_notifier.py,111,Workflow event notification system,Workflow_Management,workflow_monitor.py,Medium
+agents/core/multi_agent.py,91,Multi-agent coordination patterns,Agent_Management,agent_registry.py,Medium
+agents/core/feature_z_agent.py,76,Feature Z specialized agent implementation,Specialized_Agent,base_agent.py,Low
+agents/core/workflow_transaction.py,68,Transaction management for workflows,Workflow_Management,workflow_manager.py,Medium
+agents/core/sensor_agent.py,67,Real-time sensor data collection and monitoring,Specialized_Agent,base_agent.py,Medium
+agents/core/data_processor_agent.py,65,High-performance data processing agent,Specialized_Agent,base_agent.py,Medium
+agents/core/agent_message.py,35,Standardized message format for agent communication,Communication,ALL inter-agent communication,HIGHEST
+agents/core/workflow_types.py,34,Workflow type definitions and enums,Type_System,All workflow components,Medium
+agents/core/message_types.py,24,Message type definitions for communication,Type_System,agent_message.py,Medium
+agents/core/ttl_validation_agent.py,108,TTL file validation and quality checking,Validation,kg/schemas/ → utils/ttl_validator.py,Medium
+agents/domain/__init__.py,3,Domain package initialization,Package_Structure,agents/domain/ namespace,Low
+agents/domain/code_review_agent.py,378,AST-based code analysis with complexity metrics,Domain_Agent,scientific_swarm_agent.py → kg/models/,HIGHEST
+agents/domain/vertex_email_agent.py,194,AI-powered email operations with Vertex AI integration,Domain_Agent,base_agent.py → integrations/vertex → kg/,High
+agents/domain/corporate_knowledge_agent.py,200,Enterprise knowledge management and retrieval,Domain_Agent,scientific_swarm_agent.py → kg/,High
+agents/domain/test_swarm_coordinator.py,231,Swarm coordination testing and validation,Domain_Agent,agents/core/ → tests/,Medium
+agents/domain/diary_agent.py,86,Activity logging and diary management,Domain_Agent,base_agent.py,Medium
+agents/domain/judge_agent.py,91,Decision making and evaluation agent,Domain_Agent,base_agent.py,Medium
+agents/domain/simple_agents.py,81,Basic agent implementation patterns and examples,Domain_Agent,base_agent.py,HIGHEST
+agents/utils/__init__.py,3,Utils package initialization,Package_Structure,agents/utils/ namespace,Low
+agents/utils/email_integration.py,13,Email integration utilities and helpers,Utility,agents/domain/vertex_email_agent.py,Medium
+kg/__init__.py,3,Knowledge graph package initialization,Package_Structure,kg/ namespace,Low
+kg/models/__init__.py,3,KG models package initialization,Package_Structure,kg/models/ namespace,Low
+kg/models/graph_manager.py,629,Enterprise-grade RDF storage with advanced features,Knowledge_Graph,Central hub for ALL knowledge operations,HIGHEST
+kg/models/cache.py,79,AsyncLRUCache with TTL support and selective invalidation,Performance,graph_manager.py,HIGHEST
+kg/models/graph_initializer.py,76,Ontology loading and bootstrap system,Knowledge_Graph,graph_manager.py → kg/schemas/,High
+kg/models/remote_graph_manager.py,74,SPARQL endpoint integration with SSL support,Knowledge_Graph,graph_manager.py,High
+kg/models/indexing.py,60,Triple indexing for query optimization,Performance,graph_manager.py,HIGHEST
+kg/queries/__init__.py,3,Queries package initialization,Package_Structure,kg/queries/ namespace,Low
+kg/schemas/__init__.py,3,Schemas package initialization,Package_Structure,kg/schemas/ namespace,Low
+integrations/gather_gmail_info.py,181,Comprehensive Google Cloud Platform configuration analysis,Integration,verify_gmail_config.py → agents/domain/vertex_email_agent.py,HIGHEST
+integrations/verify_gmail_config.py,133,Live Gmail API connectivity testing and validation,Integration,gather_gmail_info.py → Gmail API,HIGHEST
+integrations/check_vertex_models.py,71,Vertex AI model access verification and testing,Integration,agents/domain/vertex_email_agent.py → Vertex AI API,High
+integrations/setup_vertex_env.py,1,Vertex AI environment setup (minimal implementation),Integration,check_vertex_models.py,Low
+tests/__init__.py,3,Tests package initialization,Package_Structure,tests/ namespace,Low
+tests/test_knowledge_graph.py,1292,Comprehensive knowledge graph testing (39 tests - all passing),Test_Infrastructure,kg/models/graph_manager.py,High
+tests/test_agent_recovery.py,816,Agent lifecycle and recovery testing,Test_Infrastructure,agents/core/recovery_strategies.py,High
+tests/test_workflow_manager.py,720,Workflow orchestration testing,Test_Infrastructure,agents/core/workflow_manager.py,High
+tests/test_capability_management.py,419,Capability system validation,Test_Infrastructure,agents/core/capability_types.py,High
+tests/test_vertex_integration.py,329,Vertex AI integration testing,Test_Infrastructure,integrations/check_vertex_models.py,High
+tests/test_agents.py,300,Core agent functionality testing,Test_Infrastructure,agents/core/base_agent.py,High
+tests/test_performance.py,233,System performance testing,Test_Infrastructure,kg/models/ → agents/core/,High
+tests/test_vertex_auth.py,160,Vertex AI authentication testing,Test_Infrastructure,integrations/verify_gmail_config.py,High
+tests/test_email_send.py,127,Email functionality testing,Test_Infrastructure,agents/domain/vertex_email_agent.py,High
+tests/test_agent_factory.py,70,Agent creation testing,Test_Infrastructure,agents/core/agent_factory.py,Medium
+tests/test_main_api.py,26,API endpoint testing,Test_Infrastructure,main_api.py,Medium
+scripts/multi_agent_workflow_demo.py,183,Workflow demonstrations,Demo_Script,agents/core/workflow_manager.py,Medium
+scripts/self_assembly_demo.py,167,Self-assembling agent patterns,Demo_Script,agents/core/agent_factory.py,Medium
+scripts/initialize_knowledge_graph.py,167,KG initialization,Utility_Script,kg/models/graph_manager.py,Medium
+scripts/verify_implementation.py,196,Implementation verification,Diagnostic_Script,agents/core/ → kg/models/,Medium
+scripts/demo_agent_integration.py,125,Agent integration examples,Demo_Script,agents/core/agent_registry.py,Medium
+scripts/start_agents.py,125,Agent startup automation,Utility_Script,agents/core/agent_factory.py,Medium
+scripts/chat_with_agent.py,125,Interactive agent communication,Utility_Script,main_agent.py,Medium
+scripts/ceo_report.py,167,Executive reporting tools,Utility_Script,kg/models/graph_manager.py,Medium
+scripts/load_sample_data.py,167,Sample data loading,Utility_Script,kg/models/graph_manager.py,Medium
+scripts/kg_diagnosis.py,91,Knowledge graph health analysis,Diagnostic_Script,kg/models/graph_manager.py,HIGHEST
+scripts/diagnose_kg_types.py,91,KG type system diagnosis,Diagnostic_Script,kg/models/graph_manager.py,High
+scripts/init_kg.py,91,KG setup utilities,Utility_Script,kg/models/graph_manager.py,Medium
+email_utils/setup_gmail_config.py,78,Automated Gmail API configuration setup,Email_Utility,integrations/gather_gmail_info.py,Medium
+email_utils/send_test_email.py,144,Email testing framework and utilities,Email_Utility,agents/domain/vertex_email_agent.py,Medium
+email_utils/demo_email.py,63,Email demonstration scripts,Email_Utility,Email testing framework,Low
+email_utils/send_gmail_test.py,38,Gmail API testing utilities,Email_Utility,Gmail API,Low
+config/__init__.py,3,Config package initialization,Package_Structure,config/ namespace,Low
+config/graphdb_config.py,67,GraphDB configuration management,Configuration,kg/models/graph_manager.py,Medium
+utils/graphdb_utils.py,67,GraphDB utility functions,Utility,kg/models/graph_manager.py,Medium
+utils/ttl_validator.py,67,TTL file validation utilities,Utility,kg/schemas/ → agents/core/ttl_validation_agent.py,Medium
+scratch_space/kg_debug_example.py,91,Knowledge graph diagnostic tool,Diagnostic_Tool,kg/models/graph_manager.py,High 

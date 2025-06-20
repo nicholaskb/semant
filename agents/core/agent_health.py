@@ -4,7 +4,7 @@ import asyncio
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from .base_agent import BaseAgent, AgentStatus
+from agents.core.base_agent import BaseAgent, AgentStatus
 
 @dataclass
 class HealthCheck:

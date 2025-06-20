@@ -1,0 +1,24 @@
+{
+  "id": "cb8e4c98-9f08-4b3f-9827-421c1085187e",
+  "name": "Test Workflow",
+  "description": "Test workflow description",
+  "required_capabilities": [
+    {
+      "type": "CapabilityType.RESEARCH",
+      "version": "1.0",
+      "parameters": {},
+      "metadata": {}
+    }
+  ],
+  "max_agents_per_capability": 1,
+  "load_balancing_strategy": "round_robin",
+  "state": "cancelled",
+  "created_at": 1749007542.4097831,
+  "updated_at": 1749007542.4186041,
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-03T23:25:42.418613",
+    "state": "cancelled",
+    "agent_count": 0
+  }
+}

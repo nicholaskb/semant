@@ -49,8 +49,8 @@ class TestPromptAgent:
         
         # Test code review prompt
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "prompt_type": "code_review",
                 "context": {
@@ -77,8 +77,8 @@ class TestPromptAgent:
         
         # Test task execution prompt
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "prompt_type": "task_execution",
                 "context": {
@@ -107,8 +107,8 @@ class TestPromptAgent:
         
         # Generate a prompt
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "prompt_type": "code_review",
                 "context": {
@@ -146,8 +146,8 @@ class TestPromptAgent:
         
         # Test missing required fields
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "prompt_type": "code_review",
                 "context": {
@@ -164,8 +164,8 @@ class TestPromptAgent:
         
         # Test invalid prompt type
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "prompt_type": "invalid_type",
                 "context": {
@@ -189,8 +189,8 @@ class TestPromptAgent:
         # Generate multiple prompts
         for i in range(3):
             message = AgentMessage(
-                sender="test_agent",
-                recipient="test_prompt_agent",
+                sender_id="test_agent",
+                recipient_id="test_prompt_agent",
                 content={
                     "prompt_type": "code_review",
                     "context": {
@@ -207,8 +207,8 @@ class TestPromptAgent:
         
         # Query metrics
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "metric_type": "prompt_usage"
             },

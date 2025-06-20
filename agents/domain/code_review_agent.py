@@ -1,9 +1,11 @@
 from typing import Dict, Any, List, Optional, Set
 from agents.core.scientific_swarm_agent import ScientificSwarmAgent
 from agents.core.capability_types import Capability, CapabilityType
+from agents.core.message_types import AgentMessage
 from loguru import logger
 import ast
 import re
+import uuid
 from datetime import datetime
 
 class CodeReviewAgent(ScientificSwarmAgent):
@@ -240,7 +242,7 @@ class CodeReviewAgent(ScientificSwarmAgent):
     async def _analyze_patterns(self, code: str) -> List[Dict[str, Any]]:
         """Analyze code patterns and anti-patterns using AST for nested ifs."""
         findings = []
-        import ast
+        
         try:
             tree = ast.parse(code)
         except Exception:
@@ -337,4 +339,40 @@ class CodeReviewAgent(ScientificSwarmAgent):
             total_weight += severity_weights.get(finding.get('severity', 'info'), 0)
             
         # Convert to a 0-100 scale
-        return max(0, 100 - (total_weight * 8)) 
+        return max(0, 100 - (total_weight * 8))
+
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        """Process incoming messages - REQUIRED IMPLEMENTATION."""
+        try:
+            # Process code review requests
+            if hasattr(message, 'content') and isinstance(message.content, dict):
+                if message.content.get('type') == 'review_request':
+                    # Perform code review
+                    review_result = await self._perform_review(message.content)
+                    response_content = {
+                        'type': 'review_response',
+                        'review': review_result
+                    }
+                else:
+                    response_content = f"Code Review Agent {self.agent_id} processed: {message.content}"
+            else:
+                response_content = f"Code Review Agent {self.agent_id} processed: {message.content}"
+            
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=response_content,
+                message_type=getattr(message, 'message_type', 'response'),
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            # Error handling
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=f"Error processing message: {str(e)}",
+                message_type="error",
+                timestamp=datetime.now()
+            ) 

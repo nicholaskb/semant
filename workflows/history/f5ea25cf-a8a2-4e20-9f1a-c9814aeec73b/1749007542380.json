@@ -1,0 +1,19 @@
+{
+  "id": "f5ea25cf-a8a2-4e20-9f1a-c9814aeec73b",
+  "name": "Test Workflow",
+  "description": "Test workflow description",
+  "required_capabilities": [
+    "test_capability"
+  ],
+  "max_agents_per_capability": 1,
+  "load_balancing_strategy": "round_robin",
+  "state": "created",
+  "created_at": 1749007542.379974,
+  "updated_at": 1749007542.379974,
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-03T23:25:42.379981",
+    "state": "created",
+    "agent_count": 0
+  }
+}

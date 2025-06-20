@@ -1,0 +1,19 @@
+{
+  "id": "8c98157a-d882-448b-b9db-6aae24bae832",
+  "name": "Invalid Workflow",
+  "description": "Workflow with missing capabilities",
+  "required_capabilities": [
+    "nonexistent_capability"
+  ],
+  "max_agents_per_capability": 1,
+  "load_balancing_strategy": "round_robin",
+  "state": "cancelled",
+  "created_at": 1749070452.54401,
+  "updated_at": 1749070452.5512588,
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-04T16:54:12.551269",
+    "state": "cancelled",
+    "agent_count": 0
+  }
+}

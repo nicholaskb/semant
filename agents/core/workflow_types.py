@@ -1,33 +1,14 @@
-from typing import Dict, List, Optional
-from dataclasses import dataclass
-from enum import Enum
+"""Public re-export facade for the authoritative workflow data-model.
 
-class WorkflowStatus(str, Enum):
-    """Status of a workflow."""
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
+Do **not** define dataclasses here.  All canonical definitions live in
+`agents.core.workflow_models`.  This module exists purely to preserve the
+import path `agents.core.workflow_types` across legacy code and tests.
+"""
 
-@dataclass
-class WorkflowStep:
-    """A step in a workflow."""
-    id: str
-    capability: str
-    parameters: Dict
-    status: WorkflowStatus = WorkflowStatus.PENDING
-    assigned_agent: Optional[str] = None
-    error: Optional[str] = None
-    start_time: Optional[float] = None
-    end_time: Optional[float] = None
+from agents.core.workflow_models import WorkflowStatus, WorkflowStep, Workflow
 
-@dataclass
-class Workflow:
-    """A complete workflow."""
-    id: str
-    steps: List[WorkflowStep]
-    status: WorkflowStatus = WorkflowStatus.PENDING
-    created_at: float = 0.0
-    updated_at: float = 0.0
-    error: Optional[str] = None 
+__all__ = [
+    "WorkflowStatus",
+    "WorkflowStep",
+    "Workflow",
+] 

@@ -1,0 +1,20 @@
+{
+  "id": "test-workflow-2",
+  "name": "Test Workflow",
+  "description": "Test workflow for versioning",
+  "required_capabilities": [
+    "test_capability"
+  ],
+  "state": "updated",
+  "created_at": 1749002723.388661,
+  "updated_at": 1749002723.389222,
+  "agents": [],
+  "results": [],
+  "version": "1.1",
+  "metadata": {
+    "version": "1.1",
+    "saved_at": "2025-06-03T22:05:23.389225",
+    "state": "updated",
+    "agent_count": 0
+  }
+}

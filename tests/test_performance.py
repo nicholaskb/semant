@@ -6,12 +6,18 @@ from agents.core.base_agent import BaseAgent, AgentMessage, AgentStatus
 from agents.core.capability_types import Capability, CapabilityType
 from rdflib import Graph, URIRef, Literal
 from rdflib.namespace import RDF, RDFS
+from typing import Set, Dict, Any
 
 class TestPerformanceAgent(BaseAgent):
     """Test agent for performance testing."""
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, agent_id: str = "test_performance_agent", agent_type: str = "performance", capabilities: Set[Capability] = None, default_response: Dict[str, Any] = None, knowledge_graph=None, **kwargs):
+        if capabilities is None:
+            capabilities = {
+                Capability(CapabilityType.MESSAGE_PROCESSING, "1.0"),
+                Capability(CapabilityType.TASK_EXECUTION, "1.0")
+            }
+        super().__init__(agent_id, agent_type, capabilities, default_response, knowledge_graph=knowledge_graph)
         self.message_count = 0
         self.total_processing_time = 0
         self.max_memory_usage = 0
@@ -38,8 +44,8 @@ class TestPerformanceAgent(BaseAgent):
         })
         
         return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
+            sender_id=self.agent_id,
+            recipient_id=message.sender,
             content={
                 "status": "success",
                 "processing_time": processing_time,
@@ -55,6 +61,9 @@ class TestPerformanceAgent(BaseAgent):
     async def update_knowledge_graph(self, data):
         """Update the knowledge graph with performance metrics."""
         return await super().update_knowledge_graph(data)
+
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        return await self.process_message(message)
 
 @pytest.mark.asyncio
 class TestPerformance:
@@ -83,8 +92,8 @@ class TestPerformance:
         # Send multiple messages in parallel
         messages = [
             AgentMessage(
-                sender="test_sender",
-                recipient="test_performance_agent",
+                sender_id="test_sender",
+                recipient_id="test_performance_agent",
                 content={"test": f"data_{i}"},
                 message_type="test_message"
             )
@@ -123,8 +132,8 @@ class TestPerformance:
         # Simulate concurrent operations
         async def perform_operation():
             message = AgentMessage(
-                sender="test_sender",
-                recipient="test_performance_agent",
+                sender_id="test_sender",
+                recipient_id="test_performance_agent",
                 content={"operation": "test"},
                 message_type="test_message"
             )
@@ -159,8 +168,8 @@ class TestPerformance:
         # Simulate high load
         messages = [
             AgentMessage(
-                sender="test_sender",
-                recipient="test_performance_agent",
+                sender_id="test_sender",
+                recipient_id="test_performance_agent",
                 content={"load": "high"},
                 message_type="test_message"
             )
@@ -199,8 +208,8 @@ class TestPerformance:
         # Simulate failure and recovery
         async def simulate_failure():
             message = AgentMessage(
-                sender="test_sender",
-                recipient="test_performance_agent",
+                sender_id="test_sender",
+                recipient_id="test_performance_agent",
                 content={"should_fail": True},
                 message_type="test_message"
             )

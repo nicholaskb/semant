@@ -3,68 +3,62 @@ import logging
 from typing import Dict, Any, Optional
 
 class WorkflowNotifier:
+    """Handles workflow event notifications."""
+    
     def __init__(self):
+        self._subscribers = set()
+        self._event_loop = None
+        self._running = False
+        self._tasks = set()
         self.logger = logging.getLogger(__name__)
-        self._notification_queue = None
-        self._notification_task = None
-        self._running = False
-        self._loop = None
-
+    
     async def initialize(self):
-        """Initialize the notifier and start processing notifications."""
-        if self._notification_queue is None:
-            self._loop = asyncio.get_running_loop()
-            self._notification_queue = asyncio.Queue()
-            self._running = True
-            self._notification_task = self._loop.create_task(self._process_notifications())
-            self.logger.info("WorkflowNotifier initialized")
-
-    async def _process_notifications(self):
-        """Process notifications from the queue."""
-        while self._running:
-            try:
-                notification = await self._notification_queue.get()
-                if notification is None:  # Shutdown signal
-                    break
-                
-                notification_type = notification.get("type")
-                if notification_type == "agent_recovery":
-                    await self._handle_agent_recovery(notification)
-                elif notification_type == "capability_change":
-                    await self._handle_capability_notification(notification)
-                elif notification_type == "workflow_assembly":
-                    await self._handle_workflow_notification(notification)
-                
-                self._notification_queue.task_done()
-            except asyncio.CancelledError:
-                self.logger.info("Notification processor cancelled")
-                break
-            except Exception as e:
-                self.logger.error(f"Error processing notification: {e}")
-
+        """Initialize the notifier."""
+        self._event_loop = asyncio.get_running_loop()
+        self._running = True
+        self.logger.info("WorkflowNotifier initialized")
+    
+    async def subscribe(self, subscriber):
+        """Subscribe to workflow events."""
+        if not self._running:
+            await self.initialize()
+        self._subscribers.add(subscriber)
+    
+    async def unsubscribe(self, subscriber):
+        """Unsubscribe from workflow events."""
+        self._subscribers.discard(subscriber)
+    
+    async def notify(self, event):
+        """Notify all subscribers of an event."""
+        if not self._running:
+            await self.initialize()
+            
+        tasks = []
+        for subscriber in self._subscribers:
+            task = asyncio.create_task(subscriber.handle_event(event))
+            self._tasks.add(task)
+            task.add_done_callback(self._tasks.discard)
+            tasks.append(task)
+        
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+    
     async def cleanup(self):
-        """Clean up resources and cancel pending tasks."""
-        self.logger.info("Starting WorkflowNotifier cleanup")
+        """Clean up resources."""
         self._running = False
         
-        if self._notification_task and not self._notification_task.done():
-            self._notification_task.cancel()
-            try:
-                await self._notification_task
-            except asyncio.CancelledError:
-                pass
+        # Cancel all pending tasks
+        for task in self._tasks:
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
         
-        if self._notification_queue:
-            try:
-                await self._notification_queue.put(None)  # Signal to stop
-                await self._notification_queue.join()
-            except Exception as e:
-                self.logger.error(f"Error during queue cleanup: {e}")
-        
-        self._notification_task = None
-        self._notification_queue = None
-        self._loop = None
-        self.logger.info("WorkflowNotifier cleanup completed")
+        self._tasks.clear()
+        self._subscribers.clear()
+        self.logger.info("WorkflowNotifier cleaned up")
 
     async def _handle_agent_recovery(self, notification: Dict[str, Any]):
         """Handle agent recovery notifications."""
@@ -86,9 +80,7 @@ class WorkflowNotifier:
 
     async def notify_agent_recovery(self, agent_id: str, success: bool):
         """Notify about agent recovery attempt."""
-        if self._notification_queue is None:
-            await self.initialize()
-        await self._notification_queue.put({
+        await self.notify({
             "type": "agent_recovery",
             "agent_id": agent_id,
             "success": success
@@ -96,9 +88,7 @@ class WorkflowNotifier:
 
     async def notify_capability_change(self, agent_id: str, capabilities: list):
         """Notify about agent capability changes."""
-        if self._notification_queue is None:
-            await self.initialize()
-        await self._notification_queue.put({
+        await self.notify({
             "type": "capability_change",
             "agent_id": agent_id,
             "capabilities": capabilities
@@ -106,10 +96,16 @@ class WorkflowNotifier:
 
     async def notify_workflow_assembly(self, workflow_id: str, agents: list):
         """Notify about workflow assembly."""
-        if self._notification_queue is None:
-            await self.initialize()
-        await self._notification_queue.put({
+        await self.notify({
             "type": "workflow_assembly",
             "workflow_id": workflow_id,
             "agents": agents
+        })
+
+    async def notify_agent_registered(self, agent_id: str, capabilities: list):
+        """Notify about agent registration."""
+        await self.notify({
+            "type": "agent_registered",
+            "agent_id": agent_id,
+            "capabilities": capabilities
         }) 

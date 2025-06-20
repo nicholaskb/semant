@@ -7,12 +7,15 @@ from agents.core.agentic_prompt_agent import AgenticPromptAgent
 from agents.core.capability_types import Capability, CapabilityType
 from rdflib import Graph, URIRef
 from rdflib.namespace import RDF
+import uuid
+from datetime import datetime
+from agents.core.message_types import AgentMessage
 
 class TestableBaseAgent(BaseAgent):
     async def process_message(self, message):
         return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
+            sender_id=self.agent_id,
+            recipient_id=message.sender_id,
             content={"error": "Not implemented"},
             message_type="error"
         )
@@ -20,6 +23,32 @@ class TestableBaseAgent(BaseAgent):
         return {}
     async def update_knowledge_graph(self, *args, **kwargs):
         return True
+
+
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        """Process incoming messages - REQUIRED IMPLEMENTATION."""
+        try:
+            # Process the message based on its type and content
+            response_content = f"Agent {self.agent_id} processed: {message.content}"
+            
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=response_content,
+                message_type=getattr(message, 'message_type', 'response'),
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            # Error handling
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=f"Error processing message: {str(e)}",
+                message_type="error",
+                timestamp=datetime.now()
+            )
 
 @pytest.mark.asyncio
 class TestBaseAgent:
@@ -64,15 +93,15 @@ class TestBaseAgent:
         agent = setup_base_agent
         
         message = AgentMessage(
-            sender="test_sender",
-            recipient="test_base_agent",
+            sender_id="test_sender",
+            recipient_id="test_base_agent",
             content={"test": "data"},
             message_type="test_message"
         )
         
         response = await agent.process_message(message)
-        assert response.sender == agent.agent_id
-        assert response.recipient == message.sender
+        assert response.sender_id == agent.agent_id
+        assert response.recipient_id == message.sender_id
         assert response.message_type == "error"  # Base agent should return error for unknown message types
 
 @pytest.mark.asyncio
@@ -90,8 +119,8 @@ class TestSensorAgent:
         """Test message processing."""
         agent = setup_sensor_agent
         message = AgentMessage(
-            sender="test_sender",
-            recipient="sensor_agent",
+            sender_id="test_sender",
+            recipient_id="sensor_agent",
             content={"sensor_id": "sensor1", "reading": 42},
             timestamp=1234567890,
             message_type="sensor_data"
@@ -114,8 +143,8 @@ class TestDataProcessorAgent:
         """Test message processing."""
         agent = setup_data_processor_agent
         message = AgentMessage(
-            sender="test_sender",
-            recipient="data_processor_agent",
+            sender_id="test_sender",
+            recipient_id="data_processor_agent",
             content={"data": "test_data"},
             timestamp=1234567890,
             message_type="data_processor_data"
@@ -160,8 +189,8 @@ class TestPromptAgent:
         agent, knowledge_graph = setup_prompt_agent
         
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "prompt_type": "code_review",
                 "context": {
@@ -195,8 +224,8 @@ class TestPromptAgent:
         agent, knowledge_graph = setup_prompt_agent
         
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "code_artifact": {
                     "file": "test.py",
@@ -221,8 +250,8 @@ class TestPromptAgent:
         agent, knowledge_graph = setup_prompt_agent
         
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "template_type": "code_review"
             },
@@ -246,8 +275,8 @@ class TestPromptAgent:
         
         # Test missing parameters
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={},
             message_type="prompt_request"
         )
@@ -258,8 +287,8 @@ class TestPromptAgent:
         
         # Test unknown template
         message = AgentMessage(
-            sender="test_agent",
-            recipient="test_prompt_agent",
+            sender_id="test_agent",
+            recipient_id="test_prompt_agent",
             content={
                 "template_type": "unknown_template"
             },

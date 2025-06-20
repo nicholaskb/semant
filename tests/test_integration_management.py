@@ -7,30 +7,33 @@ from agents.core.agent_registry import AgentRegistry
 from agents.core.agent_factory import AgentFactory
 from rdflib import Graph, URIRef, Literal
 from rdflib.namespace import RDF, XSD
+from agents.utils import AwaitableValue
 
 class TestIntegrationAgent(BaseAgent):
     """Test agent for integration testing."""
     
-    def __init__(self, agent_id: str, agent_type: str = "integration_test", capabilities=None, config=None):
+    def __init__(self, agent_id: str, agent_type: str = "integration_test", capabilities=None, config=None, knowledge_graph=None, **kwargs):
         super().__init__(
             agent_id=agent_id,
             agent_type=agent_type,
             capabilities=capabilities or {
                 Capability(CapabilityType.INTEGRATION_MANAGEMENT)
             },
-            config=config
+            config=config,
+            knowledge_graph=knowledge_graph,
+            **kwargs
         )
         self.integration_status = "active"
         self.message_count = 0
         self.latency = 0.0
-        self.graph = Graph()
+        self.graph = self.knowledge_graph
         
     async def process_message(self, message: AgentMessage) -> AgentMessage:
         self.message_count += 1
         self.latency = 0.1  # Simulated latency
         return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
+            sender_id=self.agent_id,
+            recipient_id=message.sender,
             content={
                 "status": "processed",
                 "latency": self.latency
@@ -41,30 +44,36 @@ class TestIntegrationAgent(BaseAgent):
     def update_graph(self):
         # Update knowledge graph with integration metrics
         integration_uri = URIRef(f"integration:{self.agent_id}")
-        self.graph.add((integration_uri, RDF.type, URIRef("integration:Integration")))
-        self.graph.add((integration_uri, URIRef("integration:hasStatus"), Literal(self.integration_status)))
-        self.graph.add((integration_uri, URIRef("integration:hasMessageCount"), Literal(self.message_count, datatype=XSD.integer)))
-        self.graph.add((integration_uri, URIRef("integration:hasMessageLatency"), Literal(self.latency, datatype=XSD.float)))
+        g = self.knowledge_graph if hasattr(self, "knowledge_graph") and self.knowledge_graph else self.graph
+        g.add((integration_uri, RDF.type, URIRef("integration:Integration")))
+        g.add((integration_uri, URIRef("integration:hasStatus"), Literal(self.integration_status)))
+        g.add((integration_uri, URIRef("integration:hasMessageCount"), Literal(self.message_count, datatype=XSD.integer)))
+        g.add((integration_uri, URIRef("integration:hasMessageLatency"), Literal(self.latency, datatype=XSD.float)))
         
     async def query_knowledge_graph(self, query: dict) -> dict:
         return {}
 
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        return await self.process_message(message)
+
 class TestModuleAgent(BaseAgent):
     """Test agent for module management testing."""
     
-    def __init__(self, agent_id: str, agent_type: str = "module_test", capabilities=None, config=None):
+    def __init__(self, agent_id: str, agent_type: str = "module_test", capabilities=None, config=None, knowledge_graph=None, **kwargs):
         super().__init__(
             agent_id=agent_id,
             agent_type=agent_type,
             capabilities=capabilities or {
                 Capability(CapabilityType.MODULE_MANAGEMENT)
             },
-            config=config
+            config=config,
+            knowledge_graph=knowledge_graph,
+            **kwargs
         )
         self.module_status = "loaded"
         self.load_time = 0.0
         self.dependencies = set()
-        self.graph = Graph()
+        self.graph = self.knowledge_graph
         
     async def process_message(self, message: AgentMessage) -> AgentMessage:
         # Handle module operations
@@ -77,8 +86,8 @@ class TestModuleAgent(BaseAgent):
             self.dependencies.add(message.content["dependency"])
             
         return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
+            sender_id=self.agent_id,
+            recipient_id=message.sender,
             content={
                 "status": "processed",
                 "module_status": self.module_status,
@@ -91,17 +100,21 @@ class TestModuleAgent(BaseAgent):
     def update_graph(self):
         # Update knowledge graph with module metrics
         module_uri = URIRef(f"module:{self.agent_id}")
-        self.graph.add((module_uri, RDF.type, URIRef("module:Module")))
-        self.graph.add((module_uri, URIRef("module:hasStatus"), Literal(self.module_status)))
-        self.graph.add((module_uri, URIRef("module:hasLoadTime"), Literal(self.load_time, datatype=XSD.float)))
+        g = self.knowledge_graph if hasattr(self, "knowledge_graph") and self.knowledge_graph else self.graph
+        g.add((module_uri, RDF.type, URIRef("module:Module")))
+        g.add((module_uri, URIRef("module:hasStatus"), Literal(self.module_status)))
+        g.add((module_uri, URIRef("module:hasLoadTime"), Literal(self.load_time, datatype=XSD.float)))
         
         # Add dependencies
         for dep in self.dependencies:
             dep_uri = URIRef(f"module:{dep}")
-            self.graph.add((module_uri, URIRef("module:hasDependency"), dep_uri))
+            g.add((module_uri, URIRef("module:hasDependency"), dep_uri))
         
     async def query_knowledge_graph(self, query: dict) -> dict:
         return {}
+
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        return await self.process_message(message)
 
 @pytest_asyncio.fixture
 async def setup_integration_test():
@@ -123,7 +136,7 @@ async def setup_integration_test():
         {CapabilityType.MODULE_MANAGEMENT}
     )
     
-    return registry, knowledge_graph, factory
+    return AwaitableValue((registry, knowledge_graph, factory))
 
 @pytest.mark.asyncio
 async def test_integration_management(setup_integration_test):
@@ -131,12 +144,12 @@ async def test_integration_management(setup_integration_test):
     registry, knowledge_graph, factory = await setup_integration_test
     
     # Create integration agent
-    agent = await factory.create_agent("integration_test")
+    agent = await factory.create_agent("integration_test", knowledge_graph=knowledge_graph)
     
     # Test message processing
     result = await agent.process_message(AgentMessage(
-        sender="test_agent",
-        recipient=agent.agent_id,
+        sender_id="test_agent",
+        recipient_id=agent.agent_id,
         content={},
         message_type="test"
     ))
@@ -158,12 +171,12 @@ async def test_module_management(setup_integration_test):
     registry, knowledge_graph, factory = await setup_integration_test
     
     # Create module agent
-    agent = await factory.create_agent("module_test")
+    agent = await factory.create_agent("module_test", knowledge_graph=knowledge_graph)
     
     # Test module loading
     result = await agent.process_message(AgentMessage(
-        sender="test_agent",
-        recipient=agent.agent_id,
+        sender_id="test_agent",
+        recipient_id=agent.agent_id,
         content={
             "operation": "load",
             "load_time": 0.5
@@ -176,8 +189,8 @@ async def test_module_management(setup_integration_test):
     
     # Test dependency management
     result = await agent.process_message(AgentMessage(
-        sender="test_agent",
-        recipient=agent.agent_id,
+        sender_id="test_agent",
+        recipient_id=agent.agent_id,
         content={
             "operation": "add_dependency",
             "dependency": "test_dependency"
@@ -196,8 +209,8 @@ async def test_module_management(setup_integration_test):
     
     # Test module unloading
     result = await agent.process_message(AgentMessage(
-        sender="test_agent",
-        recipient=agent.agent_id,
+        sender_id="test_agent",
+        recipient_id=agent.agent_id,
         content={
             "operation": "unload"
         },
@@ -212,13 +225,13 @@ async def test_integration_metrics(setup_integration_test):
     registry, knowledge_graph, factory = await setup_integration_test
     
     # Create integration agent
-    agent = await factory.create_agent("integration_test")
+    agent = await factory.create_agent("integration_test", knowledge_graph=knowledge_graph)
     
     # Process multiple messages
     for _ in range(3):
         await agent.process_message(AgentMessage(
-            sender="test_agent",
-            recipient=agent.agent_id,
+            sender_id="test_agent",
+            recipient_id=agent.agent_id,
             content={},
             message_type="test"
         ))

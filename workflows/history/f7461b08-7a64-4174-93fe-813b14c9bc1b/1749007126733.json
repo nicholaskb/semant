@@ -1,0 +1,20 @@
+{
+  "id": "f7461b08-7a64-4174-93fe-813b14c9bc1b",
+  "name": "Concurrent Test",
+  "description": "Test concurrent registration and assembly",
+  "required_capabilities": [
+    "test_research_agent",
+    "test_data_processor"
+  ],
+  "max_agents_per_capability": 1,
+  "load_balancing_strategy": "round_robin",
+  "state": "cancelled",
+  "created_at": 1749007126.7258492,
+  "updated_at": 1749007126.7331011,
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-03T23:18:46.733107",
+    "state": "cancelled",
+    "agent_count": 0
+  }
+}

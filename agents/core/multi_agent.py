@@ -2,7 +2,9 @@ from typing import List, Optional
 import time
 from agents.core.base_agent import BaseAgent
 from kg.models.graph_manager import KnowledgeGraphManager
-from agents.core.agent_message import AgentMessage
+from agents.core.message_types import AgentMessage
+import uuid
+from datetime import datetime
 
 class MultiAgent(BaseAgent):
     """Agent that can handle multiple capabilities by delegating to sub-agents."""
@@ -30,34 +32,43 @@ class MultiAgent(BaseAgent):
                 f"Sub-agents missing required capabilities: {missing_capabilities}"
             )
             
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process a message by delegating to appropriate sub-agents."""
-        # Find sub-agents that can handle the message
-        capable_agents = [
-            agent for agent in self.sub_agents
-            if any(cap in agent.capabilities for cap in self.capabilities)
-        ]
-        
-        if not capable_agents:
-            raise ValueError(f"No sub-agents can handle capabilities: {self.capabilities}")
+        try:
+            # Find sub-agents that can handle the message
+            capable_agents = [
+                agent for agent in self.sub_agents
+                if any(cap in agent.capabilities for cap in self.capabilities)
+            ]
             
-        # Create response message
-        response = AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
-            content={},
-            timestamp=time.time(),
-            message_type="response"
-        )
-        
-        # Process message with each capable agent
-        for agent in capable_agents:
-            try:
-                agent_response = await agent.process_message(message)
-                if isinstance(agent_response, AgentMessage):
-                    response.content.update(agent_response.content)
-            except Exception as e:
-                self.logger.error(f"Error processing message with agent {agent.agent_id}: {str(e)}")
-                raise
+            if not capable_agents:
+                raise ValueError(f"No sub-agents can handle capabilities: {self.capabilities}")
                 
-        return response 
+            # Create response message
+            response = AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={},
+                message_type="response"
+            )
+            
+            # Process message with each capable agent
+            for agent in capable_agents:
+                try:
+                    agent_response = await agent.process_message(message)
+                    if isinstance(agent_response, AgentMessage):
+                        response.content.update(agent_response.content)
+                except Exception as e:
+                    self.logger.error(f"Error processing message with agent {agent.agent_id}: {str(e)}")
+                    raise
+                    
+            return response
+            
+        except Exception as e:
+            # Error handling
+            return AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=f"Error processing message: {str(e)}",
+                message_type="error"
+            ) 

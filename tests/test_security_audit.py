@@ -5,24 +5,35 @@ from agents.core.base_agent import BaseAgent, AgentStatus, AgentMessage
 from agents.core.capability_types import Capability, CapabilityType
 from agents.core.agent_registry import AgentRegistry
 from agents.core.agent_factory import AgentFactory
-from rdflib import Graph, URIRef, Literal
+from rdflib import Graph, URIRef, Literal, Namespace
 from rdflib.namespace import RDF, XSD
+import asyncio
+
+# NOTE: This class is only used inside this test module; we patch in the
+# missing abstract method so the AgentFactory can instantiate it without
+# raising a TypeError.
 
 class TestSecurityAgent(BaseAgent):
     """Test agent for security and audit testing."""
     
-    def __init__(self, agent_id: str, agent_type: str = "security_test", capabilities=None, config=None):
+    def __init__(self, agent_id: str, agent_type: str = "security_test", capabilities=None, config=None, knowledge_graph=None, **kwargs):
         super().__init__(
             agent_id=agent_id,
             agent_type=agent_type,
             capabilities=capabilities or {
                 Capability(CapabilityType.SECURITY_CHECK)
             },
-            config=config
+            knowledge_graph=knowledge_graph,
+            config=config,
+            **kwargs
         )
         self.audit_log = []
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+        # Ensure necessary prefixes are bound for SPARQL queries that tests run
+        self.knowledge_graph.bind("agent", Namespace("agent:"))
+        self.knowledge_graph.bind("audit", Namespace("audit:"))
+        
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         # Log the message for audit
         self.audit_log.append({
             "timestamp": datetime.now().isoformat(),
@@ -31,32 +42,61 @@ class TestSecurityAgent(BaseAgent):
             "content": message.content
         })
         
+        # Persist audit entry to knowledge graph
+        await self.update_knowledge_graph({"action": message.content.get("action", "unknown")})
+        
         # Check security level
         if message.content.get("security_level", "low") == "high":
             if not self.config.get("has_high_security_access", False):
                 return AgentMessage(
-                    sender=self.agent_id,
-                    recipient=message.sender,
+                    sender_id=self.agent_id,
+                    recipient_id=message.sender,
                     content={"error": "Insufficient security level"},
                     message_type="error"
                 )
         
         return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
+            sender_id=self.agent_id,
+            recipient_id=message.sender,
             content={"status": "processed", "audit_id": len(self.audit_log)},
             message_type="response"
         )
         
     async def update_knowledge_graph(self, update_data: dict) -> None:
+        if self.knowledge_graph is None:
+            return
+
         # Update audit log in knowledge graph
         audit_uri = URIRef(f"audit:{len(self.audit_log)}")
         self.knowledge_graph.add((audit_uri, RDF.type, URIRef("audit:AuditEntry")))
         self.knowledge_graph.add((audit_uri, URIRef("audit:timestamp"), Literal(datetime.now().isoformat(), datatype=XSD.dateTime)))
         self.knowledge_graph.add((audit_uri, URIRef("audit:action"), Literal(update_data.get("action", "unknown"))))
         
+        # Maintain simple security metrics count per agent
+        agent_uri = URIRef(f"agent:{self.agent_id}")
+        # security_violations metric
+        metric_violations = URIRef("security_violations")
+        self.knowledge_graph.add((agent_uri, URIRef("agent:hasMetric"), metric_violations))
+        self.knowledge_graph.add((metric_violations, URIRef("agent:hasMetricValue"), Literal(len([log for log in self.audit_log if "error" in log['content']]), datatype=XSD.integer)))
+
+        # security_checks metric (total processed messages)
+        metric_checks = URIRef("security_checks")
+        self.knowledge_graph.add((agent_uri, URIRef("agent:hasMetric"), metric_checks))
+        self.knowledge_graph.add((metric_checks, URIRef("agent:hasMetricValue"), Literal(len(self.audit_log), datatype=XSD.integer)))
+
     async def query_knowledge_graph(self, query: dict) -> dict:
-        return {}
+        if self.knowledge_graph is None:
+            return {}
+        sparql = query.get("query") if isinstance(query, dict) else query
+        if not sparql:
+            return {}
+        results = []
+        for row in self.knowledge_graph.query(sparql):
+            result = {}
+            for var in row.labels:
+                result[str(var)] = str(row[var])
+            results.append(result)
+        return results
 
 @pytest_asyncio.fixture
 async def setup_security_test():
@@ -72,7 +112,9 @@ async def setup_security_test():
         {CapabilityType.SECURITY_CHECK}
     )
     
-    return registry, knowledge_graph, factory
+    fut: asyncio.Future = asyncio.Future()
+    fut.set_result((registry, knowledge_graph, factory))
+    return fut
 
 @pytest.mark.asyncio
 async def test_security_levels(setup_security_test):
@@ -87,8 +129,8 @@ async def test_security_levels(setup_security_test):
     
     # Test low security message
     message = AgentMessage(
-        sender="test_agent",
-        recipient=agent.agent_id,
+        sender_id="test_agent",
+        recipient_id=agent.agent_id,
         content={"security_level": "low"},
         message_type="test"
     )
@@ -99,8 +141,8 @@ async def test_security_levels(setup_security_test):
     
     # Test high security message
     message = AgentMessage(
-        sender="test_agent",
-        recipient=agent.agent_id,
+        sender_id="test_agent",
+        recipient_id=agent.agent_id,
         content={"security_level": "high"},
         message_type="test"
     )
@@ -128,14 +170,14 @@ async def test_audit_logging(setup_security_test):
     # Send test messages
     messages = [
         AgentMessage(
-            sender="test_agent",
-            recipient=agent.agent_id,
+            sender_id="test_agent",
+            recipient_id=agent.agent_id,
             content={"action": "test_action_1"},
             message_type="test"
         ),
         AgentMessage(
-            sender="test_agent",
-            recipient=agent.agent_id,
+            sender_id="test_agent",
+            recipient_id=agent.agent_id,
             content={"action": "test_action_2"},
             message_type="test"
         )
@@ -173,14 +215,14 @@ async def test_security_metrics(setup_security_test):
     # Send messages with different security levels
     messages = [
         AgentMessage(
-            sender="test_agent",
-            recipient=agent.agent_id,
+            sender_id="test_agent",
+            recipient_id=agent.agent_id,
             content={"security_level": "low"},
             message_type="test"
         ),
         AgentMessage(
-            sender="test_agent",
-            recipient=agent.agent_id,
+            sender_id="test_agent",
+            recipient_id=agent.agent_id,
             content={"security_level": "high"},
             message_type="test"
         )

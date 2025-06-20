@@ -1,0 +1,20 @@
+{
+  "id": "test-workflow-1",
+  "name": "Test Workflow",
+  "description": "Test workflow for persistence",
+  "required_capabilities": [
+    "test_capability"
+  ],
+  "state": "created",
+  "created_at": 1749070452.808286,
+  "updated_at": 1749070452.808287,
+  "agents": [],
+  "results": [],
+  "version": "1.0",
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-04T16:54:12.808291",
+    "state": "created",
+    "agent_count": 0
+  }
+}

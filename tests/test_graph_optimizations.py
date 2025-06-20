@@ -84,21 +84,21 @@ async def test_triple_indexing(triple_index):
     object = "idle"
     
     # Test predicate indexing
-    triple_index.index_triple(subject, predicate, object)
+    await triple_index.index_triple(subject, predicate, object)
     assert predicate in triple_index.predicate_index
     assert (subject, object) in triple_index.predicate_index[predicate]
     
     # Test type indexing
     type_predicate = str(RDF.type)  # Convert RDF.type to string
     type_object = "http://example.org/core#Agent"
-    triple_index.index_triple(subject, type_predicate, type_object)
+    await triple_index.index_triple(subject, type_predicate, type_object)
     assert type_object in triple_index.type_index
     assert subject in triple_index.type_index[type_object]
     
     # Test relationship indexing
     rel_predicate = "http://example.org/core#participatesIn"
     rel_object = "http://example.org/core#Workflow1"
-    triple_index.index_triple(subject, rel_predicate, rel_object)
+    await triple_index.index_triple(subject, rel_predicate, rel_object)
     assert rel_predicate in triple_index.relationship_index
     assert rel_object in triple_index.relationship_index[rel_predicate]
     assert subject in triple_index.relationship_index[rel_predicate][rel_object]
@@ -128,6 +128,10 @@ async def test_concurrent_operations(graph_manager):
 
 @pytest.mark.asyncio
 async def test_cache_invalidation(graph_manager):
+    # Ensure cache/index clear before test
+    if hasattr(graph_manager, '_simple_cache'):
+        graph_manager._simple_cache.clear()
+
     # Test cache invalidation on updates
     subject = "http://example.org/core#Agent1"
     predicate = "http://example.org/core#hasStatus"

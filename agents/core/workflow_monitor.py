@@ -7,7 +7,7 @@ from collections import defaultdict
 from .base_agent import AgentMessage
 from dataclasses import dataclass
 from enum import Enum
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import Counter, Gauge, Histogram, CollectorRegistry
 from .workflow_types import Workflow, WorkflowStep, WorkflowStatus
 
 class MetricType(str, Enum):
@@ -26,9 +26,173 @@ class MetricValue:
     labels: Dict[str, str]
 
 class WorkflowMonitor:
-    """Handles workflow monitoring, metrics collection, and alerting."""
+    """Monitors workflow execution and collects metrics."""
     
     def __init__(self):
+        """Initialize workflow monitor."""
+        self.metrics = {}
+        self._initialize_metrics()
+        
+    def _initialize_metrics(self):
+        """Initialize metrics storage."""
+        self.metrics = {
+            "workflow_count": 0,
+            "active_workflows": 0,
+            "completed_workflows": 0,
+            "failed_workflows": 0,
+            "total_execution_time": 0.0,
+            "average_execution_time": 0.0
+        }
+        
+    async def track_workflow_metrics(
+        self,
+        workflow_id: str,
+        metrics: Dict[str, Any]
+    ) -> None:
+        """Track workflow execution metrics."""
+        if workflow_id not in self.metrics:
+            self.metrics[workflow_id] = {
+                "state_changes": [],
+                "agent_metrics": {},
+                "error_counts": defaultdict(int),
+                "response_times": [],
+                "resource_usage": defaultdict(list)
+            }
+            
+        workflow_metrics = self.metrics[workflow_id]
+        
+        # Add timestamp to metrics
+        metrics["timestamp"] = datetime.now().isoformat()
+        
+        # Track state changes if status is provided
+        if "state" in metrics:
+            workflow_metrics["state_changes"].append({
+                "state": metrics["state"],
+                "timestamp": metrics["timestamp"]
+            })
+            
+        # Track response time if provided
+        if "response_time" in metrics:
+            workflow_metrics["response_times"].append(metrics["response_time"])
+            
+        # Track resource usage if provided
+        if "resource_usage" in metrics:
+            for resource, value in metrics["resource_usage"].items():
+                workflow_metrics["resource_usage"][resource].append({"usage": value, "timestamp": metrics["timestamp"]})
+                
+    async def get_workflow_metrics(
+        self,
+        workflow_id: str,
+        metric_type: str = None
+    ) -> Dict[str, Any]:
+        """Get metrics for a workflow."""
+        if workflow_id not in self.metrics:
+            return {}
+            
+        workflow_metrics = self.metrics[workflow_id]
+        
+        if metric_type:
+            return workflow_metrics.get(metric_type, {})
+            
+        return workflow_metrics
+        
+    async def get_active_alerts(
+        self,
+        workflow_id: str = None
+    ) -> List[Dict[str, Any]]:
+        """Get active alerts for workflows."""
+        alerts = []
+        
+        for wf_id, metrics in self.metrics.items():
+            if workflow_id and wf_id != workflow_id:
+                continue
+                
+            # Check resource usage thresholds
+            if "resource_usage" in metrics:
+                for resource, values in metrics["resource_usage"].items():
+                    # Each entry in the list is a dict {"usage": float, "timestamp": str}
+                    if not values:
+                        continue
+
+                    latest_entry = values[-1]
+
+                    # Guard against malformed entries (e.g., a bare float accidentally stored)
+                    latest_usage = (
+                        latest_entry["usage"] if isinstance(latest_entry, dict) and "usage" in latest_entry else latest_entry
+                    )
+
+                    if resource == "cpu" and latest_usage > 0.8:
+                        alerts.append({
+                            "workflow_id": wf_id,
+                            "type": "high_cpu_usage",
+                            "value": latest_usage,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                    elif resource == "memory" and latest_usage > 0.8:
+                        alerts.append({
+                            "workflow_id": wf_id,
+                            "type": "high_memory_usage",
+                            "value": latest_usage,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                            
+            # Check response time thresholds
+            if "response_times" in metrics and metrics["response_times"]:
+                avg_response_time = sum(metrics["response_times"]) / len(metrics["response_times"])
+                if avg_response_time > 5.0:  # 5 seconds threshold
+                    alerts.append({
+                        "workflow_id": wf_id,
+                        "type": "high_response_time",
+                        "value": avg_response_time,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
+            # Check error counts
+            if "error_counts" in metrics:
+                total_errors = sum(metrics["error_counts"].values())
+                if total_errors > 5:  # 5 errors threshold
+                    alerts.append({
+                        "workflow_id": wf_id,
+                        "type": "high_error_count",
+                        "value": total_errors,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
+        return alerts
+        
+    async def clear_metrics(self, workflow_id: str = None) -> None:
+        """Clear metrics for a workflow or all workflows."""
+        if workflow_id:
+            if workflow_id in self.metrics:
+                del self.metrics[workflow_id]
+        else:
+            self.metrics.clear()
+            self._initialize_metrics()
+            
+    async def get_system_health(self) -> Dict[str, Any]:
+        """Get overall system health metrics."""
+        return {
+            "workflow_count": len(self.metrics),
+            "active_workflows": sum(1 for m in self.metrics.values() if m.get("state_changes") and m["state_changes"][-1]["state"] == "running"),
+            "completed_workflows": sum(1 for m in self.metrics.values() if m.get("state_changes") and m["state_changes"][-1]["state"] == "completed"),
+            "failed_workflows": sum(1 for m in self.metrics.values() if m.get("state_changes") and m["state_changes"][-1]["state"] == "failed"),
+            "total_errors": sum(sum(m["error_counts"].values()) for m in self.metrics.values() if "error_counts" in m),
+            "average_response_time": self._calculate_average_response_time()
+        }
+        
+    def _calculate_average_response_time(self) -> float:
+        """Calculate average response time across all workflows."""
+        total_time = 0.0
+        total_count = 0
+        
+        for metrics in self.metrics.values():
+            if "response_times" in metrics and metrics["response_times"]:
+                total_time += sum(metrics["response_times"])
+                total_count += len(metrics["response_times"])
+                
+        return total_time / total_count if total_count > 0 else 0.0
+
+    def __init__(self, registry=None):
         self.metrics: Dict[str, Dict[str, Any]] = defaultdict(
             lambda: {
                 "response_times": [],
@@ -48,69 +212,60 @@ class WorkflowMonitor:
         self.logger = logger.bind(component="WorkflowMonitor")
         self._lock = asyncio.Lock()
         self._metrics: Dict[str, List[MetricValue]] = {}
+        self._registry = registry
         
         # Prometheus metrics
+        reg = registry if registry is not None else None
         self.workflow_latency = Histogram(
             'workflow_latency_seconds',
             'Time taken to complete workflows',
-            ['workflow_id', 'capability']
+            ['workflow_id', 'capability'],
+            registry=reg
         )
         self.workflow_errors = Counter(
             'workflow_errors_total',
             'Total number of workflow errors',
-            ['workflow_id', 'error_type']
+            ['workflow_id', 'error_type'],
+            registry=reg
         )
         self.active_workflows = Gauge(
             'active_workflows',
             'Number of currently active workflows',
-            ['status']
+            ['status'],
+            registry=reg
         )
         self.step_latency = Histogram(
             'workflow_step_latency_seconds',
             'Time taken to complete workflow steps',
-            ['workflow_id', 'step_id', 'capability']
+            ['workflow_id', 'step_id', 'capability'],
+            registry=reg
         )
         
-    async def track_workflow_metrics(
-        self,
-        workflow_id: str,
-        agent_id: str,
-        metrics: Dict[str, Any]
-    ) -> None:
-        """Track workflow execution metrics."""
-        if workflow_id not in self.metrics:
-            self.metrics[workflow_id] = {
-                "state_changes": [],
-                "agent_metrics": {},
-                "error_counts": defaultdict(int)
-            }
-            
-        workflow_metrics = self.metrics[workflow_id]
+    async def track_workflow_start(self, workflow_id: str, steps: List[Dict]) -> None:
+        """Track workflow start."""
+        self.workflow_steps.labels(workflow_id=workflow_id).set(len(steps))
+        self.workflow_status.labels(workflow_id=workflow_id, status='running').set(1)
         
-        # Track agent metrics
-        if "agent_metrics" not in workflow_metrics:
-            workflow_metrics["agent_metrics"] = {}
-            
-        if agent_id not in workflow_metrics["agent_metrics"]:
-            workflow_metrics["agent_metrics"][agent_id] = []
-            
-        # Add timestamp to metrics
-        metrics["timestamp"] = datetime.now().isoformat()
-        workflow_metrics["agent_metrics"][agent_id].append(metrics)
+    async def track_workflow_completion(self, workflow_id: str, duration: float) -> None:
+        """Track workflow completion."""
+        self.workflow_duration.labels(workflow_id=workflow_id).set(duration)
+        self.workflow_status.labels(workflow_id=workflow_id, status='completed').set(1)
         
-        # Track state changes if status is provided
-        if "status" in metrics:
-            workflow_metrics["state_changes"].append({
-                "state": metrics["status"],
-                "timestamp": metrics["timestamp"],
-                "agent_id": agent_id
-            })
-            
-        # Track errors if present
-        if metrics.get("status") == "error":
-            workflow_metrics["error_counts"]["agent_error"] += 1
-            
-        self.logger.info(f"Tracked metrics for workflow {workflow_id}, agent {agent_id}")
+    async def track_workflow_error(self, workflow_id: str, error: str) -> None:
+        """Track workflow error."""
+        self.workflow_status.labels(workflow_id=workflow_id, status='error').set(1)
+        
+    async def track_step_start(self, workflow_id: str, step_id: str) -> None:
+        """Track step start."""
+        self.step_duration.labels(workflow_id=workflow_id, step_id=step_id).observe(0)
+        
+    async def track_step_completion(self, workflow_id: str, step_id: str, duration: float) -> None:
+        """Track step completion."""
+        self.step_duration.labels(workflow_id=workflow_id, step_id=step_id).observe(duration)
+        
+    async def track_agent_usage(self, agent_id: str, capability: str) -> None:
+        """Track agent usage."""
+        self.agent_usage.labels(agent_id=agent_id, capability=capability).inc()
         
     async def track_workflow_assembly(
         self,
@@ -230,188 +385,6 @@ class WorkflowMonitor:
         self.alerts.append(alert)
         self.logger.warning(f"Alert created: {message}")
         
-    async def get_workflow_metrics(
-        self,
-        workflow_id: str,
-        metric_type: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get metrics for a workflow."""
-        workflow_metrics = self.metrics[workflow_id]
-        
-        if metric_type:
-            return {metric_type: workflow_metrics[metric_type]}
-            
-        return {
-            "response_times": workflow_metrics["response_times"],
-            "error_counts": dict(workflow_metrics["error_counts"]),
-            "state_changes": workflow_metrics["state_changes"],
-            "resource_usage": dict(workflow_metrics["resource_usage"])
-        }
-        
-    async def get_active_alerts(
-        self,
-        workflow_id: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
-        """Get active alerts, optionally filtered by workflow."""
-        alerts = [a for a in self.alerts if a["status"] == "active"]
-        if workflow_id:
-            alerts = [a for a in alerts if a["workflow_id"] == workflow_id]
-        return alerts
-        
-    async def resolve_alert(self, alert_id: str) -> None:
-        """Mark an alert as resolved."""
-        for alert in self.alerts:
-            if alert["id"] == alert_id:
-                alert["status"] = "resolved"
-                alert["resolved_at"] = datetime.now().isoformat()
-                self.logger.info(f"Alert {alert_id} resolved")
-                break
-                
-    async def get_system_health(self) -> Dict[str, Any]:
-        """Get overall system health metrics."""
-        total_workflows = len(self.metrics)
-        active_alerts = len([a for a in self.alerts if a["status"] == "active"])
-        
-        # Calculate average response times
-        avg_response_times = {}
-        for workflow_id, metrics in self.metrics.items():
-            if metrics["response_times"]:
-                avg_response_times[workflow_id] = sum(metrics["response_times"]) / len(metrics["response_times"])
-                
-        # Calculate error rates
-        error_rates = {}
-        for workflow_id, metrics in self.metrics.items():
-            total_requests = len(metrics["response_times"])
-            if total_requests > 0:
-                error_rates[workflow_id] = sum(metrics["error_counts"].values()) / total_requests
-                
-        return {
-            "total_workflows": total_workflows,
-            "active_alerts": active_alerts,
-            "average_response_times": avg_response_times,
-            "error_rates": error_rates,
-            "timestamp": datetime.now().isoformat()
-        }
-
-    async def record_workflow_start(self, workflow: Workflow) -> None:
-        """Record the start of a workflow."""
-        async with self._lock:
-            self.active_workflows.labels(status=workflow.status.value).inc()
-            self._record_metric(
-                f"workflow_{workflow.id}_start",
-                MetricValue(1.0, time.time(), {"status": workflow.status.value})
-            )
-            
-    async def record_workflow_end(self, workflow: Workflow) -> None:
-        """Record the end of a workflow."""
-        async with self._lock:
-            self.active_workflows.labels(status=workflow.status.value).dec()
-            duration = time.time() - workflow.created_at
-            self.workflow_latency.labels(
-                workflow_id=workflow.id,
-                capability="all"
-            ).observe(duration)
-            
-            self._record_metric(
-                f"workflow_{workflow.id}_end",
-                MetricValue(duration, time.time(), {
-                    "status": workflow.status.value,
-                    "error": workflow.error or ""
-                })
-            )
-            
-    async def record_step_start(self, workflow: Workflow, step: WorkflowStep) -> None:
-        """Record the start of a workflow step."""
-        async with self._lock:
-            self._record_metric(
-                f"step_{step.id}_start",
-                MetricValue(1.0, time.time(), {
-                    "workflow_id": workflow.id,
-                    "capability": step.capability
-                })
-            )
-            
-    async def record_step_end(self, workflow: Workflow, step: WorkflowStep) -> None:
-        """Record the end of a workflow step."""
-        async with self._lock:
-            if step.start_time and step.end_time:
-                duration = step.end_time - step.start_time
-                self.step_latency.labels(
-                    workflow_id=workflow.id,
-                    step_id=step.id,
-                    capability=step.capability
-                ).observe(duration)
-                
-                self._record_metric(
-                    f"step_{step.id}_end",
-                    MetricValue(duration, time.time(), {
-                        "workflow_id": workflow.id,
-                        "capability": step.capability,
-                        "status": step.status.value,
-                        "error": step.error or ""
-                    })
-                )
-                
-    async def record_error(self, workflow: Workflow, step: Optional[WorkflowStep], error: str) -> None:
-        """Record a workflow or step error."""
-        async with self._lock:
-            if step:
-                self.workflow_errors.labels(
-                    workflow_id=workflow.id,
-                    error_type=f"step_{step.capability}"
-                ).inc()
-            else:
-                self.workflow_errors.labels(
-                    workflow_id=workflow.id,
-                    error_type="workflow"
-                ).inc()
-                
-            self._record_metric(
-                f"error_{workflow.id}",
-                MetricValue(1.0, time.time(), {
-                    "workflow_id": workflow.id,
-                    "step_id": step.id if step else "workflow",
-                    "error": error
-                })
-            )
-            
-    def _record_metric(self, name: str, value: MetricValue) -> None:
-        """Record a metric value."""
-        if name not in self._metrics:
-            self._metrics[name] = []
-        self._metrics[name].append(value)
-        
-    async def get_metrics(
-        self,
-        metric_type: Optional[MetricType] = None,
-        workflow_id: Optional[str] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None
-    ) -> Dict[str, List[MetricValue]]:
-        """Get metrics matching the specified criteria."""
-        async with self._lock:
-            filtered_metrics = {}
-            for name, values in self._metrics.items():
-                # Filter by metric type
-                if metric_type and not name.startswith(metric_type.value):
-                    continue
-                    
-                # Filter by workflow ID
-                if workflow_id and not name.endswith(workflow_id):
-                    continue
-                    
-                # Filter by time range
-                filtered_values = values
-                if start_time:
-                    filtered_values = [v for v in filtered_values if v.timestamp >= start_time]
-                if end_time:
-                    filtered_values = [v for v in filtered_values if v.timestamp <= end_time]
-                    
-                if filtered_values:
-                    filtered_metrics[name] = filtered_values
-                    
-            return filtered_metrics
-            
     async def get_workflow_summary(self, workflow_id: str) -> Dict:
         """Get a summary of metrics for a workflow."""
         metrics = await self.get_metrics(workflow_id=workflow_id)

@@ -1,0 +1,49 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.8, pytest-8.4.0, pluggy-1.6.0 -- /Users/nicholasbaro/Python/semant/venv/bin/python3.11
+cachedir: .pytest_cache
+rootdir: /Users/nicholasbaro/Python/semant
+configfile: pytest.ini
+plugins: anyio-4.9.0, cov-4.1.0, langsmith-0.3.43, mock-3.12.0, asyncio-1.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 243 items
+
+tests/agents/test_code_review_agent.py::test_agent_initialization PASSED [  0%]
+tests/agents/test_code_review_agent.py::test_code_review_basic_functionality PASSED [  0%]
+tests/agents/test_code_review_agent.py::test_code_review_error_handling PASSED [  1%]
+tests/agents/test_code_review_agent.py::test_analysis_functions_mocked PASSED [  1%]
+tests/agents/test_code_review_agent.py::test_scoring_and_recommendations PASSED [  2%]
+tests/agents/test_code_review_agent.py::test_message_processing_basic PASSED [  2%]
+tests/test_agent_factory.py::test_create_agent PASSED                    [  2%]
+tests/test_agent_factory.py::test_create_capability_agent PASSED         [  3%]
+tests/test_agent_factory.py::test_agent_initialization PASSED            [  3%]
+tests/test_agent_factory.py::test_agent_capability_management PASSED     [  4%]
+tests/test_agent_integrator.py::test_register_agent ERROR                [  4%]
+tests/test_agent_integrator.py::test_route_message ERROR                 [  4%]
+tests/test_agent_integrator.py::test_broadcast_message ERROR             [  5%]
+tests/test_agent_integrator.py::test_get_agent_status ERROR              [  5%]
+tests/test_agent_integrator.py::test_get_all_agent_statuses ERROR        [  6%]
+tests/test_agent_integrator.py::test_knowledge_graph_updates ERROR       [  6%]
+tests/test_agent_integrator.py::test_knowledge_graph_queries ERROR       [  6%]
+tests/test_agent_integrator.py::test_process_message_called_during_routing ERROR [  7%]
+tests/test_agent_recovery.py::test_agent_recovery_success FAILED         [  7%]
+tests/test_agent_recovery.py::test_agent_recovery_failure FAILED         [  8%]
+tests/test_agent_recovery.py::test_agent_recovery_timeout FAILED         [  8%]
+tests/test_agent_recovery.py::test_agent_recovery_max_attempts FAILED    [  9%]
+tests/test_agent_recovery.py::test_concurrent_agent_recovery FAILED      [  9%]
+tests/test_agent_recovery.py::test_agent_recovery_metrics FAILED         [  9%]
+tests/test_agent_recovery.py::test_agent_recovery_error_handling FAILED  [ 10%]
+tests/test_agent_recovery.py::test_agent_recovery FAILED                 [ 10%]
+tests/test_agent_recovery.py::test_max_recovery_attempts FAILED          [ 11%]
+tests/test_agent_recovery.py::test_role_recovery FAILED                  [ 11%]
+tests/test_agent_recovery.py::test_recovery_metrics FAILED               [ 11%]
+tests/test_agent_recovery.py::test_knowledge_graph_integration FAILED    [ 12%]
+tests/test_agent_recovery.py::test_recovery_strategies FAILED            [ 12%]
+tests/test_agent_recovery.py::test_recovery_strategy_metrics FAILED      [ 13%]
+tests/test_agent_recovery.py::test_recovery_strategy_failure FAILED      [ 13%]
+tests/test_agents.py::TestBaseAgent::test_initialization PASSED          [ 13%]
+tests/test_agents.py::TestBaseAgent::test_state_transitions PASSED       [ 14%]
+tests/test_agents.py::TestBaseAgent::test_message_handling PASSED        [ 14%]
+tests/test_agents.py::TestSensorAgent::test_process_message PASSED       [ 15%]
+tests/test_agents.py::TestDataProcessorAgent::test_process_message PASSED [ 15%]
+tests/test_agents.py::TestPromptAgent::test_prompt_generation PASSED     [ 16%]
+tests/test_agents.py::TestPromptAgent::test_code_review 

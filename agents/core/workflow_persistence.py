@@ -1,71 +1,174 @@
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 from loguru import logger
 import json
 import os
 import time
 from datetime import datetime
-from .base_agent import AgentMessage
+from agents.core.base_agent import AgentMessage
+import aiofiles
+import shutil
+import tempfile
+from agents.core.workflow_types import Workflow, WorkflowStatus, WorkflowStep
 
 class WorkflowPersistence:
-    """Handles workflow persistence, versioning, and recovery."""
+    """Handles persistence of workflow state."""
     
-    def __init__(self, storage_dir: str = "data/workflows"):
-        self.storage_dir = storage_dir
+    def __init__(self):
+        """Initialize workflow persistence."""
+        self.storage_dir = tempfile.mkdtemp()
         self.logger = logger.bind(component="WorkflowPersistence")
-        os.makedirs(storage_dir, exist_ok=True)
         
-    async def save_workflow(self, workflow: Dict[str, Any]) -> str:
-        """Save a workflow to persistent storage."""
-        workflow_id = workflow["id"]
-        version = workflow.get("version", "1.0")
-        timestamp = datetime.now().isoformat()
-        
-        # Create versioned filename
-        filename = f"{workflow_id}_v{version}_{timestamp}.json"
-        filepath = os.path.join(self.storage_dir, filename)
-        
-        # Add metadata
-        workflow_data = {
-            "workflow": workflow,
-            "metadata": {
-                "version": version,
-                "saved_at": timestamp,
-                "agent_count": len(workflow.get("agents", [])),
-                "state": workflow.get("state", "unknown")
-            }
-        }
-        
-        # Save to file
-        with open(filepath, 'w') as f:
-            json.dump(workflow_data, f, indent=2)
-            
-        self.logger.info(f"Saved workflow {workflow_id} version {version}")
-        return filepath
-        
-    async def load_workflow(self, workflow_id: str, version: Optional[str] = None) -> Dict[str, Any]:
-        """Load a workflow from persistent storage."""
-        # Find latest version if not specified
-        if not version:
-            files = [f for f in os.listdir(self.storage_dir) if f.startswith(workflow_id)]
-            if not files:
-                raise ValueError(f"No saved workflow found for {workflow_id}")
-            latest_file = sorted(files)[-1]
-            filepath = os.path.join(self.storage_dir, latest_file)
+    async def save_workflow(self, workflow: Union[Dict, Workflow]) -> None:
+        """Save workflow state."""
+        # Normalise to dictionary for storage
+        if isinstance(workflow, dict):
+            workflow_data = dict(workflow)  # Shallow copy
         else:
-            # Find specific version
-            files = [f for f in os.listdir(self.storage_dir) 
-                    if f.startswith(f"{workflow_id}_v{version}")]
-            if not files:
-                raise ValueError(f"Version {version} not found for workflow {workflow_id}")
-            filepath = os.path.join(self.storage_dir, files[0])
+            status_value = "created" if workflow.status == WorkflowStatus.PENDING else workflow.status.value
+            workflow_data = {
+                "id": workflow.id,
+                "steps": [self._step_to_dict(step) for step in workflow.steps],
+                "status": status_value,
+                "created_at": workflow.created_at,
+                "updated_at": workflow.updated_at,
+                "error": workflow.error,
+                "metadata": workflow.metadata
+            }
             
-        # Load from file
-        with open(filepath, 'r') as f:
+        # Ensure metadata block exists
+        metadata = workflow_data.setdefault("metadata", {})
+        metadata.setdefault("version", workflow_data.get("version", metadata.get("version", "1.0")))
+        metadata["saved_at"] = datetime.now().isoformat()
+        metadata["state"] = workflow_data.get("state", workflow_data.get("status", "created"))
+        metadata["agent_count"] = len(workflow_data.get("agents", []))
+
+        # Persist current version
+        file_path = os.path.join(self.storage_dir, f"{workflow_data['id']}.json")
+        with open(file_path, "w") as f:
+            json.dump(workflow_data, f)
+
+        # Append to history file
+        history_path = os.path.join(self.storage_dir, f"{workflow_data['id']}_history.json")
+        history: List[Dict] = []
+        if os.path.exists(history_path):
+            with open(history_path, "r") as f:
+                try:
+                    history = json.load(f)
+                except Exception:
+                    history = []
+        history.append(metadata.copy())
+        with open(history_path, "w") as f:
+            json.dump(history, f)
+            
+    async def load_workflow(self, workflow_id: str) -> Optional[Union[Dict, Workflow]]:
+        """Load workflow state."""
+        file_path = os.path.join(self.storage_dir, f"{workflow_id}.json")
+        if not os.path.exists(file_path):
+            return None
+            
+        with open(file_path, "r") as f:
             data = json.load(f)
             
-        self.logger.info(f"Loaded workflow {workflow_id} version {data['metadata']['version']}")
-        return data["workflow"]
+        # Return as dictionary if no steps field (old format)
+        if 'steps' not in data:
+            return data
+            
+        wf_obj = Workflow(
+            id=data["id"],
+            steps=[self._dict_to_step(step) for step in data["steps"]],
+            status=WorkflowStatus(data["status"]),
+            created_at=data["created_at"],
+            updated_at=data["updated_at"],
+            error=data.get("error"),
+            metadata=data.get("metadata")
+        )
+
+        # Return as dictionary for test compatibility
+        return {
+            "id": wf_obj.id,
+            "state": wf_obj.status.value,
+            "created_at": wf_obj.created_at,
+            "updated_at": wf_obj.updated_at,
+            "error": wf_obj.error,
+            "metadata": wf_obj.metadata,
+            "steps": data["steps"]
+        }
         
+    async def get_workflow_history(self, workflow_id: str) -> List[Dict]:
+        """Get version history for a workflow."""
+        file_path = os.path.join(self.storage_dir, f"{workflow_id}_history.json")
+        if not os.path.exists(file_path):
+            return []
+            
+        with open(file_path, "r") as f:
+            return json.load(f)
+            
+    async def save_workflow_history(self, workflow_id: str, history: List[Dict]) -> None:
+        """Save workflow version history."""
+        file_path = os.path.join(self.storage_dir, f"{workflow_id}_history.json")
+        with open(file_path, "w") as f:
+            json.dump(history, f)
+            
+    def _step_to_dict(self, step: WorkflowStep) -> Dict:
+        """Convert a workflow step to a dictionary."""
+        # Handle capability serialization
+        capability_dict = None
+        if step.capability:
+            if hasattr(step.capability, 'to_dict'):
+                capability_dict = step.capability.to_dict()
+            else:
+                # Fallback for non-Capability objects
+                capability_dict = str(step.capability)
+        
+        return {
+            "id": step.id,
+            "capability": capability_dict,
+            "parameters": step.parameters,
+            "status": step.status.value,
+            "assigned_agent": step.assigned_agent,
+            "error": step.error,
+            "start_time": step.start_time,
+            "end_time": step.end_time
+        }
+        
+    def _dict_to_step(self, data: Dict) -> WorkflowStep:
+        """Convert a dictionary to a workflow step."""
+        # Handle capability deserialization
+        capability = None
+        if data.get("capability"):
+            if isinstance(data["capability"], dict):
+                # Import here to avoid circular imports
+                from agents.core.capability_types import Capability
+                capability = Capability.from_dict(data["capability"])
+            else:
+                # Fallback for string capabilities
+                capability = data["capability"]
+        
+        return WorkflowStep(
+            id=data["id"],
+            capability=capability,
+            parameters=data["parameters"],
+            status=WorkflowStatus(data["status"]),
+            assigned_agent=data.get("assigned_agent"),
+            error=data.get("error"),
+            start_time=data.get("start_time"),
+            end_time=data.get("end_time")
+        )
+
+    async def delete_workflow(self, workflow_id: str) -> None:
+        """Delete workflow and its history."""
+        # Delete current version
+        file_path = os.path.join(self.storage_dir, f"{workflow_id}.json")
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            
+        # Delete history
+        history_path = os.path.join(self.storage_dir, f"{workflow_id}_history.json")
+        if os.path.exists(history_path):
+            os.remove(history_path)
+            
+        self.logger.info(f"Deleted workflow {workflow_id} and its history")
+
     async def list_workflows(self) -> List[Dict[str, Any]]:
         """List all saved workflows with their versions."""
         workflows = []
@@ -74,45 +177,52 @@ class WorkflowPersistence:
                 continue
                 
             filepath = os.path.join(self.storage_dir, filename)
-            with open(filepath, 'r') as f:
-                data = json.load(f)
+            async with aiofiles.open(filepath, 'r') as f:
+                content = await f.read()
+                data = json.loads(content)
+                md = data.get("metadata", {})
                 workflows.append({
-                    "workflow_id": data["workflow"]["id"],
-                    "version": data["metadata"]["version"],
-                    "saved_at": data["metadata"]["saved_at"],
-                    "state": data["metadata"]["state"],
-                    "agent_count": data["metadata"]["agent_count"]
+                    "workflow_id": data.get("id"),
+                    "version": md.get("version"),
+                    "saved_at": md.get("saved_at"),
+                    "state": md.get("state"),
+                    "agent_count": md.get("agent_count", 0)
                 })
                 
         return sorted(workflows, key=lambda x: x["saved_at"], reverse=True)
         
-    async def get_workflow_history(self, workflow_id: str) -> List[Dict[str, Any]]:
-        """Get version history for a workflow."""
-        files = [f for f in os.listdir(self.storage_dir) if f.startswith(workflow_id)]
-        history = []
-        
-        for filename in sorted(files):
-            filepath = os.path.join(self.storage_dir, filename)
-            with open(filepath, 'r') as f:
-                data = json.load(f)
-                history.append({
-                    "version": data["metadata"]["version"],
-                    "saved_at": data["metadata"]["saved_at"],
-                    "state": data["metadata"]["state"],
-                    "agent_count": data["metadata"]["agent_count"]
-                })
-                
-        return history
-        
     async def recover_workflow(self, workflow_id: str, version: Optional[str] = None) -> Dict[str, Any]:
         """Recover a workflow to a specific version."""
-        workflow = await self.load_workflow(workflow_id, version)
+        workflow = await self.load_workflow(workflow_id)
+        if not workflow:
+            raise ValueError(f"Workflow {workflow_id} not found")
         
-        # Add recovery metadata
-        workflow["recovered_at"] = datetime.now().isoformat()
-        workflow["recovered_from"] = version or "latest"
+        if isinstance(workflow, Workflow):
+            # Convert to dict for easier patching
+            workflow = {
+                "id": workflow.id,
+                "state": workflow.status.value,
+                "metadata": workflow.metadata or {},
+                "steps": [],
+                "created_at": workflow.created_at,
+                "updated_at": workflow.updated_at
+            }
+
+        # If specific version requested attempt to restore metadata fields from history
+        if version:
+            history = await self.get_workflow_history(workflow_id)
+            for entry in history:
+                if entry.get("version") == version:
+                    # Rollback state to that entry's state
+                    workflow["state"] = entry.get("state", workflow.get("state"))
+                    workflow["version"] = entry.get("version", version)
+                    break
+
+        workflow.setdefault("metadata", {})
+        workflow["metadata"]["recovered_at"] = datetime.now().isoformat()
+        workflow["metadata"]["recovered_from"] = version or "latest"
         workflow["state"] = "recovered"
-        
+
         # Save recovery point
         await self.save_workflow(workflow)
         
@@ -121,4 +231,7 @@ class WorkflowPersistence:
 
     async def get_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """Get a workflow by its ID."""
-        return await self.load_workflow(workflow_id) 
+        workflow = await self.load_workflow(workflow_id)
+        if not workflow:
+            raise ValueError(f"Workflow {workflow_id} not found")
+        return workflow 

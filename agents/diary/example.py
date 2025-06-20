@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from diary_agent import DiaryAgent, AgentMessage
 import time
 

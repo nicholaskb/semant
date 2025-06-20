@@ -24,11 +24,11 @@ async def test_stats_collection(graph_manager):
         object = "idle"
         await graph_manager.add_triple(subject, predicate, object)
     
-    # Get stats
-    stats = graph_manager.get_stats()
+    # Get stats - await the coroutine
+    stats = await graph_manager.get_stats()
     
     # Verify stats
-    assert stats['triple_count'] == 100
+    assert stats['metrics']['triple_count'] == 100
     assert 'cache_stats' in stats
     assert 'index_stats' in stats
     assert 'timestamp_count' in stats
@@ -82,17 +82,18 @@ async def test_cache_monitoring(graph_manager):
         """
         await graph_manager.query_graph(query)
     
-    # Get cache stats
-    stats = graph_manager.cache.get_stats()
+    # Get stats - await the coroutine
+    stats = await graph_manager.get_stats()
+    cache_stats = stats['cache_stats']
     
     # Verify cache stats
-    assert stats['size'] > 0
-    assert stats['maxsize'] == 1000
-    assert stats['hits'] >= 0
-    assert stats['misses'] >= 0
+    assert cache_stats['size'] > 0
+    assert cache_stats['maxsize'] == 1000
+    assert cache_stats['hits'] >= 0
+    assert cache_stats['misses'] >= 0
     
     # Test cache hit rate calculation
-    hit_rate = stats['hits'] / (stats['hits'] + stats['misses']) if (stats['hits'] + stats['misses']) > 0 else 0
+    hit_rate = cache_stats['hits'] / (cache_stats['hits'] + cache_stats['misses']) if (cache_stats['hits'] + cache_stats['misses']) > 0 else 0
     assert 0 <= hit_rate <= 1
 
 @pytest.mark.asyncio
@@ -140,8 +141,8 @@ async def test_performance_monitoring(graph_manager):
     assert len(results) == 100
     assert query_time < 1.0  # Should complete within 1 second
     
-    # Get stats after query
-    stats = graph_manager.get_stats()
+    # Get stats after query - await the coroutine
+    stats = await graph_manager.get_stats()
     cache_stats = stats['cache_stats']
     
     # Verify cache performance

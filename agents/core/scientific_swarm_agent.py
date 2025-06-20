@@ -4,6 +4,9 @@ from agents.core.capability_types import Capability, CapabilityType
 from loguru import logger
 import asyncio
 from datetime import datetime
+import uuid
+from datetime import datetime
+from agents.core.message_types import AgentMessage
 
 class ScientificSwarmAgent(BaseAgent):
     """
@@ -42,7 +45,7 @@ class ScientificSwarmAgent(BaseAgent):
                 }
             })
             
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages for scientific code review and analysis."""
         try:
             if message.message_type == "review_request":
@@ -56,8 +59,8 @@ class ScientificSwarmAgent(BaseAgent):
         except Exception as e:
             self.logger.error(f"Error processing message: {str(e)}")
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"error": str(e)},
                 timestamp=message.timestamp,
                 message_type="error"
@@ -92,8 +95,8 @@ class ScientificSwarmAgent(BaseAgent):
                 })
                 
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"review_result": review_result},
                 timestamp=message.timestamp,
                 message_type="review_response"
@@ -125,8 +128,8 @@ class ScientificSwarmAgent(BaseAgent):
                 consensus = await self._calculate_consensus(reviews)
                 
                 return AgentMessage(
-                    sender=self.agent_id,
-                    recipient=message.sender,
+                    sender_id=self.agent_id,
+                    recipient_id=message.sender_id,
                     content={"consensus": consensus},
                     timestamp=message.timestamp,
                     message_type="consensus_response"
@@ -158,8 +161,8 @@ class ScientificSwarmAgent(BaseAgent):
                 })
                 
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"analysis_result": analysis_result},
                 timestamp=message.timestamp,
                 message_type="analysis_response"
@@ -249,4 +252,30 @@ class ScientificSwarmAgent(BaseAgent):
         """Query the knowledge graph for scientific coding information."""
         if not self.knowledge_graph:
             return {}
+
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        """Process incoming messages - REQUIRED IMPLEMENTATION."""
+        try:
+            # Process the message based on its type and content
+            response_content = f"Agent {self.agent_id} processed: {message.content}"
+            
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=response_content,
+                message_type=getattr(message, 'message_type', 'response'),
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            # Error handling
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=f"Error processing message: {str(e)}",
+                message_type="error",
+                timestamp=datetime.now()
+            )
+
         return await self.knowledge_graph.query_graph(query.get('sparql', '')) 

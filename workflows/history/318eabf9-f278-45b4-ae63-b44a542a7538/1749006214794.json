@@ -1,0 +1,42 @@
+{
+  "id": "318eabf9-f278-45b4-ae63-b44a542a7538",
+  "name": "Test Workflow",
+  "description": "Test workflow description",
+  "required_capabilities": [
+    {
+      "type": "CapabilityType.KNOWLEDGE_GRAPH",
+      "version": "1.0",
+      "parameters": {},
+      "metadata": {}
+    },
+    {
+      "type": "CapabilityType.DATA_PROCESSING",
+      "version": "1.0",
+      "parameters": {},
+      "metadata": {}
+    },
+    {
+      "type": "CapabilityType.SENSOR_DATA",
+      "version": "1.0",
+      "parameters": {},
+      "metadata": {}
+    },
+    {
+      "type": "CapabilityType.RESEARCH",
+      "version": "1.0",
+      "parameters": {},
+      "metadata": {}
+    }
+  ],
+  "max_agents_per_capability": 2,
+  "load_balancing_strategy": "round_robin",
+  "state": "created",
+  "created_at": 1749006214.793671,
+  "updated_at": 1749006214.793671,
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-03T23:03:34.793692",
+    "state": "created",
+    "agent_count": 0
+  }
+}

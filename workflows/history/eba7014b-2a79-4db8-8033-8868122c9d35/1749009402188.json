@@ -1,0 +1,24 @@
+{
+  "id": "eba7014b-2a79-4db8-8033-8868122c9d35",
+  "name": "Test Workflow",
+  "description": "Test workflow description",
+  "required_capabilities": [
+    {
+      "type": "CapabilityType.SENSOR_DATA",
+      "version": "1.0",
+      "parameters": {},
+      "metadata": {}
+    }
+  ],
+  "max_agents_per_capability": 2,
+  "load_balancing_strategy": "round_robin",
+  "state": "cancelled",
+  "created_at": 1749009402.1780741,
+  "updated_at": 1749009402.188083,
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-03T23:56:42.188094",
+    "state": "cancelled",
+    "agent_count": 0
+  }
+}

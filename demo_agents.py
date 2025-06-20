@@ -70,7 +70,7 @@ class TaskPlannerAgent(BaseAgent):
             str(DM.TaskPlanner)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "task_request":
             return await self._handle_task_request(message)
@@ -136,7 +136,7 @@ class ResearcherAgent(BaseAgent):
             str(DM.Researcher)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "research_request":
             return await self._handle_research_request(message)
@@ -202,7 +202,7 @@ class AnalystAgent(BaseAgent):
             str(DM.Analyst)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "analysis_request":
             return await self._handle_analysis_request(message)
@@ -273,7 +273,7 @@ class SummarizerAgent(BaseAgent):
             str(DM.Summarizer)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "summary_request":
             return await self._handle_summary_request(message)
@@ -341,7 +341,7 @@ class AuditorAgent(BaseAgent):
             str(DM.Auditor)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "audit_request":
             return await self._handle_audit_request(message)
@@ -403,7 +403,7 @@ class EngagementManagerAgent(BaseAgent):
             str(CONSULTING.EngagementManager)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "engagement_request":
             return await self._handle_engagement_request(message)
@@ -411,6 +411,16 @@ class EngagementManagerAgent(BaseAgent):
             return await self._handle_team_update(message)
         else:
             return await self._handle_unknown_message(message)
+            
+    async def _handle_unknown_message(self, message: AgentMessage) -> AgentMessage:
+        """Handle unknown message types."""
+        return AgentMessage(
+            sender_id=self.agent_id,
+            recipient_id=message.sender_id,
+            content={'status': 'unknown_message_type', 'original_type': message.message_type},
+            timestamp=message.timestamp,
+            message_type="error_response"
+        )
             
     async def _handle_engagement_request(self, message: AgentMessage) -> AgentMessage:
         """Handle new engagement requests."""
@@ -490,12 +500,22 @@ class StrategyLeadAgent(BaseAgent):
             str(CONSULTING.StrategyLead)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "strategy_request":
             return await self._handle_strategy_request(message)
         else:
             return await self._handle_unknown_message(message)
+            
+    async def _handle_unknown_message(self, message: AgentMessage) -> AgentMessage:
+        """Handle unknown message types."""
+        return AgentMessage(
+            sender_id=self.agent_id,
+            recipient_id=message.sender_id,
+            content={'status': 'unknown_message_type', 'original_type': message.message_type},
+            timestamp=message.timestamp,
+            message_type="error_response"
+        )
             
     async def _handle_strategy_request(self, message: AgentMessage) -> AgentMessage:
         """Handle strategy development requests."""
@@ -578,12 +598,22 @@ class ImplementationLeadAgent(BaseAgent):
             str(CONSULTING.ImplementationLead)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "implementation_request":
             return await self._handle_implementation_request(message)
         else:
             return await self._handle_unknown_message(message)
+            
+    async def _handle_unknown_message(self, message: AgentMessage) -> AgentMessage:
+        """Handle unknown message types."""
+        return AgentMessage(
+            sender_id=self.agent_id,
+            recipient_id=message.sender_id,
+            content={'status': 'unknown_message_type', 'original_type': message.message_type},
+            timestamp=message.timestamp,
+            message_type="error_response"
+        )
             
     async def _handle_implementation_request(self, message: AgentMessage) -> AgentMessage:
         """Handle implementation planning requests."""
@@ -680,12 +710,22 @@ class ValueRealizationLeadAgent(BaseAgent):
             str(CONSULTING.ValueRealizationLead)
         )
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "value_request":
             return await self._handle_value_request(message)
         else:
             return await self._handle_unknown_message(message)
+            
+    async def _handle_unknown_message(self, message: AgentMessage) -> AgentMessage:
+        """Handle unknown message types."""
+        return AgentMessage(
+            sender_id=self.agent_id,
+            recipient_id=message.sender_id,
+            content={'status': 'unknown_message_type', 'original_type': message.message_type},
+            timestamp=message.timestamp,
+            message_type="error_response"
+        )
             
     async def _handle_value_request(self, message: AgentMessage) -> AgentMessage:
         """Handle value measurement planning requests."""

@@ -35,18 +35,20 @@ class AsyncLRUCache:
             expiry_time = time.time() + ttl if ttl is not None else float('inf')
             
             if key in self.cache:
+                # Update existing entry
                 self.cache[key] = (value, expiry_time)
                 self.lru.remove(key)
                 self.lru.append(key)
             else:
+                # New entry
                 if len(self.cache) >= self.maxsize:
                     # Remove least recently used
                     oldest = self.lru.pop(0)
                     del self.cache[oldest]
                     del self.access_times[oldest]
                 self.cache[key] = (value, expiry_time)
+                self.lru.append(key)
             self.access_times[key] = time.time()
-            self.lru.append(key)
             
     async def clear(self):
         """Clear all entries from the cache."""

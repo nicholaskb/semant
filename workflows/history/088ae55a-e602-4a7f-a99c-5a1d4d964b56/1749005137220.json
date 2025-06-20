@@ -1,0 +1,19 @@
+{
+  "id": "088ae55a-e602-4a7f-a99c-5a1d4d964b56",
+  "name": "No Agents Workflow",
+  "description": "Test no agents for capability",
+  "required_capabilities": [
+    "nonexistent_capability"
+  ],
+  "max_agents_per_capability": 1,
+  "load_balancing_strategy": "round_robin",
+  "state": "created",
+  "created_at": 1749005137.2195709,
+  "updated_at": 1749005137.2195709,
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-03T22:45:37.219575",
+    "state": "created",
+    "agent_count": 0
+  }
+}

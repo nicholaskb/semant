@@ -28,7 +28,7 @@ class VPEngineeringAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("VP of Engineering Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "engineering_strategy_request":
             return await self._handle_strategy_request(message)
         return await self._handle_unknown_message(message)
@@ -78,7 +78,7 @@ class HeadOfMLAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Head of ML Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "ml_strategy_request":
             return await self._handle_ml_strategy_request(message)
         return await self._handle_unknown_message(message)
@@ -127,7 +127,7 @@ class SeniorOpenAIAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Senior OpenAI Engineer Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "openai_implementation_request":
             return await self._handle_implementation_request(message)
         return await self._handle_unknown_message(message)
@@ -177,7 +177,7 @@ class MiraMuratiAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Mira Murati Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "ai_strategy_request":
             return await self._handle_ai_strategy_request(message)
         return await self._handle_unknown_message(message)
@@ -227,7 +227,7 @@ class SamAltmanAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Sam Altman Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "startup_strategy_request":
             return await self._handle_startup_strategy_request(message)
         return await self._handle_unknown_message(message)
@@ -277,7 +277,7 @@ class OntologySoftwareDeveloperAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Ontology Software Developer Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "ontology_development_request":
             return await self._handle_development_request(message)
         return await self._handle_unknown_message(message)
@@ -331,7 +331,7 @@ class FullStackDeveloperAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Full Stack Developer Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "full_stack_development_request":
             return await self._handle_development_request(message)
         return await self._handle_unknown_message(message)

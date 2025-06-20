@@ -62,8 +62,8 @@ async def test_email_enhancement(vertex_agent, is_vertex_ai_enabled):
 async def test_message_processing(vertex_agent):
     """Test processing of email messages."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="vertex_email_agent",
+        sender_id="test_sender",
+        recipient_id="vertex_email_agent",
         content={
             "recipient": "test@example.com",
             "subject": "Test Subject",
@@ -82,8 +82,8 @@ async def test_message_processing(vertex_agent):
 async def test_invalid_message_type(vertex_agent):
     """Test handling of invalid message types."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="vertex_email_agent",
+        sender_id="test_sender",
+        recipient_id="vertex_email_agent",
         content={"invalid": "content"},
         message_type="invalid_type",
         timestamp=datetime.now().timestamp()
@@ -97,8 +97,8 @@ async def test_invalid_message_type(vertex_agent):
 async def test_knowledge_graph_integration(vertex_agent):
     """Test integration with knowledge graph."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="vertex_email_agent",
+        sender_id="test_sender",
+        recipient_id="vertex_email_agent",
         content={
             "recipient": "test@example.com",
             "subject": "Test Subject",
@@ -117,8 +117,8 @@ async def test_error_handling(vertex_agent):
     """Test error handling in various scenarios."""
     # Test with invalid email address
     message = AgentMessage(
-        sender="test_sender",
-        recipient="vertex_email_agent",
+        sender_id="test_sender",
+        recipient_id="vertex_email_agent",
         content={
             "recipient": "invalid-email",
             "subject": "Test Subject",
@@ -136,8 +136,8 @@ async def test_error_handling(vertex_agent):
 async def test_empty_subject_and_body(vertex_agent):
     """Test handling of empty subject and body."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="vertex_email_agent",
+        sender_id="test_sender",
+        recipient_id="vertex_email_agent",
         content={
             "recipient": "test@example.com",
             "subject": "",
@@ -174,19 +174,16 @@ def verify_environment():
 
 def test_credentials():
     """Test loading service account credentials."""
+    creds_path = expand_path(os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "nonexistent.json"))
+    if not os.path.exists(creds_path):
+        # In CI environments without real credentials we simply skip.
+        pytest.skip("Credentials file not present – skipping real credential test")
     try:
-        creds_path = expand_path(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-        if not os.path.exists(creds_path):
-            logger.error(f"Credentials file not found at: {creds_path}")
-            return False
-        credentials = service_account.Credentials.from_service_account_file(creds_path)
-        logger.info(f"Successfully loaded credentials from: {creds_path}")
-        return True
-    except Exception as e:
-        logger.error(f"Credential loading failed: {str(e)}")
-        return False
+        service_account.Credentials.from_service_account_file(creds_path)
+    except Exception as exc:
+        pytest.fail(f"Credential loading failed: {exc}")
 
-def test_vertex_initialization():
+def test_vertex_initialization_sync():
     """Test Vertex AI initialization."""
     try:
         project = os.getenv("GOOGLE_CLOUD_PROJECT")
@@ -201,12 +198,10 @@ def test_vertex_initialization():
             )
         )
         logger.info("Successfully initialized Vertex AI")
-        return True
     except Exception as e:
-        logger.error(f"Vertex AI initialization failed: {str(e)}")
-        return False
+        pytest.skip(f"Vertex AI initialization skipped: {e}")
 
-def test_model_access():
+def test_model_access_sync():
     """Test access to the generative model."""
     # Try global location first for Gemini models
     logger.info("\nTrying global location for Gemini models")
@@ -226,8 +221,7 @@ def test_model_access():
             logger.info("Attempting to access gemini-2.0-flash-001 model...")
             model = GenerativeModel("gemini-2.0-flash-001")
             response = model.generate_content("Hello, world!")
-            logger.info(f"Model access test successful with gemini-2.0-flash-001: {response.text}")
-            return True
+            logger.info("Model access test successful with gemini-2.0-flash-001")
         except Exception as e:
             logger.error(f"gemini-2.0-flash-001 model access failed: {str(e)}")
             
@@ -236,8 +230,7 @@ def test_model_access():
             logger.info("Attempting to access gemini-1.5-pro model...")
             model = GenerativeModel("gemini-1.5-pro")
             response = model.generate_content("Hello, world!")
-            logger.info(f"Model access test successful with gemini-1.5-pro: {response.text}")
-            return True
+            logger.info("Model access test successful with gemini-1.5-pro")
         except Exception as e:
             logger.error(f"gemini-1.5-pro model access failed: {str(e)}")
             
@@ -264,15 +257,14 @@ def test_model_access():
                     logger.info(f"Attempting to access {model_name} model in {region}...")
                     model = GenerativeModel(model_name)
                     response = model.generate_content("Hello, world!")
-                    logger.info(f"Model access test successful with {model_name} in {region}: {response.text}")
-                    return True
+                    logger.info(f"Model access test successful with {model_name} in {region}")
                 except Exception as e:
                     logger.error(f"{model_name} model access failed in {region}: {str(e)}")
         except Exception as e:
             logger.error(f"Failed to initialize Vertex AI in {region}: {str(e)}")
     
     logger.error("All model access attempts failed across all locations")
-    return False
+    pytest.skip("Model access unavailable in test environment")
 
 def check_api_enablement():
     """Check if the Vertex AI API is enabled for the project."""
@@ -309,8 +301,8 @@ def main():
         ("Environment Variables", verify_environment),
         ("Service Account Credentials", test_credentials),
         ("API Enablement", check_api_enablement),
-        ("Vertex AI Initialization", test_vertex_initialization),
-        ("Model Access", test_model_access)
+        ("Vertex AI Initialization", test_vertex_initialization_sync),
+        ("Model Access", test_model_access_sync)
     ]
     all_passed = True
     for test_name, test_func in tests:

@@ -4,6 +4,8 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 from utils.graphdb_utils import GraphDBUtils
 from config.graphdb_config import NAMESPACES
 import logging
+import rdflib
+from rdflib.term import URIRef, Literal
 
 logger = logging.getLogger(__name__)
 

@@ -96,7 +96,7 @@ class BaseAgent:
         """Initialize the agent."""
         self.logger.info(f"{self.agent_type} Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         raise NotImplementedError
         
@@ -127,7 +127,7 @@ class ResearchAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Research Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "research_request":
             return await self._handle_research_request(message)
         return await self._handle_unknown_message(message)
@@ -177,7 +177,7 @@ class AnalysisAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Analysis Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "analysis_request":
             return await self._handle_analysis_request(message)
         return await self._handle_unknown_message(message)
@@ -232,7 +232,7 @@ class CoordinatorAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Coordinator Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "task_request":
             return await self._handle_task_request(message)
         return await self._handle_unknown_message(message)
@@ -317,7 +317,7 @@ class KnowledgeGraphConsultantAgent(BaseAgent):
         super().__init__(agent_id, "consultant")
     async def initialize(self) -> None:
         self.logger.info("Knowledge Graph Consultant initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "consulting_request":
             return await self._handle_consulting_request(message)
         return await self._handle_unknown_message(message)
@@ -357,7 +357,7 @@ class KnowledgeGraphEngineerAgent(BaseAgent):
         super().__init__(agent_id, "engineer")
     async def initialize(self) -> None:
         self.logger.info("Knowledge Graph Engineer initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "engineering_request":
             return await self._handle_engineering_request(message)
         return await self._handle_unknown_message(message)
@@ -397,7 +397,7 @@ class KnowledgeGraphVPAgent(BaseAgent):
         self.registry = None
     async def initialize(self) -> None:
         self.logger.info("Knowledge Graph VP/Lead initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "complex_query":
             return await self._handle_complex_query(message)
         return await self._handle_unknown_message(message)
@@ -464,7 +464,7 @@ class OntologyDesignerAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Ontology Designer Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "ontology_design_request":
             return await self._handle_ontology_design_request(message)
         return await self._handle_unknown_message(message)
@@ -518,7 +518,7 @@ class SemanticAlignmentAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Semantic Alignment Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "alignment_request":
             return await self._handle_alignment_request(message)
         return await self._handle_unknown_message(message)
@@ -569,7 +569,7 @@ class QueryOptimizationAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Query Optimization Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "optimization_request":
             return await self._handle_optimization_request(message)
         return await self._handle_unknown_message(message)
@@ -626,7 +626,7 @@ class DataIngestionAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Data Ingestion Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "ingestion_request":
             return await self._handle_ingestion_request(message)
         return await self._handle_unknown_message(message)
@@ -678,7 +678,7 @@ class ValidationAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Validation Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "validation_request":
             return await self._handle_validation_request(message)
         return await self._handle_unknown_message(message)
@@ -731,7 +731,7 @@ class ReasoningAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Reasoning Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "reasoning_request":
             return await self._handle_reasoning_request(message)
         return await self._handle_unknown_message(message)
@@ -788,7 +788,7 @@ class PerformanceAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Performance Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "performance_request":
             return await self._handle_performance_request(message)
         return await self._handle_unknown_message(message)
@@ -840,7 +840,7 @@ class SecurityAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Security Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "security_request":
             return await self._handle_security_request(message)
         return await self._handle_unknown_message(message)
@@ -893,7 +893,7 @@ class MonitoringAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Monitoring Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "monitoring_request":
             return await self._handle_monitoring_request(message)
         return await self._handle_unknown_message(message)
@@ -949,7 +949,7 @@ class IntegrationAgent(BaseAgent):
     async def initialize(self) -> None:
         self.logger.info("Integration Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "integration_request":
             return await self._handle_integration_request(message)
         return await self._handle_unknown_message(message)
@@ -997,7 +997,7 @@ class ProvenanceAgent(BaseAgent):
     def __init__(self, agent_id="provenance_agent"):
         super().__init__(agent_id, "provenance")
     async def initialize(self): self.logger.info("Provenance Agent initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "provenance_request":
             return await self._handle_provenance_request(message)
         return await self._handle_unknown_message(message)
@@ -1013,7 +1013,7 @@ class ProvenanceAgent(BaseAgent):
     async def _handle_provenance_request(self, message: AgentMessage) -> AgentMessage:
         provenance = {'source': "MONDO API", 'evidence': "PMID:123456"}
         await self.update_knowledge_graph(provenance)
-        return AgentMessage(sender=self.agent_id, recipient=message.sender, content=provenance, timestamp=message.timestamp, message_type="provenance_response")
+        return AgentMessage(sender_id=self.agent_id, recipient_id=message.sender_id, content=provenance, timestamp=message.timestamp, message_type="provenance_response")
 
 class HardwareAgent(BaseAgent):
     """
@@ -1024,7 +1024,7 @@ class HardwareAgent(BaseAgent):
     def __init__(self, agent_id="hardware_agent"):
         super().__init__(agent_id, "hardware")
     async def initialize(self): self.logger.info("Hardware Agent initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "hardware_request":
             return await self._handle_hardware_request(message)
         return await self._handle_unknown_message(message)
@@ -1041,7 +1041,7 @@ class HardwareAgent(BaseAgent):
     async def _handle_hardware_request(self, message: AgentMessage) -> AgentMessage:
         hardware = {'cpu': "Intel Xeon", 'memory': "128GB", 'disk': "2TB SSD"}
         await self.update_knowledge_graph(hardware)
-        return AgentMessage(sender=self.agent_id, recipient=message.sender, content=hardware, timestamp=message.timestamp, message_type="hardware_response")
+        return AgentMessage(sender_id=self.agent_id, recipient_id=message.sender_id, content=hardware, timestamp=message.timestamp, message_type="hardware_response")
 
 class ComplianceAgent(BaseAgent):
     """
@@ -1052,7 +1052,7 @@ class ComplianceAgent(BaseAgent):
     def __init__(self, agent_id="compliance_agent"):
         super().__init__(agent_id, "compliance")
     async def initialize(self): self.logger.info("Compliance Agent initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "compliance_request":
             return await self._handle_compliance_request(message)
         return await self._handle_unknown_message(message)
@@ -1068,7 +1068,7 @@ class ComplianceAgent(BaseAgent):
     async def _handle_compliance_request(self, message: AgentMessage) -> AgentMessage:
         compliance = {'standards': ["HIPAA", "GDPR"], 'status': "compliant"}
         await self.update_knowledge_graph(compliance)
-        return AgentMessage(sender=self.agent_id, recipient=message.sender, content=compliance, timestamp=message.timestamp, message_type="compliance_response")
+        return AgentMessage(sender_id=self.agent_id, recipient_id=message.sender_id, content=compliance, timestamp=message.timestamp, message_type="compliance_response")
 
 class DiseaseOntologyAgent(BaseAgent):
     """
@@ -1079,7 +1079,7 @@ class DiseaseOntologyAgent(BaseAgent):
     def __init__(self, agent_id="disease_ontology_agent"):
         super().__init__(agent_id, "disease_ontology")
     async def initialize(self): self.logger.info("Disease Ontology Agent initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "disease_ontology_request":
             return await self._handle_disease_ontology_request(message)
         return await self._handle_unknown_message(message)
@@ -1096,7 +1096,7 @@ class DiseaseOntologyAgent(BaseAgent):
         # Stub: In real use, query MONDO or other API
         disease = {'label': "Type 2 Diabetes Mellitus", 'external_id': "MONDO:0005148"}
         await self.update_knowledge_graph(disease)
-        return AgentMessage(sender=self.agent_id, recipient=message.sender, content=disease, timestamp=message.timestamp, message_type="disease_ontology_response")
+        return AgentMessage(sender_id=self.agent_id, recipient_id=message.sender_id, content=disease, timestamp=message.timestamp, message_type="disease_ontology_response")
 
 class NewsIngestionAgent(BaseAgent):
     """
@@ -1112,7 +1112,7 @@ class NewsIngestionAgent(BaseAgent):
     async def initialize(self):
         self.logger.info("News Ingestion Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "news_ingestion_request":
             return await self._handle_news_ingestion_request(message)
         return await self._handle_unknown_message(message)
@@ -1166,7 +1166,7 @@ class StockImpactAgent(BaseAgent):
     async def initialize(self):
         self.logger.info("Stock Impact Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "stock_impact_request":
             return await self._handle_stock_impact_request(message)
         return await self._handle_unknown_message(message)
@@ -1219,7 +1219,7 @@ class ShortTermMemoryAgent(BaseAgent):
     async def initialize(self):
         self.logger.info("Short Term Memory Agent initialized")
         
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "memory_request":
             return await self._handle_memory_request(message)
         return await self._handle_unknown_message(message)
@@ -1271,7 +1271,7 @@ class KnowledgeGraphArchitectAgent(BaseAgent):
         self.registry = None
     async def initialize(self) -> None:
         self.logger.info("Knowledge Graph Architect Agent initialized")
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "architecture_request":
             return await self._handle_architecture_request(message)
         return await self._handle_unknown_message(message)
@@ -1337,7 +1337,7 @@ class TavilyWebSearchAgent(BaseAgent):
     async def initialize(self):
         self.logger.info("Tavily Web Search Agent initialized")
 
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "web_search_request":
             return await self._handle_web_search_request(message)
         return await self._handle_unknown_message(message)
@@ -1397,7 +1397,7 @@ class DeepWebResearchAgent(BaseAgent):
     async def initialize(self):
         self.logger.info("Deep Web Research Agent initialized")
 
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "deep_web_research_request":
             return await self._handle_deep_web_research_request(message)
         return await self._handle_unknown_message(message)
@@ -1446,7 +1446,7 @@ class DirectorAgent(BaseAgent):
     async def initialize(self):
         self.logger.info("Director Agent initialized")
 
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "director_request":
             return await self._handle_director_request(message)
         return await self._handle_unknown_message(message)
@@ -1526,7 +1526,7 @@ class SoftwareEngineeringTeamAgent(BaseAgent):
     async def initialize(self):
         self.logger.info("Software Engineering Team Agent initialized")
 
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         if message.message_type == "software_engineering_team_request":
             return await self._handle_team_request(message)
         return await self._handle_unknown_message(message)

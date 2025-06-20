@@ -12,6 +12,7 @@ from demo_agents import (
     KnowledgeGraph,
     CONSULTING
 )
+from agents.utils import AwaitableValue
 
 @pytest.fixture
 async def setup_agents():
@@ -26,12 +27,12 @@ async def setup_agents():
     await implementation_lead.initialize()
     await value_realization_lead.initialize()
     
-    return {
+    return AwaitableValue({
         'engagement_manager': engagement_manager,
         'strategy_lead': strategy_lead,
         'implementation_lead': implementation_lead,
         'value_realization_lead': value_realization_lead
-    }
+    })
 
 @pytest.mark.asyncio
 async def test_engagement_initialization(setup_agents):
@@ -41,8 +42,8 @@ async def test_engagement_initialization(setup_agents):
     
     # Create test engagement
     engagement_message = AgentMessage(
-        sender="test_client",
-        recipient="engagement_manager",
+        sender_id="test_client",
+        recipient_id="engagement_manager",
         content={
             'client': 'Test Healthcare Provider',
             'scope': 'Test AI Transformation',
@@ -76,8 +77,8 @@ async def test_strategy_development(setup_agents):
     
     # Create test strategy request
     strategy_message = AgentMessage(
-        sender="engagement_manager",
-        recipient="strategy_lead",
+        sender_id="engagement_manager",
+        recipient_id="strategy_lead",
         content={
             'engagement_id': 'test_engagement_1',
             'client': 'Test Client',
@@ -112,8 +113,8 @@ async def test_implementation_planning(setup_agents):
     
     # Create test implementation request
     implementation_message = AgentMessage(
-        sender="strategy_lead",
-        recipient="implementation_lead",
+        sender_id="strategy_lead",
+        recipient_id="implementation_lead",
         content={
             'engagement_id': 'test_engagement_1',
             'strategy': {
@@ -150,8 +151,8 @@ async def test_value_framework_development(setup_agents):
     
     # Create test value request
     value_message = AgentMessage(
-        sender="implementation_lead",
-        recipient="value_realization_lead",
+        sender_id="implementation_lead",
+        recipient_id="value_realization_lead",
         content={
             'engagement_id': 'test_engagement_1',
             'implementation': {
@@ -193,8 +194,8 @@ async def test_end_to_end_engagement(setup_agents):
     
     # 1. Initialize engagement
     engagement_message = AgentMessage(
-        sender="test_client",
-        recipient="engagement_manager",
+        sender_id="test_client",
+        recipient_id="engagement_manager",
         content={
             'client': 'End-to-End Test Client',
             'scope': 'Comprehensive Digital Transformation',
@@ -210,8 +211,8 @@ async def test_end_to_end_engagement(setup_agents):
     
     # 2. Develop strategy
     strategy_message = AgentMessage(
-        sender="engagement_manager",
-        recipient="strategy_lead",
+        sender_id="engagement_manager",
+        recipient_id="strategy_lead",
         content={
             'engagement_id': engagement_id,
             'client': 'End-to-End Test Client',
@@ -225,8 +226,8 @@ async def test_end_to_end_engagement(setup_agents):
     
     # 3. Plan implementation
     implementation_message = AgentMessage(
-        sender="strategy_lead",
-        recipient="implementation_lead",
+        sender_id="strategy_lead",
+        recipient_id="implementation_lead",
         content={
             'engagement_id': engagement_id,
             'strategy': strategy_response.content['strategy']
@@ -239,8 +240,8 @@ async def test_end_to_end_engagement(setup_agents):
     
     # 4. Develop value framework
     value_message = AgentMessage(
-        sender="implementation_lead",
-        recipient="value_realization_lead",
+        sender_id="implementation_lead",
+        recipient_id="value_realization_lead",
         content={
             'engagement_id': engagement_id,
             'implementation': implementation_response.content['implementation']
@@ -276,8 +277,8 @@ async def test_knowledge_graph_consistency(setup_agents):
     
     # Create test engagement
     engagement_message = AgentMessage(
-        sender="test_client",
-        recipient="engagement_manager",
+        sender_id="test_client",
+        recipient_id="engagement_manager",
         content={
             'client': 'Knowledge Graph Test Client',
             'scope': 'Knowledge Graph Test',

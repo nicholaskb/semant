@@ -33,7 +33,8 @@ TEST_GROUPS = {
         'test_capability_management.py',
         'test_capability_handling.py',
         'test_integration_management.py',
-        'test_dynamic_agents.py'
+        'test_dynamic_agents.py',
+        'test_code_review.py'
     ],
     'group4_workflows': [
         'test_workflow_manager.py',
@@ -43,12 +44,22 @@ TEST_GROUPS = {
     'group5_performance_security': [
         'test_performance.py',
         'test_security_audit.py',
-        'test_prompt_agent.py'
+        'test_prompt_agent.py',
+        'test_vertex_auth.py'
     ],
     'group6_integration': [
         'test_main_api.py',
         'test_chat_endpoint.py',
-        'test_research_agent.py'
+        'test_research_agent.py',
+        'test_vertex_email.py',
+        'test_email_send.py',
+        'test_vertex_integration.py'
+    ],
+    'group7_documentation': [
+        'test_implementation_guide.py',
+        'test_analysis.md',
+        'test_grouping_analysis.md',
+        'test_learnings.md'
     ]
 }
 

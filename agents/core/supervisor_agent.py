@@ -9,6 +9,9 @@ import time
 from datetime import datetime
 from rdflib import Graph, URIRef, Literal, BNode
 from rdflib.namespace import RDF, RDFS
+import uuid
+from datetime import datetime
+from agents.core.message_types import AgentMessage
 
 class SupervisorAgent(BaseAgent):
     """Supervisor agent that manages dynamic agent instantiation and role delegation."""
@@ -56,7 +59,7 @@ class SupervisorAgent(BaseAgent):
                 self.logger.error(f"Error in workload monitoring: {e}")
                 await asyncio.sleep(5)  # Wait before retrying
                 
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages."""
         if message.message_type == "scale_request":
             return await self._handle_scale_request(message)
@@ -64,8 +67,8 @@ class SupervisorAgent(BaseAgent):
             return await self._handle_role_change_request(message)
         else:
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"error": "Unknown message type"},
                 message_type="error"
             )
@@ -86,8 +89,8 @@ class SupervisorAgent(BaseAgent):
             )
             
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={
                     "status": "success",
                     "new_agents": [agent.agent_id for agent in new_agents]
@@ -97,8 +100,8 @@ class SupervisorAgent(BaseAgent):
         except Exception as e:
             self.logger.error(f"Error handling scale request: {e}")
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"error": str(e)},
                 message_type="error"
             )
@@ -119,16 +122,16 @@ class SupervisorAgent(BaseAgent):
             )
             
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"status": "success"},
                 message_type="role_change_response"
             )
         except Exception as e:
             self.logger.error(f"Error handling role change request: {e}")
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"error": str(e)},
                 message_type="error"
             )
@@ -182,4 +185,30 @@ class SupervisorAgent(BaseAgent):
                 await self._monitoring_task
             except asyncio.CancelledError:
                 pass
+
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        """Process incoming messages - REQUIRED IMPLEMENTATION."""
+        try:
+            # Process the message based on its type and content
+            response_content = f"Agent {self.agent_id} processed: {message.content}"
+            
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=response_content,
+                message_type=getattr(message, 'message_type', 'response'),
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            # Error handling
+            return AgentMessage(
+                message_id=str(uuid.uuid4()),
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=f"Error processing message: {str(e)}",
+                message_type="error",
+                timestamp=datetime.now()
+            )
+
         self.logger.info("Supervisor agent cleaned up") 

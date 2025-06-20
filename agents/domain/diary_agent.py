@@ -1,56 +1,99 @@
-from typing import Any, Dict, List
+from typing import Dict, Any, Optional, Set
 from agents.core.base_agent import BaseAgent, AgentMessage
-
+from agents.core.capability_types import Capability, CapabilityType
+from datetime import datetime
 
 class DiaryAgent(BaseAgent):
-    """Simple agent that stores diary entries in memory."""
-
-    def __init__(self, agent_id: str = "diary_agent"):
-        super().__init__(agent_id, "diary")
-        self.entries: List[str] = []
-
-    async def initialize(self) -> None:
-        self.entries = []
-
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    """Agent that maintains a diary of events."""
+    
+    def __init__(
+        self,
+        agent_id: str,
+        agent_type: str = "diary",
+        capabilities: Optional[Set[Capability]] = None,
+        knowledge_graph: Optional[Any] = None,
+        config: Optional[Dict[str, Any]] = None
+    ):
+        default_capabilities = {
+            Capability(CapabilityType.MESSAGE_PROCESSING, "1.0"),
+            Capability(CapabilityType.DIARY_MANAGEMENT, "1.0")
+        }
+        super().__init__(
+            agent_id=agent_id,
+            agent_type=agent_type,
+            capabilities=capabilities or default_capabilities,
+            knowledge_graph=knowledge_graph,
+            config=config
+        )
+        self._entries = []
+        
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        """Process an incoming message."""
         if message.message_type == "add_entry":
-            entry = message.content.get("entry", "")
-            self.entries.append(entry)
-            await self.update_knowledge_graph({"entry": entry})
+            entry = message.content.get("entry")
+            if not entry:
+                return AgentMessage(
+                    sender_id=self.agent_id,
+                    recipient_id=message.sender_id,
+                    content={"status": "error", "message": "No entry provided"},
+                    timestamp=datetime.utcnow(),
+                    message_type="error"
+                )
+                
+            self._entries.append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "entry": entry
+            })
+            
+            if self.knowledge_graph:
+                await self.knowledge_graph.add_triple(
+                    f"diary:{len(self._entries)}",
+                    "diary:entry",
+                    entry
+                )
+                
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={"status": "success"},
-                timestamp=message.timestamp,
-                message_type="add_entry_response",
+                timestamp=datetime.utcnow(),
+                message_type="add_entry_response"
             )
+            
         elif message.message_type == "query_diary":
-            query = message.content.get("query", "").lower()
-            results = [e for e in self.entries if query in e.lower()]
+            query = message.content.get("query")
+            if not query:
+                return AgentMessage(
+                    sender_id=self.agent_id,
+                    recipient_id=message.sender_id,
+                    content={"status": "error", "message": "No query provided"},
+                    timestamp=datetime.utcnow(),
+                    message_type="error"
+                )
+                
+            results = []
+            for entry in self._entries:
+                if query.lower() in entry["entry"].lower():
+                    results.append(entry)
+                    
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
-                content={"results": results},
-                timestamp=message.timestamp,
-                message_type="query_diary_response",
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={"status": "success", "results": results},
+                timestamp=datetime.utcnow(),
+                message_type="query_diary_response"
             )
-        return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
-            content={"status": "error", "message": "Unknown message type"},
-            timestamp=message.timestamp,
-            message_type="error_response",
-        )
+            
+        else:
+            return AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={"status": "error", "message": "Unknown message type"},
+                timestamp=datetime.utcnow(),
+                message_type="error"
+            )
+            
+    def get_entries(self) -> list:
+        """Get all diary entries."""
+        return self._entries
 
-    async def update_knowledge_graph(self, update_data: Dict[str, Any]) -> None:
-        if not self.knowledge_graph:
-            return
-        await self.knowledge_graph.update_graph(
-            {f"entry:{len(self.entries)}": {"content": update_data.get("entry", "")}}
-        )
-
-    async def query_knowledge_graph(self, query: Dict[str, Any]) -> Dict[str, Any]:
-        if not self.knowledge_graph:
-            return {}
-        sparql = query.get("sparql", "")
-        return await self.knowledge_graph.query_graph(sparql)

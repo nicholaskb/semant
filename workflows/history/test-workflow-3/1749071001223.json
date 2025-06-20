@@ -1,0 +1,20 @@
+{
+  "id": "test-workflow-3",
+  "name": "Test Workflow",
+  "description": "Test workflow for recovery",
+  "required_capabilities": [
+    "test_capability"
+  ],
+  "state": "created",
+  "created_at": 1749071001.223231,
+  "updated_at": 1749071001.223231,
+  "agents": [],
+  "results": [],
+  "version": "1.0",
+  "metadata": {
+    "version": "1.0",
+    "saved_at": "2025-06-04T17:03:21.223236",
+    "state": "created",
+    "agent_count": 0
+  }
+}

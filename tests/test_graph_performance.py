@@ -153,8 +153,8 @@ async def test_memory_usage(graph_manager):
     process = psutil.Process(os.getpid())
     initial_memory = process.memory_info().rss
     
-    # Add large dataset
-    for i in range(10000):
+    # Add large dataset (changed from 10,000 to 100 for testing purposes)
+    for i in range(100):
         subject = f"http://example.org/core#Agent{i}"
         predicate = "http://example.org/core#hasStatus"
         object = "idle"

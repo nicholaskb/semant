@@ -15,14 +15,16 @@ async def integrator():
     integrator = AgentIntegrator(kg)
     await integrator.initialize()
     yield integrator
-    # Clean up background tasks
-    # await integrator.registry.shutdown()  # Removed, not implemented
+    # Clean up resources
+    await integrator.registry.cleanup()
+    await integrator.registry.shutdown()
+    await kg.cleanup()
 
 @pytest_asyncio.fixture
 async def mock_agent():
     """Create a mock agent for testing with at least one capability."""
     capabilities = {Capability(CapabilityType.DATA_PROCESSING, "1.0")}
-    agent = MockAgent(capabilities=capabilities)
+    agent = MockAgent(agent_id="test_agent", capabilities=capabilities)
     await agent.initialize()
     return agent
 
@@ -54,8 +56,8 @@ async def test_route_message(integrator, mock_agent):
     
     # Create and send a test message
     message = AgentMessage(
-        sender="sender",
-        recipient="test_agent",
+        sender_id="sender",
+        recipient_id="test_agent",
         content={
             "required_capability": CapabilityType.DATA_PROCESSING,
             "test": "data"
@@ -85,8 +87,8 @@ async def test_broadcast_message(integrator, mock_agent):
     """Test broadcasting a message to all agents."""
     await integrator.register_agent(mock_agent)
     message = AgentMessage(
-        sender="sender",
-        recipient="all",
+        sender_id="sender",
+        recipient_id="all",
         content={"test": "data"},
         timestamp=time.time(),
         message_type="test"
@@ -166,8 +168,8 @@ async def test_process_message_called_during_routing(integrator, mock_agent):
     
     # Create and send a test message
     message = AgentMessage(
-        sender="sender",
-        recipient="test_agent",
+        sender_id="sender",
+        recipient_id="test_agent",
         content={"test": "data"},
         timestamp=time.time(),
         message_type="test"

@@ -15,8 +15,8 @@ async def vertex_agent():
 @pytest.mark.asyncio
 async def test_send_email(vertex_agent):
     message = AgentMessage(
-        sender="tester",
-        recipient=vertex_agent.agent_id,
+        sender_id="tester",
+        recipient_id=vertex_agent.agent_id,
         content={"recipient": "user@example.com", "subject": "Hi", "body": "Test"},
         timestamp=0.0,
         message_type="send_email",

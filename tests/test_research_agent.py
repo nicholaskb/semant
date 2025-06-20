@@ -34,8 +34,8 @@ async def test_initialize(research_agent):
 async def test_process_message(research_agent):
     """Test processing a research message."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={"topic": "Test research query"},
         timestamp=time.time(),
         message_type="research_request"
@@ -57,8 +57,8 @@ async def test_test_agent_initialization(test_research_agent):
 async def test_test_agent_message_history(test_research_agent):
     """Test test agent message history tracking."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={"query": "Test research query"},
         timestamp=time.time(),
         message_type="research_request"
@@ -92,8 +92,8 @@ async def test_test_agent_knowledge_graph(test_research_agent):
 async def test_process_message_without_topic(research_agent):
     """Test processing a message without a topic."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={},
         timestamp=time.time(),
         message_type="research_request"
@@ -105,8 +105,8 @@ async def test_process_message_without_topic(research_agent):
 async def test_process_message_with_topic(research_agent):
     """Test processing a message with a valid topic."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={"topic": "test_topic", "depth": 2},
         timestamp=time.time(),
         message_type="research_request"
@@ -152,8 +152,8 @@ async def test_update_knowledge_graph(research_agent):
 async def test_confidence_scoring(research_agent):
     """Test confidence scoring in research findings."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={
             "topic": "test_topic",
             "depth": 2,
@@ -172,8 +172,8 @@ async def test_confidence_scoring(research_agent):
 async def test_evidence_tracking(research_agent):
     """Test evidence chain tracking in research findings."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={
             "topic": "test_topic",
             "depth": 2,
@@ -192,8 +192,8 @@ async def test_evidence_tracking(research_agent):
 async def test_multiple_research_paths(research_agent):
     """Test exploration of multiple research paths."""
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={
             "topic": "test_topic",
             "depth": 2,
@@ -213,8 +213,8 @@ async def test_error_handling(research_agent):
     """Test comprehensive error handling."""
     # Test invalid depth
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={
             "topic": "test_topic",
             "depth": -1
@@ -227,8 +227,8 @@ async def test_error_handling(research_agent):
 
     # Test invalid topic type
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={
             "topic": 123,  # Invalid type
             "depth": 2
@@ -247,8 +247,8 @@ async def test_reasoner_integration(research_agent):
     
     # Test reasoner methods
     message = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={
             "topic": "test_topic",
             "depth": 2,
@@ -272,8 +272,8 @@ async def test_research_findings_persistence(research_agent):
     """Test persistence of research findings."""
     # First research request
     message1 = AgentMessage(
-        sender="test_sender",
-        recipient="test_research_agent",
+        sender_id="test_sender",
+        recipient_id="test_research_agent",
         content={
             "topic": "test_topic",
             "depth": 2

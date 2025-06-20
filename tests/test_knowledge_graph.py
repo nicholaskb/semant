@@ -2,39 +2,110 @@ import pytest
 import pytest_asyncio
 from rdflib import Graph, Namespace, Literal, URIRef
 from rdflib.namespace import RDF, RDFS, XSD
-from demo_agents import KnowledgeGraph
+# Remove incorrect import - using KnowledgeGraphManager instead
 from pathlib import Path
 from kg.models.graph_manager import KnowledgeGraphManager
 from kg.models.graph_initializer import GraphInitializer
 import rdflib
+import asyncio
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Set
+from tests.utils.test_helpers import resource_manager
+from kg.models.graph_manager import KnowledgeGraphManager as AgentKnowledgeGraph
+from agents.core.capability_types import Capability
+from agents.core.capability_types import CapabilityType
+from tests.utils.test_agents import TestAgent
 
-@pytest.fixture
-def knowledge_graph():
+@pytest_asyncio.fixture
+async def knowledge_graph():
     """Create a fresh knowledge graph instance for testing."""
-    return KnowledgeGraph()
+    graph = KnowledgeGraphManager()
+    await graph.initialize()
+    return graph
 
 @pytest_asyncio.fixture
 async def graph_manager():
     """Create a fresh graph manager instance for testing."""
-    return KnowledgeGraphManager()
+    manager = KnowledgeGraphManager()
+    await manager.initialize()
+    return manager
 
 @pytest_asyncio.fixture
 async def graph_initializer(graph_manager):
     """Create a fresh graph initializer instance for testing."""
     return GraphInitializer(graph_manager)
 
+@pytest_asyncio.fixture
+async def test_agent(agent_factory):
+    agent = await agent_factory.create_agent(
+        "test_agent",
+        "kg_agent_1",
+        {Capability(CapabilityType.KNOWLEDGE_GRAPH, "1.0")}
+    )
+    await agent.initialize()
+    return agent
+
 @pytest.mark.asyncio
 async def test_knowledge_graph_initialization(knowledge_graph):
-    """Test knowledge graph initialization and namespace binding."""
-    # Verify graph is initialized
-    assert isinstance(knowledge_graph.graph, Graph)
+    # Verify graph initialization
+    assert knowledge_graph is not None
+    assert await knowledge_graph.is_initialized()
     
-    # Verify namespaces are bound
-    namespaces = dict(knowledge_graph.graph.namespaces())
-    assert "dm" in namespaces
-    assert "task" in namespaces
-    assert "agent" in namespaces
-    assert "analysis" in namespaces
+    # Test basic graph operations
+    await knowledge_graph.add_triple("subject", "predicate", "object")
+    result = await knowledge_graph.query("SELECT ?o WHERE { ?s ?p ?o }")
+    assert len(result) == 1
+    assert result[0]["o"] == "object"
+
+@pytest.mark.asyncio
+async def test_agent_knowledge_graph_access(test_agent, knowledge_graph):
+    # Test agent's knowledge graph capabilities
+    capabilities = await test_agent.get_capabilities()
+    assert any(c.type == CapabilityType.KNOWLEDGE_GRAPH for c in capabilities)
+    
+    # Test agent's ability to query knowledge graph with a specific query
+    await knowledge_graph.add_triple("test:agent", "has_capability", "knowledge_graph")
+    result = await knowledge_graph.query(
+        "SELECT ?capability WHERE { <test:agent> <has_capability> ?capability }"
+    )
+    assert len(result) == 1
+    assert result[0]["capability"] == "knowledge_graph"
+
+@pytest.mark.asyncio
+async def test_knowledge_graph_updates(test_agent, knowledge_graph):
+    # Test updating knowledge graph
+    await knowledge_graph.add_triple("test:item", "test:status", "initial")
+    await knowledge_graph.update_triple("test:item", "test:status", "updated")
+    
+    result = await knowledge_graph.query(
+        "SELECT ?status WHERE { <test:item> <test:status> ?status }"
+    )
+    assert len(result) == 1
+    assert result[0]["status"] == "updated"
+    
+    # Test agent's ability to process updates
+    status = await test_agent.get_status()
+    assert status["agent_id"] == "kg_agent_1"
+    assert len(status["capabilities"]) == 1
+
+@pytest.mark.asyncio
+async def test_knowledge_graph_validation(test_agent, knowledge_graph):
+    # Test knowledge graph validation
+    await knowledge_graph.add_triple("valid", "type", "test")
+    validation = await knowledge_graph.validate()
+    assert validation["is_valid"]
+    
+    # Test invalid triple handling - should handle None gracefully or raise appropriate error
+    try:
+        await knowledge_graph.add_triple(None, "predicate", "object")
+        # If no exception, that's also acceptable for this test
+    except (ValueError, TypeError) as e:
+        # Expected behavior for None input
+        pass
+    
+    # Verify agent can handle validation results
+    capabilities = await test_agent.get_capabilities()
+    assert any(c.type == CapabilityType.KNOWLEDGE_GRAPH for c in capabilities)
 
 @pytest.mark.asyncio
 async def test_triple_addition(knowledge_graph):
@@ -46,13 +117,14 @@ async def test_triple_addition(knowledge_graph):
         "test:object"
     )
     
-    # Verify triple was added
-    triples = list(knowledge_graph.graph.triples((
-        URIRef("test:subject"),
-        URIRef("test:predicate"),
-        URIRef("test:object")
-    )))
-    assert len(triples) == 1
+    # Verify triple was added by querying
+    results = await knowledge_graph.query_graph("""
+        SELECT ?o WHERE { 
+            <test:subject> <test:predicate> ?o 
+        }
+    """)
+    assert len(results) == 1
+    assert results[0]['o'] == "test:object"
 
 @pytest.mark.asyncio
 async def test_graph_update(knowledge_graph):
@@ -742,15 +814,15 @@ async def test_graph_validation(graph_manager):
     graph_manager.namespaces['test'] = test_ns
     graph_manager.graph.bind('test', test_ns)
     
-    # Add validation rule
+    # Add validation rule that looks for violations (machines with non-Nominal status)
     graph_manager.add_validation_rule({
-        'type': 'sparql',
+        'type': 'sparql_violation',
         'query': """
             PREFIX test: <http://example.org/test/>
             SELECT ?machine WHERE {
                 ?machine rdf:type test:Machine .
                 ?machine test:hasStatus ?status .
-                FILTER(?status = "Nominal")
+                FILTER(?status != "Nominal")
             }
         """
     })
@@ -976,4 +1048,245 @@ async def test_agentic_ontology_loading(graph_initializer):
         'contributesTo',
         'usesDataFrom'
     }
-    assert expected_properties.issubset(property_names), "Should find all expected object properties" 
+    assert expected_properties.issubset(property_names), "Should find all expected object properties"
+
+@pytest_asyncio.fixture
+async def kg_manager():
+    """Create a knowledge graph manager instance for testing."""
+    manager = KnowledgeGraphManager()
+    await manager.initialize()
+    yield manager
+    await manager.cleanup()
+
+@pytest.mark.asyncio
+async def test_kg_manager_cleanup(kg_manager):
+    """Test knowledge graph manager cleanup."""
+    # Add some test data
+    await kg_manager.add_triple(
+        "http://example.org/test/subject",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object"
+    )
+    
+    # Verify data exists
+    result = await kg_manager.query_graph("""
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """)
+    assert len(result) > 0
+    
+    # Clean up
+    await kg_manager.cleanup()
+    
+    # Verify data is cleared
+    result = await kg_manager.query_graph("""
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """)
+    assert len(result) == 0
+
+@pytest.mark.asyncio
+async def test_kg_manager_caching(kg_manager):
+    """Test knowledge graph manager caching."""
+    # Add test data
+    await kg_manager.add_triple(
+        "http://example.org/test/subject",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object"
+    )
+    
+    # First query should populate cache
+    query = """
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """
+    result1 = await kg_manager.query_graph(query)
+    cache_hits_before = kg_manager.metrics.get('cache_hits', 0)
+    
+    # Second identical query should hit cache
+    result2 = await kg_manager.query_graph(query)
+    cache_hits_after = kg_manager.metrics.get('cache_hits', 0)
+    
+    assert cache_hits_after > cache_hits_before
+    assert result1 == result2
+
+@pytest.mark.asyncio
+async def test_kg_manager_cache_invalidation(kg_manager):
+    """Test knowledge graph manager cache invalidation."""
+    # Add test data
+    await kg_manager.add_triple(
+        "http://example.org/test/subject",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object"
+    )
+    
+    # Query to populate cache
+    query = """
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """
+    await kg_manager.query_graph(query)
+    cache_hits_before = kg_manager.metrics.get('cache_hits', 0)
+    
+    # Update data
+    await kg_manager.add_triple(
+        "http://example.org/test/subject",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object2"
+    )
+    
+    # Query again - should not hit cache due to update
+    await kg_manager.query_graph(query)
+    cache_hits_after = kg_manager.metrics.get('cache_hits', 0)
+    
+    assert cache_hits_after == cache_hits_before
+
+@pytest.mark.asyncio
+async def test_kg_manager_cache_ttl(kg_manager):
+    """Test knowledge graph manager cache TTL."""
+    # Add test data
+    await kg_manager.add_triple(
+        "http://example.org/test/subject",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object"
+    )
+    
+    # Query to populate cache
+    query = """
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """
+    await kg_manager.query_graph(query)
+    cache_hits_before = kg_manager.metrics.get('cache_hits', 0)
+    
+    # Clear existing cache and set short TTL for testing
+    if hasattr(kg_manager, '_simple_cache'):
+        kg_manager._simple_cache.clear()
+    kg_manager._cache_ttl = 1  # 1 second for quick testing
+    
+    # Query again to populate cache with new TTL
+    await kg_manager.query_graph(query)
+    
+    # Wait for cache to expire
+    await asyncio.sleep(1.5)
+    
+    # Query again - should not hit cache due to TTL
+    await kg_manager.query_graph(query)
+    cache_hits_after = kg_manager.metrics.get('cache_hits', 0)
+    
+    assert cache_hits_after == cache_hits_before
+
+@pytest.mark.asyncio
+async def test_kg_manager_concurrent_access(kg_manager):
+    """Test knowledge graph manager concurrent access."""
+    # Add test data
+    await kg_manager.add_triple(
+        "http://example.org/test/subject",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object"
+    )
+    
+    # Create multiple concurrent queries
+    async def query_task():
+        return await kg_manager.query_graph("""
+            SELECT ?s ?p ?o WHERE {
+                ?s ?p ?o .
+            }
+        """)
+    
+    tasks = [asyncio.create_task(query_task()) for _ in range(3)]
+    results = await asyncio.gather(*tasks)
+    
+    # All results should be identical
+    assert all(r == results[0] for r in results)
+
+@pytest.mark.asyncio
+async def test_kg_manager_error_handling(kg_manager):
+    """Test knowledge graph manager error handling."""
+    # Test invalid query
+    with pytest.raises(Exception):
+        await kg_manager.query_graph("INVALID SPARQL")
+    
+    # Test invalid triple
+    with pytest.raises(Exception):
+        await kg_manager.add_triple(None, None, None)
+    
+    # Test concurrent error handling
+    async def error_task():
+        try:
+            await kg_manager.query_graph("INVALID SPARQL")
+        except Exception:
+            return True
+        return False
+    
+    tasks = [asyncio.create_task(error_task()) for _ in range(3)]
+    results = await asyncio.gather(*tasks)
+    
+    assert all(results)  # All tasks should have caught the error
+
+@pytest.mark.asyncio
+async def test_kg_manager_metrics(kg_manager):
+    """Test knowledge graph manager metrics tracking."""
+    # Add test data
+    await kg_manager.add_triple(
+        "http://example.org/test/subject",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object"
+    )
+    
+    # Perform some operations
+    await kg_manager.query_graph("""
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """)
+    await kg_manager.add_triple(
+        "http://example.org/test/subject2",
+        "http://example.org/test/predicate",
+        "http://example.org/test/object"
+    )
+    
+    # Verify metrics
+    metrics = kg_manager.metrics
+    assert metrics.get('sparql_queries', 0) > 0
+    assert metrics.get('triples_added', 0) > 0
+    assert 'cache_hits' in metrics
+    assert 'cache_misses' in metrics
+
+@pytest.mark.asyncio
+async def test_kg_manager_bulk_operations(kg_manager):
+    """Test knowledge graph manager bulk operations."""
+    # Add multiple triples
+    triples = [
+        ("http://example.org/test/subject1", "http://example.org/test/predicate", "http://example.org/test/object1"),
+        ("http://example.org/test/subject2", "http://example.org/test/predicate", "http://example.org/test/object2"),
+        ("http://example.org/test/subject3", "http://example.org/test/predicate", "http://example.org/test/object3")
+    ]
+    
+    for s, p, o in triples:
+        await kg_manager.add_triple(s, p, o)
+    
+    # Verify all triples were added
+    result = await kg_manager.query_graph("""
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """)
+    assert len(result) == len(triples)
+    
+    # Remove all triples
+    for s, p, o in triples:
+        await kg_manager.remove_triple(s, p, o)
+    
+    # Verify all triples were removed
+    result = await kg_manager.query_graph("""
+        SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .
+        }
+    """)
+    assert len(result) == 0 

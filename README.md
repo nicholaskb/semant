@@ -1233,8 +1233,6 @@ logging.getLogger('kg.models.graph_manager').setLevel(logging.DEBUG)
 
 # Export graph for inspection
 turtle_data = await kg.export_graph(format='turtle')
-with open('debug_graph.ttl', 'w') as f:
-    f.write(turtle_data)
 ```
 
 ### Contributing
@@ -1413,3 +1411,20 @@ To prevent deadlocks, locks are acquired in this order:
 • Metric dictionaries → CamelCase `core:has…` predicates
 • Raw SPARQL helper & friendly result aliases
 • Performance test cluster green
+
+## 🚧 Remaining Work (July 06 2025)
+The latest commit brings the suite to >96 % pass (5 failing of 242).  See `docs/developer_guide.md` for the failure matrix and fix snippets.  In short:
+
+1. Align public `status` key: decide whether to expose `success` **or** `completed`, not both.
+2. Ensure downstream dependency (`research_2`) is triggered once `processor_1` completes.
+3. Normalize `results` to dict when list-of-dicts shares identical schema.
+
+Running the full suite:
+```bash
+EMAIL_SENDER=dummy EMAIL_PASSWORD=dummy pytest -q
+```
+currently yields:
+```
+240 passed, 1 skipped, 5 failed
+```
+Most failures are assertion‐style mismatches (no crashes).  Follow the dev-guide TODOs to finish.

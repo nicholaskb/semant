@@ -2,7 +2,119 @@
 
 🏗️ **STATUS: IN RECOVERY – 42 FAILURES / 19 ERRORS (see docs/developer_guide.md)**
 
+> 📌  See **"2035 Agent Recovery Hotfix Protocol"** in `docs/developer_guide.md` — copy that block into every new PR until `tests/test_agent_recovery.py` is 100 % green.
+
 A robust and scalable multi-agent orchestration system with knowledge graph integration, workflow management, and comprehensive testing infrastructure.
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```text
+#############################################################
+🚀  SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+#############################################################
+Location  
+• Keep this block in **docs/developer_guide.md** and in every new PR body  
+  until `pytest -q` reports **0 failed / 0 error**.  
+• Update the "Defect-Ledger" table in the same file each time a red → green
+  transition occurs.
+
+----------------------------------------------------------------
+WHY WE USE THIS PLAYBOOK
+----------------------------------------------------------------
+1. Prevents drive-by script clutter — only existing files may change.  
+2. Breaks the huge rescue into SMALL, auditable work-packs.  
+3. Makes blast-radius visible before any code is touched.  
+4. Provides auditors with an immutable timeline of actions.  
+5. Guarantees Knowledge-Graph (KG) integrity at every step.  
+6. Ensures future agents can on-board instantly by reading one block.
+
+----------------------------------------------------------------
+🔧 SIX-STEP WORK-PACK CIRCUIT
+----------------------------------------------------------------
+| Step | Goal                    | Mandatory Commands / Actions                                                |
+|------|-------------------------|-----------------------------------------------------------------------------|
+| 1    | Test Census            | `pytest -q` → snapshot *fail / error* count, runtime, coverage              |
+| 2    | Root-Cause Isolation   | Re-run ONE failing test with `-vv`; enable `loguru` DEBUG                   |
+| 3    | Repo Impact Scan       | `ripgrep -n "<failing_fn>" agents/ kg/ tests/` + semantic search            |
+| 4    | Surgical Fix           | Edit **existing** files only; keep diff atomic; add timestamp comment       |
+| 5    | Regression Guard       | `pytest -q && pylint agents core` – expect **0 reds**                       |
+| 6    | Doc Sync & Commit      | Move ledger row 🔴→✅; update diagrams; commit w/ signed message            |
+
+----------------------------------------------------------------
+🗺️  HIGH-LEVEL FLOW (Mermaid)
+----------------------------------------------------------------
+```mermaid
+graph TD
+    subgraph Model Layer
+        M1[workflow_models.py] --> M2[workflow_types.py]
+    end
+    subgraph Logic Layer
+        L1[workflow_manager.py]
+        L2[workflow_persistence.py]
+        L3[workflow_monitor.py]
+    end
+    subgraph Agents & Registry
+        R1[agent_registry.py] --> L1
+    end
+    M2 --> L1 & L2
+    L1 -->|executes| L3
+    L1 & L2 & L3 --> T[Tests]
+```
+
+----------------------------------------------------------------
+WORK-PACK BACKLOG (update as you go)
+----------------------------------------------------------------
+| ID | Cluster / Symptom                              | Owner | Status |
+|----|-----------------------------------------------|--------|--------|
+| 01 | `WorkflowStep()` constructor arg mismatch      | ⬜      | 🔴 |
+| 02 | Monitor `resource_usage` list vs float compare | ⬜      | 🔴 |
+| 03 | `AgentMessage` vs dict in `TestAgent` helpers  | ⬜      | 🔴 |
+| 04 | Dynamic-agent factory "Unknown agent type"     | ⬜      | 🔴 |
+| 05 | rdflib `URIRef` NameErrors in reasoner tests   | ⬜      | 🔴 |
+| …  | _append new clusters here_                     |        |      |
+
+Legend: 🔴 = failing • 🟡 = PR open • ✅ = merged/green
+
+----------------------------------------------------------------
+KNOWLEDGE-GRAPH SANITY SNIPPET
+----------------------------------------------------------------
+Paste in `python -i` to validate after every workflow change:
+
+```python
+from agents.core.workflow_manager import WorkflowManager
+from agents.core.workflow_types   import Workflow
+from agents.core.agent_registry   import AgentRegistry
+import asyncio, nest_asyncio, textwrap
+nest_asyncio.apply()
+
+async def smoke():
+    reg = AgentRegistry(); await reg.initialize()
+    wm  = WorkflowManager(reg); await wm.initialize()
+    wf  = Workflow(workflow_id="kg_smoke", name="SmokeTest")
+    await wm.register_workflow(wf)
+    turtle = await wm.persistence.export_graph(format="turtle")
+    print(textwrap.shorten(turtle, 300))
+    q = """SELECT ?w WHERE { ?w <rdf:type> <http://example.org/core#Workflow> }"""
+    print("SPARQL rows:", await wm.persistence.query_graph(q))
+asyncio.run(smoke())
+```
+
+----------------------------------------------------------------
+GUARANTEES & CONSTRAINTS
+----------------------------------------------------------------
+• **NO NEW SCRIPTS** unless the roadmap explicitly calls for them.  
+• **Lock Order**: `_metrics_lock` → `_status_lock` → `_lock`  (never reverse).  
+• **KG Integrity**: every state change mirrored in KG or rolled-back.  
+• **Timeout Budget**: unit test ≤ 0.1 s, integration ≤ 5 s.  
+• **Cleanup**: always `await agent.cleanup()`; purge KG triples in `finally`.
+
+> Delete this block **only when** `pytest -q` prints  
+> `=== 0 failed, 0 error in *s ===`
+
+#############################################################
+✅ End-of-directive — copy into each PR until repo is green.  
+#############################################################
+```
 
 ## 🗺️ **System Understanding Roadmap**
 
@@ -421,7 +533,7 @@ The Knowledge Graph (kg/) subsystem provides a sophisticated RDF-based semantic 
 - **agentic_ontology.ttl** (287 lines) - Agent coordination patterns  
 - **design_ontology.ttl** (240 lines) - Design pattern vocabulary
 - **swarm_ontology.ttl** (92 lines) - Swarm behavior concepts
-- **scientific_swarm_schema.ttl** (151 lines) - Research workflow schema
+- **scientific_swarm_schema.ttl** (151 lines) - **Research workflow patterns** and scientific method ontology
 
 #### **Advanced Capabilities**:
 ```python
@@ -478,7 +590,7 @@ semant/
 │   │   ├── agentic_ontology.ttl # ✅ Agent coordination patterns (287 lines)
 │   │   ├── design_ontology.ttl # ✅ Design pattern vocabulary (240 lines)
 │   │   ├── swarm_ontology.ttl # ✅ Swarm behavior concepts (92 lines)
-│   │   ├── scientific_swarm_schema.ttl # ✅ Research workflow schema (151 lines)
+│   │   ├── scientific_swarm_schema.ttl # ✅ Research workflow patterns (151 lines)
 │   │   └── sample_data.ttl   # ✅ Example data for testing (76 lines)
 │   ├── queries/              # SPARQL query templates (extensible)
 │   └── kg_readme.md          # ✅ KG-specific debugging guide
@@ -777,7 +889,7 @@ await agent.initialize()  # CRITICAL: Always initialize
 - `remote_graph_manager.py` (74 lines) - **SPARQL endpoint integration** with SSL support
 
 **Ontology System (`kg/schemas/`) - 1,400+ Lines**:
-- `core.ttl` (1010 lines) - **Primary ontology** with 50+ classes (Machine, Sensor, Task, Agent, Workflow)
+- `core.ttl` (1010 lines) - **Primary ontology** with 50+ classes
 - `agentic_ontology.ttl` (287 lines) - **Agent coordination patterns** with clinical integration (FHIR, OMOP)
 - `design_ontology.ttl` (240 lines) - **Design pattern vocabulary** and architecture patterns
 - `swarm_ontology.ttl` (92 lines) - **Swarm behavior concepts** with example agent definitions
@@ -1292,232 +1404,12 @@ To prevent deadlocks, locks are acquired in this order:
 2. Status Lock (medium priority)
 3. Main Lock (lowest priority)
 
-## Recent Updates
+## Recent Updates (chronological)
 
-### 2025-06-09: Enhanced Agent Recovery System
-- Improved cache invalidation handling in agent recovery system
-- Fixed status preservation during cache failures
-- Added comprehensive testing for cache-related error scenarios
-- Updated documentation in `docs/developer_guide.md` and `technical_architecture.md`
+**2025-06-24 – Diary + Performance Refactor**
 
-For detailed information about these changes, see:
-- `docs/developer_guide.md` - Cache Invalidation Handling section
-- `technical_architecture.md` - Agent Recovery Architecture section
-- `tests/test_agent_recovery.py` - Cache invalidation test cases
-
-## Testing Agent Recovery
-
-### Running Recovery Tests
-```bash
-# Run all recovery tests
-pytest tests/test_agent_recovery.py -v
-
-# Run specific test cases
-pytest tests/test_agent_recovery.py::test_agent_recovery_success -v
-pytest tests/test_agent_recovery.py::test_agent_recovery_failure -v
-pytest tests/test_agent_recovery.py::test_agent_recovery_timeout -v
-```
-
-### Debugging Recovery Issues
-
-1. Check Knowledge Graph State
-```python
-# Query agent status
-await agent.query_knowledge_graph("""
-    SELECT ?status WHERE {
-        <agent_uri> <http://example.org/agent/hasStatus> ?status .
-    }
-""")
-
-# Verify recovery metrics
-await agent.query_knowledge_graph("""
-    SELECT ?metrics WHERE {
-        <agent_uri> <http://example.org/agent/hasRecoveryMetrics> ?metrics .
-    }
-""")
-```
-
-2. Validate Lock States
-- Check metrics_lock state
-- Verify status_lock acquisition
-- Confirm main lock release
-
-3. Monitor Resource Usage
-- Track memory consumption
-- Check CPU utilization
-- Monitor lock contention
-
-4. Common Issues
-- Inconsistent lock ordering
-- Cache invalidation failures
-- Timeout race conditions
-- State validation errors
-
-5. Best Practices
-- Follow lock hierarchy
-- Validate pre/post states
-- Clean up resources
-- Handle timeouts properly
-
-### Recovery Metrics
-
-Monitor these key metrics:
-- Recovery attempts/successes/failures
-- Strategy-specific performance
-- Resource utilization
-- Lock contention rates
-
-### Troubleshooting Steps
-
-1. Pre-recovery
-   - Validate initial state
-   - Check resource availability
-   - Verify lock states
-
-2. During Recovery
-   - Monitor timeout conditions
-   - Track resource usage
-   - Log state transitions
-
-3. Post-recovery
-   - Validate final state
-   - Verify metrics updates
-   - Check cache consistency
-
-4. Error Resolution
-   - Clean up resources
-   - Reset lock states
-   - Restore consistent state
-```
-
-## 🚀 2035 Salvage Roadmap – Message to Future Agents (added 2035-07-22)
-Refer to `docs/developer_guide.md` for full context. Keep this block visible near the top of README until the entire test suite is green.
-
-### Six-Step Debug Circuit
-1. Run **all** tests (`pytest -q`). Collect failures & coverage.
-2. Isolate a single failing test; reproduce with detailed logging.
-3. Scan repository for coupled code; gauge blast radius.
-4. Apply an *atomic* fix in an existing file (no new scripts).
-5. Re-run full suite & linters; ensure no regression, coverage non-decreasing.
-6. Update docs & changelog with timestamp + rationale.
-
-```mermaid
-graph TD;
-    A[Failing Tests] --> B[Test Census];
-    B --> C[Hot-Spot Profiling];
-    C --> D[Red→Green Patch];
-    D --> E[Local Refactor];
-    E --> F[Concurrency Hardening];
-    F --> G[Docs & Post-Mortem];
-    G --> H{All green?};
-    H -->|No| B;
-    H -->|Yes| I[Stable Build ✅];
-```
-
-> Do **not** remove this section until `pytest -q` returns **0 failures, 0 errors, 0 xfails**.
-
-#############################################################
-🚀  SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
-#############################################################
-Location  
-• Keep this block in **docs/developer_guide.md** and in every new PR body  
-  until `pytest -q` reports **0 failed / 0 error**.  
-• Update the "Defect-Ledger" table in the same file each time a red → green
-  transition occurs.
-
-----------------------------------------------------------------
-WHY WE USE THIS PLAYBOOK
-----------------------------------------------------------------
-1. Prevents drive-by script clutter — only existing files may change.  
-2. Breaks the huge rescue into SMALL, auditable work-packs.  
-3. Makes blast-radius visible before any code is touched.  
-4. Provides auditors with an immutable timeline of actions.  
-5. Guarantees Knowledge-Graph (KG) integrity at every step.  
-6. Ensures future agents can on-board instantly by reading one block.
-
-----------------------------------------------------------------
-🔧 SIX-STEP WORK-PACK CIRCUIT
-----------------------------------------------------------------
-| Step | Goal                    | Mandatory Commands / Actions                                                |
-|------|-------------------------|-----------------------------------------------------------------------------|
-| 1    | Test Census            | `pytest -q` → snapshot *fail / error* count, runtime, coverage              |
-| 2    | Root-Cause Isolation   | Re-run ONE failing test with `-vv`; enable `loguru` DEBUG                   |
-| 3    | Repo Impact Scan       | `ripgrep -n "<failing_fn>" agents/ kg/ tests/` + semantic search            |
-| 4    | Surgical Fix           | Edit **existing** files only; keep diff atomic; add timestamp comment       |
-| 5    | Regression Guard       | `pytest -q && pylint agents core` – expect **0 reds**                       |
-| 6    | Doc Sync & Commit      | Move ledger row 🔴→✅; update diagrams; commit w/ signed message            |
-
-----------------------------------------------------------------
-🗺️  HIGH-LEVEL FLOW (Mermaid)
-----------------------------------------------------------------
-```mermaid
-graph TD
-    subgraph Model Layer
-        M1[workflow_models.py] --> M2[workflow_types.py]
-    end
-    subgraph Logic Layer
-        L1[workflow_manager.py]
-        L2[workflow_persistence.py]
-        L3[workflow_monitor.py]
-    end
-    subgraph Agents & Registry
-        R1[agent_registry.py] --> L1
-    end
-    M2 --> L1 & L2
-    L1 -->|executes| L3
-    L1 & L2 & L3 --> T[Tests]
-```
-
-----------------------------------------------------------------
-WORK-PACK BACKLOG (update as you go)
-----------------------------------------------------------------
-| ID | Cluster / Symptom                              | Owner | Status |
-|----|-----------------------------------------------|--------|--------|
-| 01 | `WorkflowStep()` constructor arg mismatch      | ⬜      | 🔴 |
-| 02 | Monitor `resource_usage` list vs float compare | ⬜      | 🔴 |
-| 03 | `AgentMessage` vs dict in `TestAgent` helpers  | ⬜      | 🔴 |
-| 04 | Dynamic-agent factory "Unknown agent type"     | ⬜      | 🔴 |
-| 05 | rdflib `URIRef` NameErrors in reasoner tests   | ⬜      | 🔴 |
-| …  | _append new clusters here_                     |        |      |
-
-Legend: 🔴 = failing • 🟡 = PR open • ✅ = merged/green
-
-----------------------------------------------------------------
-KNOWLEDGE-GRAPH SANITY SNIPPET
-----------------------------------------------------------------
-Paste in `python -i` to validate after every workflow change:
-
-```python
-from agents.core.workflow_manager import WorkflowManager
-from agents.core.workflow_types   import Workflow
-from agents.core.agent_registry   import AgentRegistry
-import asyncio, nest_asyncio, textwrap
-nest_asyncio.apply()
-
-async def smoke():
-    reg = AgentRegistry(); await reg.initialize()
-    wm  = WorkflowManager(reg); await wm.initialize()
-    wf  = Workflow(workflow_id="kg_smoke", name="SmokeTest")
-    await wm.register_workflow(wf)
-    turtle = await wm.persistence.export_graph(format="turtle")
-    print(textwrap.shorten(turtle, 300))
-    q = """SELECT ?w WHERE { ?w <rdf:type> <http://example.org/core#Workflow> }"""
-    print("SPARQL rows:", await wm.persistence.query_graph(q))
-asyncio.run(smoke())
-```
-
-----------------------------------------------------------------
-GUARANTEES & CONSTRAINTS
-----------------------------------------------------------------
-• **NO NEW SCRIPTS** unless the roadmap explicitly calls for them.  
-• **Lock Order**: `_metrics_lock` → `_status_lock` → `_lock`  (never reverse).  
-• **KG Integrity**: every state change mirrored in KG or rolled-back.  
-• **Timeout Budget**: unit test ≤ 0.1 s, integration ≤ 5 s.  
-• **Cleanup**: always `await agent.cleanup()`; purge KG triples in `finally`.
-
-> Delete this block **only when** `pytest -q` prints  
-> `=== 0 failed, 0 error in *s ===`
-
-#############################################################
-✅ End-of-directive — copy into each PR until repo is green.  
-#############################################################
+• BaseAgent diary logging & KG persistence
+• Automatic namespace binding (`core:`, `agent:`, `rdf:`)
+• Metric dictionaries → CamelCase `core:has…` predicates
+• Raw SPARQL helper & friendly result aliases
+• Performance test cluster green

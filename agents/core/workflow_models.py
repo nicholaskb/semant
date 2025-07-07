@@ -25,6 +25,7 @@ class WorkflowStatus(str, Enum):
     FAILED = "failed"
     CANCELLED = "cancelled"
     ASSEMBLED = "assembled"
+    SKIPPED = "skipped"
 
 
 @dataclass

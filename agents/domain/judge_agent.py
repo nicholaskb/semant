@@ -13,12 +13,30 @@ class JudgeAgent(BaseAgent):
 
     def __init__(
         self,
-        agent_id: str,
+        agent_id: Optional[str] = None,
         agent_type: str = "judge",
         capabilities: Optional[Set[Capability]] = None,
         knowledge_graph: Optional[Any] = None,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
+        **kwargs
     ):
+        """Initialize JudgeAgent.
+
+        Parameters
+        ----------
+        knowledge_graph : Any, optional
+            Preferred argument name.  Tests in the repo historically passed
+            a positional alias ``kg``; we map that here for backward-compat.
+        kwargs : dict
+            Catch-all to absorb legacy aliases without breaking callers.
+        """
+        # Back-compat: map alias ``kg`` → ``knowledge_graph`` if provided.
+        if knowledge_graph is None and "kg" in kwargs:
+            knowledge_graph = kwargs.pop("kg")
+
+        if agent_id is None:
+            agent_id = f"judge_{uuid.uuid4().hex[:8]}"
+
         default_capabilities = {
             Capability(CapabilityType.MESSAGE_PROCESSING, "1.0"),
             Capability(CapabilityType.DECISION_MAKING, "1.0")
@@ -31,6 +49,8 @@ class JudgeAgent(BaseAgent):
             config=config
         )
         self._decisions = []
+        # Simple in-memory diary so unit tests can inspect judgement logs
+        self.diary: list[dict] = []
         self.logger = logger.bind(agent_id=agent_id)
 
     async def initialize(self) -> None:
@@ -82,11 +102,13 @@ class JudgeAgent(BaseAgent):
             decision = "Approved" if results else "Rejected"
 
         # Log the decision
-        self._decisions.append({
+        log_entry = {
             "timestamp": datetime.utcnow().isoformat(),
             "decision": decision,
             "data": challenge_data
-        })
+        }
+        self._decisions.append(log_entry)
+        self.diary.append(log_entry)
 
         return decision
 

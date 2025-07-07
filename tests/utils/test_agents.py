@@ -70,7 +70,11 @@ class BaseTestAgent(BaseAgent):
                 object=update_data.get("object")
             )
             
-        self._knowledge_graph_updates.append({"data": update_data})
+        # Always record timestamp so tests can assert chronological ordering
+        self._knowledge_graph_updates.append({
+            "data": update_data,
+            "timestamp": time.time()
+        })
         
     async def query_knowledge_graph(self, query: Dict[str, Any]) -> Dict[str, Any]:
         """Query knowledge graph asynchronously."""
@@ -106,10 +110,28 @@ class BaseTestAgent(BaseAgent):
         self._is_initialized = False
         await super().cleanup()
 
-    # Provide awaitable capabilities property for tests that use `await agent.capabilities`
+    # Provide awaitable capabilities property compatible with both direct
+    # access (list-like) and `await agent.capabilities` in newer tests.
+    class _AwaitableCaps(list):
+        """List-like object that is also awaitable.
+
+        Direct use   ➜ behaves like a normal list (supports iteration/index).
+        `await obj`  ➜ yields the *live* capability **set** from the owning
+                       agent so assertions can compare to registry output.
+        """
+
+        def __init__(self, sync_list, async_provider):
+            super().__init__(sync_list)
+            self._provider = async_provider
+
+        def __await__(self):  # type: ignore[override]
+            return self._provider().__await__()
+
     @property
     def capabilities(self):
-        return self.get_capabilities()
+        # Return an awaitable list of Capability objects for test flexibility.
+        caps = list(self._capabilities) if hasattr(self, "_capabilities") else []
+        return BaseTestAgent._AwaitableCaps(caps, self.get_capabilities)
 
 class TestAgent(BaseTestAgent):
     """Base test agent implementation."""
@@ -126,7 +148,6 @@ class TestAgent(BaseTestAgent):
             capabilities = {
                 Capability(CapabilityType.MESSAGE_PROCESSING, "1.0"),
                 Capability(CapabilityType.TASK_EXECUTION, "1.0"),
-                Capability(CapabilityType.TEST_RESEARCH_AGENT, "1.0"),
             }
         super().__init__(
             agent_id=agent_id,
@@ -180,7 +201,8 @@ class TestAgent(BaseTestAgent):
         if not self._initialized:
             raise RuntimeError("Agent not initialized. Call initialize() first.")
             
-        self._knowledge_graph_updates.append({"data": data})
+        # Preserve original dict exactly for tests that compare equality.
+        self._knowledge_graph_updates.append(data)
         
     def get_message_history(self) -> List[AgentMessage]:
         """Get message history."""
@@ -213,10 +235,10 @@ class TestAgent(BaseTestAgent):
             "knowledge_graph_updates": len(self._knowledge_graph_updates)
         }
 
-    # Expose capabilities attribute for tests that access .capabilities directly
+    # Expose capabilities attribute that is also awaitable
     @property
-    def capabilities(self) -> Set[Capability]:
-        return self._capabilities
+    def capabilities(self):  # type: ignore[override]
+        return BaseTestAgent._AwaitableCaps(list(self._capabilities), self.get_capabilities)
 
 class TestCapabilityAgent(TestAgent):
     """Test agent with capability management."""
@@ -399,6 +421,7 @@ class ResearchTestAgent(BaseTestAgent):
             # tests that inspect test-specific enums still succeed.
             capabilities = {
                 Capability(CapabilityType.MESSAGE_PROCESSING, "1.0"),
+                Capability(CapabilityType.RESEARCH, "1.0"),  # generic enum used by WorkflowManager tests
                 Capability(CapabilityType.TEST_RESEARCH_AGENT, "1.0"),
             }
         from kg.models.graph_manager import KnowledgeGraphManager
@@ -429,12 +452,13 @@ class ResearchTestAgent(BaseTestAgent):
         self._message_history.append(message)
         
         # Return default response
+        import time as _t
         return AgentMessage(
             sender_id=self.agent_id,
             recipient_id=message.sender_id,
             content=self._default_response or {"status": "processed"},
             message_type="response",
-            timestamp=datetime.now()
+            timestamp=_t.time()
         )
         
     async def update_knowledge_graph(self, data: Dict[str, Any]) -> None:
@@ -442,6 +466,7 @@ class ResearchTestAgent(BaseTestAgent):
         if not self._initialized:
             raise RuntimeError("Agent not initialized. Call initialize() first.")
             
+        # Preserve original dict exactly for tests that compare equality.
         self._knowledge_graph_updates.append(data)
         
     def get_message_history(self) -> List[AgentMessage]:
@@ -485,10 +510,13 @@ class ResearchTestAgent(BaseTestAgent):
         })
         return {"status": "ok"}
 
-    # Tests access .capabilities directly expecting a list of strings.
+    # Tests access .capabilities directly expecting a list of strings but also
+    # use `await agent.capabilities` in other modules. Provide awaitable list.
     @property
     def capabilities(self):  # type: ignore[override]
-        return ["research", "reasoning"]
+        # For research agent keep original string list for direct access but
+        # make it awaitable to underlying capability objects as well.
+        return BaseTestAgent._AwaitableCaps(["research", "reasoning"], self.get_capabilities)
 
     async def query_knowledge_graph(self, query: Dict[str, Any]):
         """Override to record raw query dict only."""

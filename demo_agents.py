@@ -63,6 +63,7 @@ class TaskPlannerAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Task Planner Agent initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -129,6 +130,7 @@ class ResearcherAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Researcher Agent initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -195,6 +197,7 @@ class AnalystAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Analyst Agent initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -266,6 +269,7 @@ class SummarizerAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Summarizer Agent initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -334,6 +338,7 @@ class AuditorAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Auditor Agent initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -396,6 +401,7 @@ class EngagementManagerAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Engagement Manager initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -493,6 +499,7 @@ class StrategyLeadAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Strategy Lead initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -591,6 +598,7 @@ class ImplementationLeadAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Implementation Lead initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",
@@ -703,6 +711,7 @@ class ValueRealizationLeadAgent(BaseAgent):
         
     async def initialize(self) -> None:
         """Initialize the agent."""
+        await super().initialize()
         self.logger.info("Value Realization Lead initialized")
         await self.knowledge_graph.add_triple(
             f"agent:{self.agent_id}",

@@ -1,5 +1,9 @@
 ## Test Suite Integration & Migration Notes
 
+> 📌  **Reminder:** Follow the "2035 Agent Recovery Hotfix Protocol" in `docs/developer_guide.md` for any changes touching recovery logic.
+
+> **2025-06-24 Update:** Core agent layer now auto-binds RDF prefixes (`core:`, `agent:`, `rdf:`) and writes status/metric triples in CamelCase (`core:hasMessageCount`, `core:hasStatus`).  `query_knowledge_graph()` accepts raw SPARQL and returns `list[dict]`, unblocking all performance tests.
+
 ### Common Pitfalls and Solutions
 
 #### 1. Async Agent Capability Access

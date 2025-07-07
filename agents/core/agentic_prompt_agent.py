@@ -125,6 +125,8 @@ class AgenticPromptAgent(BaseAgent):
                 # Add RDFS label expected by tests for code_review only
                 if prompt_type == "code_review":
                     kg.add((prompt_uri, RDFS.label, Literal("Code Review Prompt")))
+                # Add timestamp triple so history queries return rows
+                kg.add((prompt_uri, URIRef("prompt:hasTimestamp"), Literal(datetime.now().isoformat())))
             # Also update via update_graph for other info
             if self.knowledge_graph and hasattr(self.knowledge_graph, 'update_graph'):
                 await self.knowledge_graph.update_graph({
@@ -308,11 +310,49 @@ class AgenticPromptAgent(BaseAgent):
         if self.knowledge_graph:
             await self.knowledge_graph.update_graph(update_data)
             
-    async def query_knowledge_graph(self, query: Dict[str, Any]) -> Dict[str, Any]:
-        """Query the knowledge graph for prompt and review information."""
+    async def query_knowledge_graph(self, query_input):  # type: ignore[override]
+        """Query the knowledge graph for prompt and review information.
+
+        This helper accepts either a raw SPARQL string or the legacy
+        `{"sparql": "..."}` dict used across older agent APIs so that unit
+        tests can pass whichever format they prefer.  Additionally it provides
+        a fallback when `self.knowledge_graph` is a plain ``rdflib.Graph``
+        instance (used by the lightweight test fixtures).
+        """
         if not self.knowledge_graph:
             return {}
-        return await self.knowledge_graph.query_graph(query.get('sparql', ''))
+
+        # Normalise query string
+        if isinstance(query_input, str):
+            sparql_query = query_input
+        elif isinstance(query_input, dict):
+            sparql_query = query_input.get("sparql", "")
+        else:
+            raise ValueError("Unsupported query format – expected str or dict")
+
+        if not sparql_query:
+            return {}
+
+        # If underlying KG exposes async query_graph use it.
+        if hasattr(self.knowledge_graph, "query_graph"):
+            return await self.knowledge_graph.query_graph(sparql_query)
+
+        # Fallback to direct rdflib query (synchronous) and convert rows.
+        if hasattr(self.knowledge_graph, 'query'):
+            # rdflib.Graph path – ensure 'prompt' prefix bound if missing
+            try:
+                from rdflib.namespace import Namespace
+                self.knowledge_graph.bind('prompt', Namespace('prompt:'), override=False)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            results = []
+            for row in self.knowledge_graph.query(sparql_query):  # type: ignore[attr-defined]
+                row_dict = {str(var): str(row[var]) if row[var] is not None else None for var in row.labels}
+                results.append(row_dict)
+            return results
+
+        # No supported API
+        return {}
         
     async def _handle_metrics_request(self, message: AgentMessage) -> AgentMessage:
         """Return simple prompt-usage metrics."""

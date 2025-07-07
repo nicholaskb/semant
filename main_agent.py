@@ -3,7 +3,7 @@ import os
 from agents.core.reasoner import KnowledgeGraphReasoner
 from rdflib import Graph, Namespace, Literal, URIRef
 from uuid import uuid4
-from artifact import Artifact, ARTIFACT
+from kg.models import Artifact, ARTIFACT
 from typing import List, Dict, Any
 from datetime import datetime
 from tavily import TavilyClient

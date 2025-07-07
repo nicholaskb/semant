@@ -411,8 +411,9 @@ class ResearchTestAgent(BaseTestAgent):
     """Test agent for research operations."""
     
     def __init__(self, agent_id: str = None, agent_type: str = "research", capabilities: Set[Capability] = None, **kwargs):
-        # Ignore optional workflow kwargs like dependencies
-        _ = kwargs.pop("dependencies", None) if "kwargs" in locals() else None
+        # Preserve optional workflow dependencies so workflow manager can trigger
+        # downstream agents in dependency tests.
+        self.dependencies = list(kwargs.pop("dependencies", []))
 
         if capabilities is None:
             # Include both generic and test-specific research capabilities so
@@ -538,8 +539,8 @@ class DataProcessorTestAgent(BaseTestAgent):
         knowledge_graph: Optional[KnowledgeGraphManager] = None,
         **kwargs
     ):
-        # Extract and ignore workflow-specific params like dependencies
-        _ = kwargs.pop("dependencies", None) if "kwargs" in locals() else None
+        # Preserve workflow-specific dependencies list to enable dependency execution tests.
+        self.dependencies = list(kwargs.pop("dependencies", []))
 
         default_capabilities = {
             Capability(CapabilityType.MESSAGE_PROCESSING, "1.0"),
@@ -564,12 +565,6 @@ class DataProcessorTestAgent(BaseTestAgent):
             await super().initialize()
             self._is_initialized = True
             
-        # Add placeholder message history entry
-        self._message_history.append({
-            "timestamp": time.time(),
-            "type": "init"
-        })
-        
     async def get_capabilities(self) -> Set[Capability]:
         """Get agent capabilities."""
         if not self._is_initialized:

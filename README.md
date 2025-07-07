@@ -1430,3 +1430,29 @@ currently yields:
 Most failures are assertion‐style mismatches (no crashes).  Follow the dev-guide TODOs to finish.
 
 👉  **Next engineer:** jump straight to the new _Finish-Line Checklist_ inside `docs/developer_guide.md` for a step-by-step plan (with Mermaid diagram) to bring the suite to 100 % green.
+
+# Workflow Manager – Weighted Agent Selection (from 55-line README)
+
+The `WorkflowManager` supports **agent weighting** (e.g., CliftonStrengths® scores) when `load_balancing_strategy="weighted"`.
+
+```python
+# 1. Register an agent with a weight (any positive float)
+await agent_registry.register_agent(
+    agent,
+    await agent.get_capabilities(),
+    metadata={"weight": 8.7},
+)
+
+# 2. Create a workflow that uses the weighted strategy
+wf_id = await workflow_manager.create_workflow(
+    name="Data-Enrichment",
+    description="Enrich raw sensor data and publish insights",
+    required_capabilities={"data_processing", "research"},
+    load_balancing_strategy="weighted",
+)
+```
+
+If no weight is provided the default is **1**.  When the strategy is
+`weighted`, the manager calls `random.choices` with these weights so an agent
+with weight 10 is ten times more likely to be selected than weight 1.  Other
+strategies (`round_robin`, `random`) ignore the field.

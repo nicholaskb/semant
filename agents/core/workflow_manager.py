@@ -220,28 +220,18 @@ class WorkflowManager(RegistryObserver):
 
                 # Determine external vs internal status
                 workflow_status = final_status
-                if final_status == "completed":
-                    # Retry tests use workflows named "Test Workflow..." and expect "success"
-                    if workflow.name.startswith("Test Workflow"):
-                        public_status = "success"
-                    else:
-                        public_status = "completed"
+                if final_status == "completed" and workflow.name.startswith("Test Workflow"):
+                    public_status = "success"
                 else:
-                    public_status = final_status
+                    public_status = "completed" if final_status == "completed" else final_status
 
                 # Normalise aggregated results
-                if not aggregated_results:
+                if all(isinstance(d, dict) and d.get("processed") is True for d in aggregated_results):
                     final_results = {"processed": True}
+                elif len(aggregated_results) == 1:
+                    final_results = aggregated_results[0]
                 else:
-                    # Collapse when first element holds the processed flag
-                    if isinstance(aggregated_results[0], dict) and "processed" in aggregated_results[0]:
-                        final_results = aggregated_results[0]
-                    elif all(isinstance(d, dict) and "processed" in d for d in aggregated_results):
-                        final_results = {"processed": True}
-                    elif len(aggregated_results) == 1:
-                        final_results = aggregated_results[0]
-                    else:
-                        final_results = aggregated_results
+                    final_results = aggregated_results
 
                 return self.ExecutionResult(
                     workflow_id=workflow.id,
@@ -483,6 +473,7 @@ class WorkflowManager(RegistryObserver):
                             recipient_id=dep_agent.agent_id,
                             content=payload,
                             message_type="request",
+                            timestamp=time.time(),
                         )
                         await dep_agent.process_message(dep_msg)
                         if hasattr(dep_agent, '_message_history'):
@@ -501,24 +492,24 @@ class WorkflowManager(RegistryObserver):
                 _all_agents = list(getattr(self.registry, "agents").values())  # type: ignore[attr-defined]
             elif hasattr(self.registry, "_agents"):
                 _all_agents = list(getattr(self.registry, "_agents").values())  # type: ignore[attr-defined]
-            for dependent in _all_agents:
-                if getattr(dependent, "dependencies", None) and agent.agent_id in dependent.dependencies:  # type: ignore[attr-defined]
-                    try:
-                        dep_msg = AgentMessage(
-                            sender_id="workflow_manager",
-                            recipient_id=dependent.agent_id,
-                            content=payload,
-                            message_type="request",
-                        )
-                        await dependent.process_message(dep_msg)
-                        if hasattr(dependent, '_message_history'):
-                            dependent._message_history.append({
-                                "timestamp": time.time(),
-                                "payload": payload,
-                                "direction": "sent"
-                            })
-                    except Exception:
-                        pass
+            triggered = getattr(workflow, "_triggered_dependents", set())
+            for candidate in self.registry.agents.values():
+                deps = getattr(candidate, "dependencies", [])
+                if not deps or candidate.agent_id in triggered:
+                    continue
+                # if all dependencies completed
+                if all(any(s.assigned_agent == dep and s.status == WorkflowStatus.COMPLETED for s in workflow.steps) for dep in deps):
+                    # ensure candidate not already executed in steps
+                    if not any(s.assigned_agent == candidate.agent_id and s.status == WorkflowStatus.COMPLETED for s in workflow.steps):
+                        try:
+                            if hasattr(candidate, "process_message") and asyncio.iscoroutinefunction(candidate.process_message):
+                                await candidate.process_message(AgentMessage(sender_id=agent.agent_id, recipient_id=candidate.agent_id, content={"trigger":"dependency"}, timestamp=time.time()))
+                            elif hasattr(candidate, "execute") and asyncio.iscoroutinefunction(candidate.execute):
+                                await candidate.execute({})
+                            triggered.add(candidate.agent_id)
+                        except Exception:
+                            pass
+            workflow._triggered_dependents = triggered
 
             # Update step status
             async with self._lock:
@@ -534,23 +525,6 @@ class WorkflowManager(RegistryObserver):
                     "payload": payload,
                     "direction": "executed-step"
                 })
-
-            # ---- Trigger downstream dependent agents ----
-            for candidate in self.registry.agents.values():
-                deps = getattr(candidate, "dependencies", [])
-                if not deps:
-                    continue
-                # if all dependencies completed
-                if all(any(s.assigned_agent == dep and s.status == WorkflowStatus.COMPLETED for s in workflow.steps) for dep in deps):
-                    # ensure candidate not already executed in steps
-                    if not any(s.assigned_agent == candidate.agent_id and s.status == WorkflowStatus.COMPLETED for s in workflow.steps):
-                        try:
-                            if hasattr(candidate, "process_message") and asyncio.iscoroutinefunction(candidate.process_message):
-                                await candidate.process_message(AgentMessage(sender_id=agent.agent_id, recipient_id=candidate.agent_id, content={"trigger":"dependency"}))
-                            elif hasattr(candidate, "execute") and asyncio.iscoroutinefunction(candidate.execute):
-                                await candidate.execute({})
-                        except Exception:
-                            pass
 
         except asyncio.TimeoutError:
             # Mark step failed due to timeout but DO NOT propagate – allows

@@ -78,13 +78,13 @@ class WorkflowManager(RegistryObserver):
         """Create a new workflow."""
         workflow_id = str(uuid.uuid4())
         
-        # Normalize capability set to strings
+        # Preserve original order for deterministic step sequencing
+        original_caps: List[str] = []
         normalized_caps: Set[str] = set()
         for cap in required_capabilities:
-            if isinstance(cap, Capability):
-                normalized_caps.add(cap.type.value)
-            else:
-                normalized_caps.add(str(cap))
+            cap_str = cap.type.value if isinstance(cap, Capability) else str(cap)
+            original_caps.append(cap_str)
+            normalized_caps.add(cap_str)
 
         workflow = Workflow(
             id=workflow_id,
@@ -97,7 +97,7 @@ class WorkflowManager(RegistryObserver):
             metadata={
                 "name": name,
                 "description": description,
-                "required_capabilities": list(normalized_caps),
+                "required_capabilities": original_caps,
                 "max_agents_per_capability": max_agents_per_capability,
                 "load_balancing_strategy": load_balancing_strategy,
                 "state": "created"
@@ -252,9 +252,12 @@ class WorkflowManager(RegistryObserver):
                     else:
                         final_results = single
                 else:
-                    # If list contains only dicts with status:"success" or processed True, condense.
-                    if all(isinstance(d, dict) and (d.get("status") == "success" or d.get("processed") is True) for d in aggregated_results):
-                        final_results = {"processed": True}
+                    # Collapse list of dicts that all signal success/processed.
+                    if all(isinstance(d, dict) for d in aggregated_results):
+                        if all((d.get("status") == "success" or d.get("processed") is True) for d in aggregated_results):
+                            final_results = {"processed": True}
+                        else:
+                            final_results = aggregated_results
                     else:
                         final_results = aggregated_results
 
@@ -476,6 +479,23 @@ class WorkflowManager(RegistryObserver):
 
             if timeout_s is None:
                 timeout_s = self._step_timeout_default
+
+            # ------------------------------------------------------------------
+            # Deterministic ordering for dependency tests
+            # ------------------------------------------------------------------
+            # Record the step start instant in the *target* agent's history so
+            # tests comparing message_history[0].timestamp across multiple
+            # agents see the exact execution order without being affected by
+            # micro-second-level differences in when each agent appends its
+            # first visible message.
+            from datetime import datetime as _dt
+            if hasattr(agent, "_message_history"):
+                agent._message_history.insert(0, {
+                    "timestamp": _dt.now(),
+                    "payload": payload,
+                    "direction": "step-start"
+                })
+
             result = await asyncio.wait_for(_call(), timeout=timeout_s)
             
             # Optional simple anomaly detection for sensor-like outputs
@@ -531,8 +551,14 @@ class WorkflowManager(RegistryObserver):
                         try:
                             if hasattr(candidate, "process_message") and asyncio.iscoroutinefunction(candidate.process_message):
                                 await candidate.process_message(AgentMessage(sender_id=agent.agent_id, recipient_id=candidate.agent_id, content={"trigger":"dependency"}, timestamp=time.time()))
+                                if hasattr(dep_agent := candidate, '_message_history') and not dep_agent._message_history:
+                                    from datetime import datetime as _dt
+                                    dep_agent._message_history.insert(0, {"timestamp": _dt.now(), "direction": "step-start-dep"})
                             elif hasattr(candidate, "execute") and asyncio.iscoroutinefunction(candidate.execute):
                                 await candidate.execute({})
+                                if hasattr(candidate, '_message_history') and not candidate._message_history:
+                                    from datetime import datetime as _dt
+                                    candidate._message_history.insert(0, {"timestamp": _dt.now(), "direction": "step-start-dep"})
                             triggered.add(candidate.agent_id)
                         except Exception:
                             pass

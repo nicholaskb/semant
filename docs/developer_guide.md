@@ -1283,6 +1283,1291 @@
 7. [Knowledge Graph Integration](#knowledge-graph-integration)
 8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
 9. [Production Deployment](#production-deployment)
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
+10. [Best Practices](#best-practices)
+11. [Concurrency and Lock Management](#concurrency-and-lock-management)
+12. [Agent Recovery System](#agent-recovery-system)
+
+## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
+
+```
+# Developer Guide: Multi-Agent Orchestration System
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture Components](#architecture-components)
+3. [Development Setup](#development-setup)
+4. [Testing Framework](#testing-framework)
+5. [Performance Optimization](#performance-optimization)
+6. [Agent Development](#agent-development)
+7. [Knowledge Graph Integration](#knowledge-graph-integration)
+8. [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+9. [Production Deployment](#production-deployment)
 10. [Best Practices](#best-practices)
 11. [Concurrency and Lock Management](#concurrency-and-lock-management)
 12. [Agent Recovery System](#agent-recovery-system)

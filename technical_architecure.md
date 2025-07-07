@@ -238,6 +238,27 @@ graph TD
 - Capability management
 - Event handling
 
+##### Work-Pack 07 – Sensor/DataProcessor Consolidation Diagram (added 2025-07-07)
+```mermaid
+classDiagram
+    class BaseAgent {
+        <<abstract>>
+    }
+    class BaseStreamingAgent {
+        +buffer_size:int
+        +stream_handler()
+    }
+    class SensorAgent {
+        +collect_sensor_data()
+    }
+    class DataProcessorAgent {
+        +transform_data()
+    }
+    BaseAgent <|-- BaseStreamingAgent
+    BaseStreamingAgent <|-- SensorAgent
+    BaseStreamingAgent <|-- DataProcessorAgent
+```
+
 ### 8. Development Infrastructure
 
 #### Testing Framework
@@ -481,3 +502,35 @@ graph TD;
 ### 2025-07-25 Note
 Current red cluster being addressed: **Work-Pack 06 – Fixture Contract & KG Init**.  
 For detailed plan and progress, refer to `docs/developer_guide.md` backlog.
+
+### 🔄 Eliminating Duplicate Core Entities (2025-07-07)
+The system must avoid parallel implementations of foundational data models. The first target is `AgentMessage`.
+
+```mermaid
+graph LR
+    subgraph Messaging
+        A1[message_types.AgentMessage] -->|re-export| B1[base_agent.AgentMessage]
+    end
+    subgraph Agents
+        AnyAgent --> B1
+    end
+```
+
+Design rules:
+1. **Single Source of Truth**: `agents/core/message_types.py::AgentMessage` is authoritative.
+2. **Backwards Compatibility**: Legacy code importing from `base_agent` receives the same class via re-export.
+3. **Type Consistency**: All serializers, workflow aggregators, and tests must treat `AgentMessage` uniformly.
+4. **Removal Policy**: Once downstream modules are migrated, the duplicate definition in `base_agent.py` will be deprecated and removed after three release cycles.
+
+See the detailed migration steps in `docs/developer_guide.md` (Core Implementation Deduplication section).
+
+### 2025-07-07 – Health Monitoring Consolidation
+`agents/core/agent_health.py` was merged into `agents/core/workflow_manager.py`.
+The `AgentHealth` helper is now an *internal* class—see the bottom of that file.
+
+```mermaid
+graph TD
+    WM[WorkflowManager] --> AH[AgentHealth (internal)]
+```
+
+*Rationale*: removes an orphan file flagged as unused by static analysis and clarifies ownership.

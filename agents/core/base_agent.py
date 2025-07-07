@@ -358,14 +358,18 @@ class BaseAgent(ABC):
             message_type = message.get("message_type", "message")
             timestamp = message.get("timestamp")
             metadata = message.get("metadata")
-            message = AgentMessage(
+            # Build kwargs dynamically so we don\'t pass None which violates Pydantic validation
+            _kwargs = dict(
                 sender_id=sender_id,
                 recipient_id=recipient_id,
                 content=content,
-                timestamp=timestamp,
                 message_type=message_type,
                 metadata=metadata,
             )
+            if timestamp is not None:
+                _kwargs["timestamp"] = timestamp
+
+            message = AgentMessage(**_kwargs)
 
         # Handle test-driven simulated failures
         if isinstance(message, AgentMessage):
@@ -821,3 +825,206 @@ class BaseAgent(ABC):
     async def capabilities(self):  # type: ignore[override]
         """Awaitable alias returning the agent's capability set (legacy)."""
         return await self.get_capabilities() 
+
+    async def _add_simple_triple(self, subject: str, predicate: str, obj: str) -> None:
+        """Utility method for child agents to add a single triple to the knowledge graph.
+        This centralises error-handling and lock acquisition so individual agent
+        classes don't duplicate boiler-plate logic.
+        Args:
+            subject: RDF subject (URI string)
+            predicate: RDF predicate (URI string)
+            obj: RDF object (URI or literal string)
+        """
+        if not self.knowledge_graph:
+            # No KG attached – nothing to do but log for traceability
+            self.logger.debug("Knowledge graph not configured; skipping add_triple")
+            return
+
+        try:
+            async with self._kg_lock:
+                if hasattr(self.knowledge_graph, "add_triple"):
+                    await self.knowledge_graph.add_triple(subject, predicate, obj)
+                elif hasattr(self.knowledge_graph, "add"):
+                    # Fall back to rdflib Graph interface
+                    self.knowledge_graph.add((URIRef(subject), URIRef(predicate), Literal(obj)))
+        except Exception as e:
+            # Centralised logging to ensure consistent error messages across agents
+            self.logger.error(f"_add_simple_triple failed for agent {self.agent_id}: {str(e)}")
+            raise
+
+class BaseStreamingAgent(BaseAgent):
+    """Common base class for simple streaming-style agents (sensor, data-processor).
+
+    Sub-classes declare:
+        • `_required_fields`: set[str] – keys that must appear in message.content.
+        • `_response_message_type`: str – message_type suffix for responses.
+        • `_build_kg_update_dict(message)` – returns dict passed to `update_knowledge_graph`.
+    The default `_process_message_impl` handles validation, KG update and
+    success / error reply generation so concrete agents don't repeat boiler-plate.
+    """
+
+    _required_fields: Set[str] = set()
+    _response_message_type: str = "stream_response"
+    _success_message: str = "success"
+
+    # ------------------------------------------------------------------
+    # Sub-classes MAY override these for special behaviour.
+    # ------------------------------------------------------------------
+    async def _build_kg_update_dict(self, message: "AgentMessage") -> Dict[str, Any]:
+        """Return a dict passed to update_knowledge_graph().  Default just echoes."""
+        return message.content if isinstance(message.content, dict) else {}
+
+    # ------------------------------------------------------------------
+    async def _process_message_impl(self, message: "AgentMessage") -> "AgentMessage":
+        # Basic validation
+        missing = [f for f in self._required_fields if f not in (message.content or {})]
+        if missing:
+            return AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={"error": f"Missing required fields: {', '.join(missing)}"},
+                timestamp=message.timestamp,
+                message_type=self._response_message_type,
+            )
+        # Attempt KG update
+        try:
+            await self.update_knowledge_graph(await self._build_kg_update_dict(message))
+            # Compose response payload
+            resp_content = {"status": self._success_message}
+            try:
+                extra = await self._additional_response_content(message)
+                if extra:
+                    resp_content.update(extra)
+            except Exception:
+                pass
+            return AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content=resp_content,
+                timestamp=message.timestamp,
+                message_type=self._response_message_type,
+            )
+        except Exception as e:
+            return AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={"error": str(e)},
+                timestamp=message.timestamp,
+                message_type=self._response_message_type,
+            )
+
+    async def _additional_response_content(self, message: "AgentMessage") -> Dict[str, Any]:
+        """Hook for subclasses to inject extra fields into success response."""
+        return {}
+
+# ------------------------------------------------------------------
+# Delegation-capable agent (migrated from agents/core/multi_agent.py)
+# ------------------------------------------------------------------
+from typing import List, Optional  # Already imported above but kept for clarity
+
+class MultiAgent(BaseAgent):
+    """Agent that can delegate incoming messages to sub-agents that possess
+    the required capabilities.  Originally defined in *agents/core/multi_agent.py*.
+    Consolidated here (2025-07-07) so the delegation helper lives next to the
+    core Agent base-class and the standalone file can be removed.
+    """
+
+    def __init__(
+        self,
+        agent_id: str,
+        capabilities: List[str],
+        sub_agents: List["BaseAgent"],
+        *,
+        knowledge_graph: Optional["KnowledgeGraphManager"] = None,
+        config: Optional[dict] = None,
+    ):
+        super().__init__(
+            agent_id=agent_id,
+            agent_type="multi",
+            capabilities={Capability(c) if not isinstance(c, Capability) else c for c in capabilities},
+            knowledge_graph=knowledge_graph,
+            config=config or {},
+        )
+        self.sub_agents = sub_agents
+        self._validate_sub_agents()
+
+    # ------------------------------------------------------------------
+    # Helper: ensure at least one sub-agent covers every advertised capability
+    # ------------------------------------------------------------------
+    def _validate_sub_agents(self):
+        sub_caps = set()
+        for ag in self.sub_agents:
+            try:
+                # Capabilities may not be initialised yet → guard
+                caps = getattr(ag, "_capabilities", None)
+                if caps is None:
+                    continue
+                if asyncio.iscoroutinefunction(caps.get_all):
+                    # Avoid blocking event-loop if not initialised
+                    continue
+                sub_caps.update(caps._capabilities.keys() if hasattr(caps, "_capabilities") else [])
+            except Exception:
+                continue
+        missing = {c.type if isinstance(c, Capability) else c for c in self._initial_capabilities} - sub_caps
+        if missing:
+            raise ValueError(f"Sub-agents missing required capabilities: {missing}")
+
+    # ------------------------------------------------------------------
+    # Delegation logic – broadcast to all capable sub-agents and merge replies
+    # ------------------------------------------------------------------
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
+        try:
+            capable = [
+                ag for ag in self.sub_agents
+                if any(
+                    cap in (await ag.get_capabilities())
+                    for cap in (await self.get_capabilities())
+                )
+            ]
+            if not capable:
+                raise ValueError("No sub-agents can handle the requested capabilities")
+
+            response = AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={},
+                message_type="response",
+            )
+            for ag in capable:
+                try:
+                    res = await ag.process_message(message)
+                    if isinstance(res, AgentMessage):
+                        if isinstance(res.content, dict):
+                            response.content.update(res.content)
+                        else:
+                            # Namespace non-dict payloads under agent id key
+                            response.content[ag.agent_id] = res.content
+                except Exception as inner:
+                    self.logger.error(
+                        f"Error processing message with agent {ag.agent_id}: {inner}"
+                    )
+                    raise
+            return response
+        except Exception as e:
+            return AgentMessage(
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
+                content={"error": str(e)},
+                message_type="error",
+            )
+
+# ------------------------------------------------------------------
+# AgentMessage singleton re-export (2025-07-07)
+# ------------------------------------------------------------------
+# The canonical implementation lives in `agents.core.message_types`. Replace the
+# local legacy definition by aliasing the canonical class under the same name
+# to ensure system-wide consistency while preserving backward-compat import paths.
+# NOTE: This must stay at the *end* of the file so every reference within
+# `base_agent.py` resolves to the canonical class at runtime.
+
+from agents.core.message_types import AgentMessage as _CanonicalAgentMessage  # noqa: E402
+
+AgentMessage = _CanonicalAgentMessage  # type: ignore[assignment]
+
+# Public re-export for `from agents.core.base_agent import AgentMessage`
+__all__ = globals().get("__all__", []) + ["AgentMessage"] 

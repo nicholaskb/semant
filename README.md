@@ -4,6 +4,10 @@
 
 > 📌  See **"2035 Agent Recovery Hotfix Protocol"** in `docs/developer_guide.md` — copy that block into every new PR until `tests/test_agent_recovery.py` is 100 % green.
 
+> **2025-07-07 UPDATE**  
+> • Consolidated `agents/core/agent_health.py` into `agents/core/workflow_manager.py` (now under *Internal health monitoring helpers*).  
+> • No public API changes; file removed to streamline core package.
+
 A robust and scalable multi-agent orchestration system with knowledge graph integration, workflow management, and comprehensive testing infrastructure.
 
 ## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
@@ -68,7 +72,7 @@ WORK-PACK BACKLOG (update as you go)
 |----|-----------------------------------------------|--------|--------|
 | 01 | `WorkflowStep()` constructor arg mismatch      | ⬜      | 🔴 |
 | 02 | Monitor `resource_usage` list vs float compare | ⬜      | 🔴 |
-| 03 | `AgentMessage` vs dict in `TestAgent` helpers  | ⬜      | 🔴 |
+| 03 | `AgentMessage` class duplication / dict fallback inconsistency | ⬜      | 🟡 |
 | 04 | Dynamic-agent factory "Unknown agent type"     | ⬜      | 🔴 |
 | 05 | rdflib `URIRef` NameErrors in reasoner tests   | ⬜      | 🔴 |
 | …  | _append new clusters here_                     |        |      |
@@ -1456,3 +1460,52 @@ If no weight is provided the default is **1**.  When the strategy is
 `weighted`, the manager calls `random.choices` with these weights so an agent
 with weight 10 is ten times more likely to be selected than weight 1.  Other
 strategies (`round_robin`, `random`) ignore the field.
+
+```
+
+## 🗂️ Work-Pack 07 – Redundant Agent Consolidation (SensorAgent ⇢ DataProcessorAgent)
+
+> **Copy / paste this block into every PR that touches agent classes until both `SensorAgent` and `DataProcessorAgent` inherit from `BaseStreamingAgent` and _all_ tests pass.**
+
+### 🎯 Objective
+Eliminate the duplicate streaming logic in `sensor_agent.py` and `data_processor_agent.py` by moving shared functionality into `agents/core/streaming_agent.py::BaseStreamingAgent`.
+
+### 🔧 SIX-STEP DEBUG & REFACTOR CIRCUIT
+| # | Goal | Why it helps |
+|---|------|--------------|
+| 1 | **Test Census** – `pytest tests/agents/test_sensor* -q` | Baseline reds & timing |
+| 2 | **Hot-Spot Isolation** – diff coverage between the two agents | Pinpoint identical blocks |
+| 3 | **Impact Scan** – `rg "SensorAgent\\|DataProcessorAgent"` repo-wide | Reveal import sites & hidden coupling |
+| 4 | **Surgical Extraction** – move duplicate methods into `BaseStreamingAgent` | Single source of truth ↓ bugs |
+| 5 | **Regression Guard** – run full suite + `pylint agents/` | Ensure no behavioural drift |
+| 6 | **Docs & Diagram Sync** – update README & technical_architecure.md | Keep docs aligned |
+
+```mermaid
+classDiagram
+    class BaseAgent {
+        <<abstract>>
+    }
+    class BaseStreamingAgent {
+        +buffer_size:int
+        +stream_handler()
+    }
+    class SensorAgent {
+        +collect_sensor_data()
+    }
+    class DataProcessorAgent {
+        +transform_data()
+    }
+    BaseAgent <|-- BaseStreamingAgent
+    BaseStreamingAgent <|-- SensorAgent
+    BaseStreamingAgent <|-- DataProcessorAgent
+```
+
+### Implementation Notes
+1. **No New Scripts** – reuse `BaseStreamingAgent`; do not create new modules.
+2. **Lock Ordering** – always `_metrics_lock → _status_lock → _lock`.
+3. **KG Mirrors** – any new state added to the base class must be mirrored in the knowledge graph.
+4. **Timestamp Comments** – tag moved code with `# 2025-07-07 WP-07`.
+5. **Backwards Compatibility** – factory keys (`"sensor"`, `"data_processor"`) remain valid.
+6. **Deletion Phase** – remove duplicated code only after subclassing is complete and tests are green.
+
+> Remove this block once `pytest -q` prints `=== 0 failed, 0 error ===` and the WP-07 backlog row is ✅.

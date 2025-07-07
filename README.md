@@ -1428,3 +1428,5 @@ currently yields:
 240 passed, 1 skipped, 5 failed
 ```
 Most failures are assertion‐style mismatches (no crashes).  Follow the dev-guide TODOs to finish.
+
+👉  **Next engineer:** jump straight to the new _Finish-Line Checklist_ inside `docs/developer_guide.md` for a step-by-step plan (with Mermaid diagram) to bring the suite to 100 % green.

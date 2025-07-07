@@ -218,10 +218,23 @@ class WorkflowManager(RegistryObserver):
                             "recommendation": "Investigate high sensor reading" if reading_val > 90 else "OK"
                         })
 
+                # Determine external vs internal status
+                workflow_status = final_status
+                public_status = "success" if final_status == "completed" else final_status
+
+                # Normalise aggregated results
+                if not aggregated_results:
+                    final_results = {"processed": True}
+                elif len(aggregated_results) == 1 and isinstance(aggregated_results[0], dict):
+                    final_results = aggregated_results[0]
+                else:
+                    final_results = aggregated_results
+
                 return self.ExecutionResult(
                     workflow_id=workflow.id,
-                    status=final_status,
-                    results=aggregated_results if aggregated_results else {"processed": True},
+                    status=public_status,
+                    workflow_status=workflow_status,
+                    results=final_results,
                 )
                 
             except asyncio.TimeoutError:
@@ -424,7 +437,7 @@ class WorkflowManager(RegistryObserver):
                     # Record message in agent history if attribute available
                     if hasattr(agent, '_message_history'):
                         agent._message_history.append({
-                            "timestamp": time.time(),
+                            "timestamp": datetime.now(),
                             "payload": payload,
                             "direction": "sent"
                         })
@@ -461,7 +474,7 @@ class WorkflowManager(RegistryObserver):
                         await dep_agent.process_message(dep_msg)
                         if hasattr(dep_agent, '_message_history'):
                             dep_agent._message_history.append({
-                                "timestamp": time.time(),
+                                "timestamp": datetime.now(),
                                 "payload": payload,
                                 "direction": "sent"
                             })
@@ -487,7 +500,7 @@ class WorkflowManager(RegistryObserver):
                         await dependent.process_message(dep_msg)
                         if hasattr(dependent, '_message_history'):
                             dependent._message_history.append({
-                                "timestamp": time.time(),
+                                "timestamp": datetime.now(),
                                 "payload": payload,
                                 "direction": "sent"
                             })
@@ -504,10 +517,35 @@ class WorkflowManager(RegistryObserver):
             # inspect its message history even when execute() path is used instead of process_message.
             if hasattr(agent, "_message_history"):
                 agent._message_history.append({
-                    "timestamp": time.time(),
+                    "timestamp": datetime.now(),
                     "payload": payload,
                     "direction": "executed-step"
                 })
+
+            # --- Trigger downstream dependent agents once their prerequisites are met ---
+            try:
+                for cand in self.registry.agents.values():  # type: ignore[attr-defined]
+                    if cand is agent:
+                        continue
+                    deps = getattr(cand, "dependencies", [])
+                    if not deps:
+                        continue
+                    # skip if cand already ran
+                    if any(s.assigned_agent == cand.agent_id for s in workflow.steps):
+                        continue
+                    if all(
+                        any(s.assigned_agent == dep and s.status == WorkflowStatus.COMPLETED for s in workflow.steps)
+                        for dep in deps
+                    ):
+                        dep_msg = AgentMessage(
+                            sender_id="workflow_manager",
+                            recipient_id=cand.agent_id,
+                            content={"trigger": "dependencies_satisfied"},
+                            message_type="request",
+                        )
+                        await cand.process_message(dep_msg)
+            except Exception:
+                pass
 
         except asyncio.TimeoutError:
             # Mark step failed due to timeout but DO NOT propagate – allows

@@ -71,10 +71,8 @@ class BaseTestAgent(BaseAgent):
             )
             
         # Always record timestamp so tests can assert chronological ordering
-        self._knowledge_graph_updates.append({
-            "data": update_data,
-            "timestamp": time.time()
-        })
+        import time as _t
+        self._knowledge_graph_updates.append({"data": update_data, "timestamp": _t.time()})
         
     async def query_knowledge_graph(self, query: Dict[str, Any]) -> Dict[str, Any]:
         """Query knowledge graph asynchronously."""
@@ -202,7 +200,8 @@ class TestAgent(BaseTestAgent):
             raise RuntimeError("Agent not initialized. Call initialize() first.")
             
         # Preserve original dict exactly for tests that compare equality.
-        self._knowledge_graph_updates.append(data)
+        import time as _t
+        self._knowledge_graph_updates.append({"data": data, "timestamp": _t.time()})
         
     def get_message_history(self) -> List[AgentMessage]:
         """Get message history."""

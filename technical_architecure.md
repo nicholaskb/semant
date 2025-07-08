@@ -4,6 +4,19 @@
 
 > **2025-06-24 Update:** Core agent layer now auto-binds RDF prefixes (`core:`, `agent:`, `rdf:`) and writes status/metric triples in CamelCase (`core:hasMessageCount`, `core:hasStatus`).  `query_knowledge_graph()` accepts raw SPARQL and returns `list[dict]`, unblocking all performance tests.
 
+> **2025-07-08 Status Update:** Two failing tests remain (`tests/test_workflow_manager.py`) covering anomaly-flag propagation and dependency-execution order.  Follow the six-step debug circuit before touching any code.
+
+```mermaid
+graph LR
+    A[Workflow Tests Failing] --> B[Identify Failing Assertions]
+    B --> C[Isolate Affected Functions]
+    C --> D[Check Agent Outputs]
+    D --> E[Update Documentation / Backlog]
+    E --> F[Design Minimal Fix]
+    F --> G[Run Full Test Suite]
+    G -->|All Green?| H[Commit & Sync Docs]
+```
+
 ### Common Pitfalls and Solutions
 
 #### 1. Async Agent Capability Access

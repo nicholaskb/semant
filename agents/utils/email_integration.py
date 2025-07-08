@@ -6,11 +6,14 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 import os
 import getpass
+from dotenv import load_dotenv
 
 class EmailIntegration:
     """Email integration functionality with real email sending capability."""
 
     def __init__(self, use_real_email=False):
+        # Load .env if present so EMAIL_SENDER / EMAIL_PASSWORD are available in non-interactive environments
+        load_dotenv()
         self.use_real_email = use_real_email
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587

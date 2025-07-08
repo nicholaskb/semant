@@ -1,12 +1,16 @@
 # Multi-Agent Orchestration System
 
-🏗️ **STATUS: IN RECOVERY – 42 FAILURES / 19 ERRORS (see docs/developer_guide.md)**
+🏗️ **STATUS: IN RECOVERY – 2 FAILURES / 0 ERRORS (see docs/developer_guide.md)**
 
 > 📌  See **"2035 Agent Recovery Hotfix Protocol"** in `docs/developer_guide.md` — copy that block into every new PR until `tests/test_agent_recovery.py` is 100 % green.
 
 > **2025-07-07 UPDATE**  
 > • Consolidated `agents/core/agent_health.py` into `agents/core/workflow_manager.py` (now under *Internal health monitoring helpers*).  
 > • No public API changes; file removed to streamline core package.
+
+> **2025-07-08 HOTFIX NOTE**  
+> • Automated test census shows only **2** failing tests, both in `tests/test_workflow_manager.py` (anomaly-flag & dependency-execution paths).  
+> • Work-Pack 08 has been opened in the backlog; follow the six-step debug circuit before touching any code.
 
 A robust and scalable multi-agent orchestration system with knowledge graph integration, workflow management, and comprehensive testing infrastructure.
 

@@ -326,6 +326,7 @@ gcloud services list --enabled --filter="name:aiplatform.googleapis.com OR name:
 python integrations/gather_gmail_info.py
 python integrations/verify_gmail_config.py
 python integrations/check_vertex_models.py
+python integrations/check_gcp_setup.py
 ```
 
 ### **🔧 Quick Fix Implementation Priority**
@@ -431,12 +432,9 @@ def verify_token_storage():
 
 **File: `integrations/check_vertex_models.py` (71 lines)**
 - **Purpose**: Vertex AI model access verification and setup
-- **Capabilities**:
-  - Vertex AI platform initialization
-  - Generative model access testing
-  - API enablement verification
-  - Model garden access validation
-  - Troubleshooting guidance
+
+**File: `integrations/check_gcp_setup.py` (95 lines)**
+- **Purpose**: End-to-end Google Cloud credentials & environment sanity checker. Verifies `.env`, service-account JSON, gcloud CLI project, and prints a concise pass/fail summary.
 
 **Critical Functions**:
 ```python

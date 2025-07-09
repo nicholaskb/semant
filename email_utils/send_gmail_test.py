@@ -4,8 +4,13 @@ import base64
 from email.mime.text import MIMEText
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+# Added readonly scope so the same OAuth token can list and fetch messages
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.readonly'
+]
 
 def get_gmail_service():
     creds = None
@@ -32,6 +37,46 @@ def send_email(service, to, subject, body):
     message = {'raw': raw}
     sent = service.users().messages().send(userId='me', body=message).execute()
     print(f"Message Id: {sent['id']}")
+
+# ---------------------------------------------------------------------------
+# 🌐  READ-ONLY HELPERS
+# ---------------------------------------------------------------------------
+
+def list_message_ids(service, query: str = "", max_results: int = 10):
+    """Return a list of Gmail message IDs matching `query`."""
+    response = service.users().messages().list(
+        userId='me', q=query, maxResults=max_results
+    ).execute()
+    return [msg['id'] for msg in response.get('messages', [])]
+
+
+def get_message_body(service, msg_id: str) -> str:
+    """Fetch plain-text body of a Gmail message by ID (best-effort)."""
+    import base64, email
+
+    msg = service.users().messages().get(
+        userId='me', id=msg_id, format='full'
+    ).execute()
+
+    # Walk the payload to find text/plain part
+    def _extract(parts):
+        for p in parts:
+            mime = p.get('mimeType')
+            if mime == 'text/plain' and 'data' in p.get('body', {}):
+                return base64.urlsafe_b64decode(p['body']['data']).decode()
+            elif p.get('parts'):
+                inner = _extract(p['parts'])
+                if inner:
+                    return inner
+        return ""
+
+    payload = msg.get('payload', {})
+    if 'body' in payload and payload.get('body', {}).get('data'):
+        return base64.urlsafe_b64decode(payload['body']['data']).decode()
+    if payload.get('parts'):
+        return _extract(payload['parts'])
+    return ""
+
 
 if __name__ == '__main__':
     service = get_gmail_service()

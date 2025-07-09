@@ -20,7 +20,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Gmail API scopes
-SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.readonly'
+]
 
 def get_gmail_credentials():
     """Get Gmail API credentials."""
@@ -35,17 +38,20 @@ def get_gmail_credentials():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            if not os.path.exists('credentials/credentials.json'):
+            # Allow overriding the default credentials path via environment variable.
+            cred_path = os.getenv("GMAIL_OAUTH_CREDENTIALS", "credentials/credentials.json")
+
+            if not os.path.exists(cred_path):
                 raise FileNotFoundError(
                     "Gmail API credentials not found. Please follow these steps:\n"
                     "1. Go to Google Cloud Console (https://console.cloud.google.com)\n"
                     "2. Create a new project or select existing one\n"
                     "3. Enable Gmail API\n"
-                    "4. Create OAuth 2.0 credentials\n"
-                    "5. Download credentials and save as 'credentials/credentials.json'"
+                    "4. Create OAuth 2.0 credentials (Desktop)\n"
+                    "5. Download credentials and set GMAIL_OAUTH_CREDENTIALS or place as 'credentials/credentials.json'"
                 )
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials/credentials.json', SCOPES)
+                cred_path, SCOPES)
             creds = flow.run_local_server(port=0)
         
         # Save credentials for future use

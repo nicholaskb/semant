@@ -27,7 +27,11 @@ sys.path.insert(0, str(project_root))
 try:
     from demo_agents import EngagementManagerAgent
     from kg.models.graph_manager import KnowledgeGraphManager
-    from real_gmail_sender import RealGmailSender
+    # RealGmailSender is optional; guard against missing module
+    try:
+        from real_gmail_sender import RealGmailSender  # type: ignore
+    except ImportError:
+        RealGmailSender = None  # type: ignore
     from agents.utils.email_integration import EmailIntegration
 except ImportError as e:
     print(f"❌ Import error: {e}")
@@ -59,16 +63,19 @@ class KnowledgeGraphEmailNotifier:
         # Try multiple email senders (fallback approach)
         print("📧 Setting up email sending capability...")
         
-        # First try the Gmail API sender
-        try:
-            self.email_sender = RealGmailSender()
-            if await self._test_email_sender("gmail_api"):
-                print("✅ Gmail API email sender ready")
-            else:
-                raise Exception("Gmail API not working")
-        except Exception as e:
-            print(f"⚠️ Gmail API failed: {e}")
-            print("🔄 Trying EmailIntegration fallback...")
+        # First try the Gmail API sender if available
+        if RealGmailSender is not None:
+            try:
+                self.email_sender = RealGmailSender()
+                if await self._test_email_sender("gmail_api"):
+                    print("✅ Gmail API email sender ready")
+                else:
+                    raise Exception("Gmail API not working")
+            except Exception as e:
+                print(f"⚠️ Gmail API failed: {e}")
+                print("🔄 Trying EmailIntegration fallback...")
+        else:
+            print("⚠️ RealGmailSender module not available; using EmailIntegration fallback...")
             
             # Fallback to EmailIntegration
             try:

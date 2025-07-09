@@ -30,7 +30,11 @@ sys.path.insert(0, str(project_root))
 try:
     # Import all email components
     from agents.utils.email_integration import EmailIntegration
-    from real_gmail_sender import RealGmailSender
+    # RealGmailSender is optional; if the module is absent we fall back to other methods
+    try:
+        from real_gmail_sender import RealGmailSender  # type: ignore
+    except ImportError:
+        RealGmailSender = None  # type: ignore
     from agents.domain.vertex_email_agent import VertexEmailAgent
     from demo_agents import EngagementManagerAgent
     IMPORTS_AVAILABLE = True
@@ -65,16 +69,19 @@ class ComprehensiveEmailSystem:
         except Exception as e:
             print(f"⚠️  SMTP Email Integration - Failed: {e}")
             
-        # Method 2: Gmail API Sender
-        try:
-            gmail_sender = RealGmailSender()
-            if gmail_sender.initialize():
-                self.methods['gmail_api'] = gmail_sender
-                print("✅ Gmail API Sender - Ready")
-            else:
-                print("⚠️  Gmail API Sender - Not available")
-        except Exception as e:
-            print(f"⚠️  Gmail API Sender - Failed: {e}")
+        # Method 2: Gmail API Sender (optional)
+        if RealGmailSender is not None:
+            try:
+                gmail_sender = RealGmailSender()
+                if gmail_sender.initialize():
+                    self.methods['gmail_api'] = gmail_sender
+                    print("✅ Gmail API Sender - Ready")
+                else:
+                    print("⚠️  Gmail API Sender - Not available")
+            except Exception as e:
+                print(f"⚠️  Gmail API Sender - Failed: {e}")
+        else:
+            print("⚠️  Gmail API Sender module not available; skipping")
             
         # Method 3: Vertex Email Agent (AI-Enhanced)
         try:

@@ -384,6 +384,20 @@ class BaseAgent(ABC):
                 # Add message to history
                 self.message_history.append(message)
                 
+                # ---------------------------------------------------------
+                # Auto-diary (T2)
+                # ---------------------------------------------------------
+                try:
+                    if self.config.get("auto_diary", True):
+                        # Record inbound content
+                        self.write_diary(
+                            f"RECV: {str(message.content)[:500]}",
+                            details={"from": message.sender_id, "type": message.message_type},
+                        )
+                except Exception as diary_err:
+                    # Diary failures must NEVER break message processing
+                    self.logger.debug(f"Auto-diary disabled due to error: {diary_err}")
+                
                 # Update status
                 self.status = AgentStatus.BUSY
                 
@@ -392,6 +406,18 @@ class BaseAgent(ABC):
                 
                 # Update status
                 self.status = AgentStatus.IDLE
+
+                # -----------------------------------------------------
+                # Auto-diary for outbound reply (T2)
+                # -----------------------------------------------------
+                try:
+                    if self.config.get("auto_diary", True):
+                        self.write_diary(
+                            f"SEND: {str(response.content)[:500]}",
+                            details={"to": response.recipient_id, "type": response.message_type},
+                        )
+                except Exception as diary_err:
+                    self.logger.debug(f"Auto-diary disabled (response) error: {diary_err}")
 
                 # Persist status to knowledge graph for monitoring tests
                 try:
@@ -784,6 +810,30 @@ class BaseAgent(ABC):
             except Exception as e:
                 # Non-fatal – diary still stored in memory
                 self.logger.warning(f"Diary KG update failed for agent {self.agent_id}: {e}")
+
+        # -------------------------------------------------------------
+        # T4 – Extract semantic triples from free-text diary entry
+        # -------------------------------------------------------------
+        try:
+            from utils.triple_extractor import extract_triples  # local import to avoid heavy deps at module load
+            triples = extract_triples(message)
+            if triples and self.knowledge_graph:
+                import asyncio  # local to keep top-level imports minimal
+
+                async def _async_push():
+                    for subj, pred, obj in triples:
+                        # Namespace predicate under core# if not already URI
+                        if not pred.startswith("http://"):
+                            pred_uri = f"http://example.org/core#{pred}"
+                        else:
+                            pred_uri = pred
+                        await self._add_simple_triple(str(subj), pred_uri, str(obj))
+
+                # Fire-and-forget so write_diary remains synchronous
+                asyncio.create_task(_async_push())
+        except Exception as triple_err:
+            # Log at debug to avoid noisy output in production
+            self.logger.debug(f"Triple extraction skipped: {triple_err}")
 
     def read_diary(self) -> List[Dict[str, Any]]:
         """Return a copy of diary entries (latest last)."""

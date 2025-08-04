@@ -202,6 +202,7 @@ This project has undergone a complete transformation from a non-functional state
 - **Configuration Validation**: Automated setup verification and troubleshooting guidance ✅
 - **Protocol Handlers**: Support for multiple communication protocols and data formats ✅
 - **Error Recovery**: Intelligent error detection with step-by-step resolution guidance ✅
+- **Image Generation (Planned)**: Midjourney API integration for `/imagine` and `/upscale` endpoints (targeted for 2035-Q3 release) ✅
 
 ### Knowledge Graph Integration ✅ **ENTERPRISE GRADE**
 - **SPARQL Queries**: Full SPARQL 1.1 compliance with intelligent caching ✅
@@ -1027,3 +1028,31 @@ The snippet above can be pasted directly into `scratch_space/` or a Jupyter note
 
 ---
 This section was added after the Gmail-API validation work (see PR #EmailFlow-2025-07-08) and demonstrates end-to-end agent collaboration over an email transport layer.
+
+## 🛠️ Script Consolidation Blueprint (main.py + main_agent.py + main_api.py)
+
+See `technical_architecure.md` for full rationale. Below is a quick reference.
+
+### Goals
+- Single entrypoint (`python main.py`) for both CLI swarm demo and FastAPI server.
+- Remove circular imports and double `.env` loading side-effects.
+- Guarantee artifacts, chain-of-thought, and KG updates remain unchanged.
+
+### Debug-Before-Code Checklist (6-Step)
+| Step | Action | Command |
+|------|--------|---------|
+| 1 | Test Census | `pytest -q` |
+| 2 | Call-Graph Mapping | `pyan *.py --dot` |
+| 3 | Scratch Merge | copy existing code into scratch buffer | n/a |
+| 4 | Import Audit | manual review | n/a |
+| 5 | Regression Guard | `pytest -q && uvicorn main:app` |
+| 6 | Doc Sync | update docs + CHANGELOG | n/a |
+
+```mermaid
+flowchart LR
+  A1[main.py – CLI] --> B[Unified main.py]
+  A2[main_agent.py] --> B
+  A3[main_api.py] --> B
+```
+
+> **Copy this section into every PR that modifies `main.py` until the test suite is 100% green.**

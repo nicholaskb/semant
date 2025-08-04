@@ -4,47 +4,248 @@
   <meta charset="UTF-8">
   <title>Semant Chat Agent</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-    #chatbox { width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 20px; }
-    #messages { height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 10px; background: #fafafa; }
-    .user { color: #0074D9; }
-    .agent { color: #2ECC40; }
-    #input { width: 80%; padding: 8px; }
-    #send { padding: 8px 16px; }
+    :root {
+      --sidebar-bg: #202123;
+      --sidebar-text: #f5f5f5;
+      --sidebar-accent: #10a37f;
+      --chat-bg: #f6f6f6;
+      --user-bubble: #e8f0ff;
+      --agent-bubble: #d2f8e7;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--chat-bg); }
+
+    #container { display: flex; height: 100vh; }
+
+    /* ------------- SIDEBAR ------------- */
+    #sidebar { width: 240px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; }
+    #sidebar-header { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+    #sidebar-header h3 { margin: 0; font-size: 18px; }
+    #newChat { background: var(--sidebar-accent); border: none; color: #fff; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    #historyList { list-style: none; margin: 0; padding: 8px 0; overflow-y: auto; flex: 1; }
+    #historyList li { padding: 10px 16px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #historyList li:hover { background: rgba(255,255,255,0.05); }
+    #historyList li.active { background: rgba(255,255,255,0.12); font-weight: 600; }
+
+    /* ------------- CHAT BOX ------------- */
+    #chatbox { flex: 1; display: flex; flex-direction: column; padding: 24px; }
+    #chatbox h2 { margin-top: 0; }
+
+    /* split chat area horizontally */
+    #chatContent { flex: 1; display: flex; gap: 16px; }
+    #conversationPane { flex: 1; display: flex; flex-direction: column; }
+    #messages { flex: 1; overflow-y: auto; padding-right: 8px; margin-bottom: 16px; }
+
+    /* Graph pane */
+    #graphPane { width: 38%; min-width: 300px; background: #ffffff; border: 1px solid #ddd; border-radius: 8px; position: relative; }
+    #graphPane h3 { font-size: 16px; margin: 8px; text-align: center; }
+    #graphSvg { width: 100%; height: calc(100% - 32px); }
+    .user, .agent { max-width: 640px; padding: 10px 14px; margin: 8px 0; border-radius: 8px; font-size: 15px; line-height: 1.4; }
+    .user { background: var(--user-bubble); align-self: flex-end; }
+    .agent { background: var(--agent-bubble); align-self: flex-start; }
+    .chain-of-thought { font-size: 13px; margin-top: 6px; color: #555; }
+    .chain-of-thought ul { padding-left: 18px; margin: 4px 0; }
+
+    /* ------------- INPUT AREA ------------- */
+    #inputArea { display: flex; gap: 8px; }
+    #input { flex: 1; padding: 10px 12px; font-size: 15px; border: 1px solid #ccc; border-radius: 6px; }
+    #send, .action-btn { padding: 0 18px; font-size: 15px; border: none; background: var(--sidebar-accent); color: #fff; border-radius: 6px; cursor: pointer; }
+    #send:hover, .action-btn:hover { background: #0d8b6c; }
+    .action-btn { background: #4b4f56; margin-left: 4px; }
+    .action-btn:hover { background: #3a3d42; }
+
+    /* Midjourney Job Styles */
+    .midjourney-job {
+      display: flex;
+      gap: 15px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      align-items: center;
+    }
+    .job-image {
+      flex: 0 0 100px;
+      height: 100px;
+      background: #e0e0e0;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .job-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .job-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #555;
+      background: #eee;
+      border-radius: 6px;
+    }
+    .job-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .job-prompt {
+      font-style: italic;
+      color: #333;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+    .job-status {
+      font-size: 13px;
+      color: #666;
+    }
+    .job-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <div id="chatbox">
-    <h2>Semant Chat Agent</h2>
-    <div id="messages"></div>
-    <input id="input" type="text" placeholder="Type your message..." autofocus />
-    <button id="send">Send</button>
+  <div id="container">
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <h3>Conversations</h3>
+        <button id="newChat">New Chat</button>
+      </div>
+      <ul id="historyList"></ul>
+    </div>
+    <div id="chatbox">
+      <h2>Semant Chat Agent</h2>
+      <div id="chatContent">
+        <div id="conversationPane">
+          <div id="messages"></div>
+          <div id="inputArea">
+        <input id="input" type="text" placeholder="Type your message..." autofocus />
+        <button id="send">Send</button>
+        <button id="investBtn" class="action-btn">Investigate</button>
+        <button id="travBtn" class="action-btn">Traverse</button>
+      </div>
+      
+      <!-- Midjourney Section -->
+      <div id="midjourney-section" style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+        <h3 style="margin-top: 0;">Midjourney Image Generation</h3>
+        <div id="midjourney-maintenance-notice" style="padding: 20px; text-align: center; background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; color: #d46b08;">
+          <p style="margin: 0; font-weight: 500;">This feature is temporarily under maintenance.</p>
+          <p style="margin: 5px 0 0; font-size: 13px;">Awaiting correct API endpoint information. Please check back later.</p>
+        </div>
+        <form id="midjourney-form" style="display: none; gap: 8px;">
+          <textarea id="midjourney-prompt" placeholder="Enter your Midjourney prompt here..." 
+                    style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; 
+                           resize: vertical; min-height: 60px; font-family: inherit; font-size: 14px;" 
+                    required></textarea>
+          <button type="submit" style="padding: 10px 20px; background: #7c3aed; color: white; 
+                                       border: none; border-radius: 6px; cursor: pointer; 
+                                       font-size: 15px; align-self: flex-start;">
+            Generate Image
+          </button>
+        </form>
+        <div id="midjourney-result" style="margin-top: 15px; text-align: center;"></div>
+      </div>
+    </div>
+    <div id="graphPane">
+      <h3>Knowledge Graph</h3>
+      <svg id="graphSvg"></svg>
+    </div>
   </div>
+</div>
   <script>
-    let history = [];
+    // --------------------- STATE ---------------------
+    let conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
+    let currentId = null;
+    let history = []; // alias for current conversation messages
+
+    // --------------------- DOM ---------------------
     const messagesDiv = document.getElementById('messages');
     const input = document.getElementById('input');
     const send = document.getElementById('send');
+    const historyList = document.getElementById('historyList');
+    const newChatBtn = document.getElementById('newChat');
+    const investBtn = document.getElementById('investBtn');
+    const travBtn = document.getElementById('travBtn');
+    const midjourneyForm = document.getElementById('midjourney-form');
+    const midjourneyPrompt = document.getElementById('midjourney-prompt');
+    const midjourneyResultDiv = document.getElementById('midjourney-result');
 
-    function addMessage(message, isUser) {
-      const chatMessages = document.getElementById('chat-messages');
+    // --------------------- MIDJOURNEY STATE ---------------------
+    let midjourneyJobs = {}; // Store all job data by task_id
+    let pollingIntervals = {}; // Store polling intervals by task_id
+
+    function addMessage(text, isUser, chainOfThought = null) {
+      const chatMessages = document.getElementById('messages');
       const messageDiv = document.createElement('div');
-      messageDiv.className = isUser ? 'user-message' : 'agent-message';
-      messageDiv.innerHTML = `<strong>${isUser ? 'You' : 'Agent'}:</strong> ${message.content}`;
-      if (message.chain_of_thought) {
+      messageDiv.className = isUser ? 'user' : 'agent';
+      messageDiv.innerHTML = `<strong>${isUser ? 'You' : 'Agent'}:</strong> ${text}`;
+      if (Array.isArray(chainOfThought) && chainOfThought.length) {
         const thoughtDiv = document.createElement('div');
         thoughtDiv.className = 'chain-of-thought';
-        thoughtDiv.innerHTML = '<strong>Chain of Thought:</strong><ul>' + message.chain_of_thought.map(thought => `<li>${thought}</li>`).join('') + '</ul>';
+        thoughtDiv.innerHTML = '<strong>Chain of Thought:</strong><ul>' + chainOfThought.map(thought => `<li>${thought}</li>`).join('') + '</ul>';
         messageDiv.appendChild(thoughtDiv);
       }
       chatMessages.appendChild(messageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    function renderHistoryList() {
+      historyList.innerHTML = '';
+      conversations.forEach(conv => {
+        const li = document.createElement('li');
+        li.textContent = conv.title || 'Untitled';
+        li.dataset.id = conv.id;
+        li.onclick = () => loadConversation(conv.id);
+        if (conv.id === currentId) li.classList.add('active');
+        historyList.appendChild(li);
+      });
+    }
+
+    function saveConversations() {
+      localStorage.setItem('conversations', JSON.stringify(conversations));
+    }
+
+    function newConversation() {
+      currentId = 'conv_' + Date.now();
+      history = [];
+      conversations.unshift({ id: currentId, title: 'New chat', messages: [] });
+      messagesDiv.innerHTML = '';
+      renderHistoryList();
+      saveConversations();
+    }
+
+    function loadConversation(id) {
+      const conv = conversations.find(c => c.id === id);
+      if (!conv) return;
+      currentId = id;
+      history = conv.messages.map(m => m.text);
+      messagesDiv.innerHTML = '';
+      conv.messages.forEach(msg => addMessage(msg.text, msg.role === 'user', msg.chain));
+      renderHistoryList();
+    }
+
+    // initialise
+    if (conversations.length) {
+      loadConversation(conversations[0].id);
+    } else {
+      newConversation();
+    }
+
     send.onclick = async function() {
       const msg = input.value.trim();
       if (!msg) return;
-      addMessage('user', msg);
+      addMessage(msg, true);
       input.value = '';
       const response = await fetch('/chat', {
         method: 'POST',
@@ -52,13 +253,165 @@
         body: JSON.stringify({ message: msg, history })
       });
       const data = await response.json();
-      addMessage('agent', data.response, data.agent);
+      addMessage(data.response, false, data.chain_of_thought);
       history = data.history;
+
+      // store in conversation object
+      const conv = conversations.find(c => c.id === currentId);
+      if (conv) {
+        conv.messages.push({ role: 'user', text: msg });
+        conv.messages.push({ role: 'agent', text: data.response, chain: data.chain_of_thought });
+        if (conv.title === 'New chat') conv.title = msg.slice(0, 20);
+      }
+      saveConversations();
+      renderHistoryList();
     };
 
     input.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') send.onclick();
     });
+
+    investBtn.addEventListener('click', async function() {
+      const topic = input.value.trim();
+      if (!topic) return;
+      addMessage(`(Investigate) ${topic}`, true);
+      input.value = '';
+      const res = await fetch('/investigate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic })
+      });
+      const data = await res.json();
+      const summary = `Key insights: ${data.key_insights.join('; ')} | Confidence: ${data.confidence}`;
+      addMessage(summary, false);
+    });
+
+    travBtn.addEventListener('click', async function() {
+      const node = input.value.trim();
+      if (!node) return;
+      addMessage(`(Traverse) ${node}`, true);
+      input.value = '';
+      const res = await fetch('/traverse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start_node: node, max_depth: 2 })
+      });
+      const data = await res.json();
+      const summary = `Nodes: ${data.nodes.length}, Relationships: ${data.relationships.length}`;
+      addMessage(summary, false);
+      renderGraph(data);
+    });
+
+    // Optional: load artifacts list via sidebar double-click (future)
+
+    // Render graph helper using D3
+    function renderGraph(data) {
+      if (!window.d3) return;
+      const svg = d3.select('#graphSvg');
+      svg.selectAll('*').remove();
+
+      const bbox = svg.node().getBoundingClientRect();
+      const width = bbox.width || 400;
+      const height = bbox.height || 300;
+
+      const nodesSet = new Set([data.start_node, ...data.nodes]);
+      const nodes = Array.from(nodesSet).map(id => ({ id }));
+      const links = data.paths.map(p => ({ source: p.from, target: p.to }));
+
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+        .force('charge', d3.forceManyBody().strength(-250))
+        .force('center', d3.forceCenter(width / 2, height / 2));
+
+      const link = svg.append('g').attr('stroke', '#999').attr('stroke-opacity', 0.6)
+        .selectAll('line').data(links).enter().append('line').attr('stroke-width', 1.5);
+
+      const node = svg.append('g').attr('stroke', '#fff').attr('stroke-width', 1.5)
+        .selectAll('circle').data(nodes).enter().append('circle').attr('r', 6)
+        .attr('fill', (d,i) => i === 0 ? '#10a37f' : '#0074D9')
+        .call(drag(simulation));
+
+      const label = svg.append('g').selectAll('text').data(nodes).enter().append('text')
+        .text(d => d.id).attr('font-size', 10).attr('dx', 8).attr('dy', 4);
+
+      simulation.on('tick', () => {
+        link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+        node.attr('cx', d => d.x).attr('cy', d => d.y);
+        label.attr('x', d => d.x).attr('y', d => d.y);
+      });
+
+      function drag(sim) {
+        function dragstarted(event) {
+          if (!event.active) sim.alphaTarget(0.3).restart();
+          event.subject.fx = event.subject.x;
+          event.subject.fy = event.subject.y;
+        }
+        function dragged(event) {
+          event.subject.fx = event.x;
+          event.subject.fy = event.y;
+        }
+        function dragended(event) {
+          if (!event.active) sim.alphaTarget(0);
+          event.subject.fx = null;
+          event.subject.fy = null;
+        }
+        return d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
+      }
+    }
+
+    newChatBtn.addEventListener('click', newConversation);
+    
+    // Midjourney form handler
+    document.getElementById('midjourney-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const promptTextarea = document.getElementById('midjourney-prompt');
+      const prompt = promptTextarea.value.trim();
+      const resultDiv = document.getElementById('midjourney-result');
+      
+      if (!prompt) return;
+      
+      // Show loading state
+      resultDiv.innerHTML = '<p style="color: #666;">Generating image... This may take a moment...</p>';
+      
+      try {
+        const response = await fetch('/midjourney/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt: prompt }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.image_url) {
+          // Display the generated image
+          resultDiv.innerHTML = `
+            <div style="margin-top: 10px;">
+              <img src="${data.image_url}" alt="Generated Image" 
+                   style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <p style="margin-top: 10px; color: #666; font-size: 14px;">Prompt: "${prompt}"</p>
+            </div>
+          `;
+          
+          // Clear the prompt textarea for next use
+          promptTextarea.value = '';
+          
+          // Optionally add to chat history
+          addMessage(`Generated Midjourney image: "${prompt}"`, true);
+          addMessage(`Image generated successfully! [View above in Midjourney section]`, false);
+          
+        } else {
+          // Handle error
+          const errorMsg = data.detail || 'Failed to generate image';
+          resultDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${errorMsg}</p>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${error.message || 'Failed to connect to server'}</p>`;
+      }
+    });
   </script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </body>
 </html> 

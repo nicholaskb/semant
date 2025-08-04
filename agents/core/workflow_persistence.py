@@ -13,10 +13,27 @@ from agents.core.workflow_types import Workflow, WorkflowStatus, WorkflowStep
 class WorkflowPersistence:
     """Handles persistence of workflow state."""
     
-    def __init__(self):
-        """Initialize workflow persistence."""
-        self.storage_dir = tempfile.mkdtemp()
-        self.logger = logger.bind(component="WorkflowPersistence")
+    def __init__(self, storage_dir: Optional[str] = None):
+        """Initialize workflow persistence.
+
+        Args:
+            storage_dir: Optional path where workflow files should be stored. If not provided,
+                a persistent directory named ``workflows`` under the current working
+                directory (or path specified by the ``SEMANT_WORKSPACE`` environment
+                variable) is used.  The directory is created if it does not exist.
+        """
+        # Determine storage location – allow caller override for tests while
+        # defaulting to a persistent on-disk directory so workflow data survive
+        # process restarts.
+        if storage_dir is None:
+            workspace_root = os.getenv("SEMANT_WORKSPACE", os.getcwd())
+            storage_dir = os.path.join(workspace_root, "workflows")
+
+        # Ensure the directory exists.
+        os.makedirs(storage_dir, exist_ok=True)
+
+        self.storage_dir = storage_dir
+        self.logger = logger.bind(component="WorkflowPersistence", storage_dir=self.storage_dir)
         
     async def save_workflow(self, workflow: Union[Dict, Workflow]) -> None:
         """Save workflow state."""

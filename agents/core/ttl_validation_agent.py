@@ -13,6 +13,7 @@ class TTLValidationAgent(BaseAgent):
         super().__init__(agent_id, "ttl_validator")
 
     async def initialize(self) -> None:
+        await super().initialize()
         self.logger.info("TTL Validation Agent initialized")
 
     async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
@@ -38,30 +39,5 @@ class TTLValidationAgent(BaseAgent):
         return {}
 
     async def update_knowledge_graph(self, update_data: dict) -> None:
-
-    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
-        """Process incoming messages - REQUIRED IMPLEMENTATION."""
-        try:
-            # Process the message based on its type and content
-            response_content = f"Agent {self.agent_id} processed: {message.content}"
-            
-            return AgentMessage(
-                message_id=str(uuid.uuid4()),
-                sender_id=self.agent_id,
-                recipient_id=message.sender_id,
-                content=response_content,
-                message_type=getattr(message, 'message_type', 'response'),
-                timestamp=datetime.now()
-            )
-        except Exception as e:
-            # Error handling
-            return AgentMessage(
-                message_id=str(uuid.uuid4()),
-                sender_id=self.agent_id,
-                recipient_id=message.sender_id,
-                content=f"Error processing message: {str(e)}",
-                message_type="error",
-                timestamp=datetime.now()
-            )
-
+        """TTLValidationAgent does not write to the shared KG."""
         pass 

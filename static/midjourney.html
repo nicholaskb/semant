@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midjourney UI</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: #f0f2f5; }
+        header { background-color: #fff; padding: 1rem 2rem; border-bottom: 1px solid #ddd; }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        main { padding: 2rem; max-width: 1200px; margin: auto; }
+        .prompt-form { background-color: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); margin-bottom: 2rem; }
+        .prompt-form textarea { width: 100%; box-sizing: border-box; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
+        .prompt-form button { background-color: #1877f2; color: #fff; border: none; padding: 0.8rem 1.2rem; border-radius: 4px; font-size: 1rem; cursor: pointer; }
+        .prompt-form button.secondary { background-color: #e4e6eb; color: #000; }
+        .prompt-form button:disabled { background-color: #ccc; color: #888; cursor: not-allowed; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        .job { background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
+        .job .image-container { position: relative; width: 100%; padding-top: 100%; background-color: #eee; }
+        .job img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .job .quadrant-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; position: absolute; top:0; left:0; width:100%; height:100%;}
+        .job .quadrant-container { position: relative; padding-top: 100%; }
+        .job .quadrant-container img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .job .quadrant-actions { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; padding: 4px; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+        .job .quadrant-container:hover .quadrant-actions { opacity: 1; }
+        .job .quadrant-actions button { font-size: 0.7rem; padding: 2px 4px; }
+        .job .progress-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .job .info { padding: 1rem; }
+        .job .prompt { font-size: 0.9rem; color: #666; margin-bottom: 1rem; max-height: 100px; overflow-y: auto; }
+        .job .actions { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .job .actions button { background-color: #e4e6eb; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; }
+        .job .actions button:hover { background-color: #ddd; }
+        .form-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;}
+        .advanced-settings { background-color: #f7f7f7; padding: 1.5rem; border-radius: 8px; margin-top: 1rem; border: 1px solid #e0e0e0; display: none; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        #image-preview-container { margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+        .preview-image-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; background-color: #fff; padding: 0.5rem; border-radius: 4px; border: 1px solid #ddd;}
+        .preview-image-wrapper img { max-width: 80px; max-height: 80px; border-radius: 4px; object-fit: cover; }
+        .preview-image-wrapper .ref-buttons { display: flex; gap: 0.3rem; margin-top: 0.5rem; }
+        .preview-image-wrapper .ref-buttons button { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
+        .preview-image-wrapper .weight-input { width: 60px; margin-top: 5px; text-align: center; font-size: 0.8rem; }
+        .preview-image-wrapper .ref-badge { position: absolute; top: 4px; left: 4px; background-color: #1877f2; color: white; padding: 2px 5px; font-size: 0.7rem; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<header><h1>Midjourney UI</h1></header>
+
+<main>
+    <div class="prompt-form">
+        <form id="imagine-form">
+            <div id="image-preview-container"></div>
+            <input type="file" id="image-upload-input" style="display: none;" accept="image/*" multiple>
+            <textarea id="prompt-input" rows="4" placeholder="Your text prompt..."></textarea>
+            
+            <div id="advanced-settings" class="advanced-settings">
+                <div class="setting full-width">
+                    <label for="cref-input">Character Reference (--cref)</label>
+                    <input type="text" id="cref-input" placeholder="Assign from an uploaded image">
+                </div>
+                <div class="setting">
+                    <label for="cw-input">Character Weight (--cw, 0-100)</label>
+                    <input type="number" id="cw-input" placeholder="100" min="0" max="100">
+                </div>
+                 <div class="setting full-width">
+                    <label for="sref-input">Style Reference (--sref)</label>
+                    <input type="text" id="sref-input" placeholder="Assign from an uploaded image">
+                </div>
+                <div class="setting">
+                    <label for="sw-input">Style Weight (--sw, 0-1000)</label>
+                    <input type="number" id="sw-input" placeholder="100" min="0" max="1000">
+                </div>
+                 <div class="setting">
+                    <label for="iw-input">Image Weight (--iw, 0-3)</label>
+                    <input type="number" id="iw-input" placeholder="1.0" min="0" max="3" step="0.1">
+                </div>
+                <div class="setting">
+                    <label for="no-input">Exclude (--no)</label>
+                    <input type="text" id="no-input" placeholder="e.g., text, signature">
+                </div>
+                <div class="setting">
+                    <label>Aspect Ratio</label>
+                    <div class="radio-group" id="aspect-ratio-group">
+                        <label><input type="radio" name="aspect_ratio" value="1:1" checked> 1:1</label>
+                        <label><input type="radio" name="aspect_ratio" value="16:9"> 16:9</label>
+                        <label><input type="radio" name="aspect_ratio" value="9:16"> 9:16</label>
+                        <label><input type="radio" name="aspect_ratio" value="custom"> Custom:</label>
+                        <input type="text" id="ar-custom-input" placeholder="e.g., 21:9" style="width: 80px; display: none;">
+                    </div>
+                </div>
+                <div class="setting">
+                    <label>Version</label>
+                    <div class="radio-group" id="version-group">
+                        <label><input type="radio" name="version" value="7"> V7</label>
+                        <label><input type="radio" name="version" value="6" checked> V6</label>
+                        <label><input type="radio" name="version" value="5.2"> V5.2</label>
+                        <label><input type="radio" name="version" value="niji 6"> Niji 6</label>
+                    </div>
+                </div>
+                <div class="setting">
+                    <label for="seed-input">Seed</label>
+                    <input type="number" id="seed-input" placeholder="Random if empty">
+                </div>
+                <div class="setting">
+                    <label for="stylize-input">Stylize (--s, 0-1000)</label>
+                    <input type="number" id="stylize-input" placeholder="100" min="0" max="1000">
+                </div>
+                <div class="setting">
+                    <label for="chaos-input">Chaos (--c, 0-100)</label>
+                    <input type="number" id="chaos-input" placeholder="0" min="0" max="100">
+                </div>
+                 <div class="setting">
+                    <label for="weird-input">Weird (--w, 0-3000)</label>
+                    <input type="number" id="weird-input" placeholder="0" min="0" max="3000">
+                </div>
+                <div class="setting">
+                    <label>Process Mode</label>
+                    <div class="radio-group" id="process-mode-group">
+                        <label><input type="radio" name="process_mode" value="relax" checked> Relax</label>
+                        <label><input type="radio" name="process_mode" value="fast"> Fast</label>
+                        <label><input type="radio" name="process_mode" value="turbo"> Turbo</label>
+                    </div>
+                </div>
+                <div class="setting">
+                     <label>Flags</label>
+                    <div class="radio-group">
+                        <label><input type="checkbox" id="tile-input"> Tile (--tile)</label>
+                        <label><input type="checkbox" id="style-raw-input"> Raw Style (--style raw)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-controls">
+                <div class="left">
+                    <button type="button" id="upload-btn" class="secondary">Upload Image(s)</button>
+                    <button type="button" id="describe-btn" class="secondary" disabled>Describe</button>
+                    <button type="button" id="blend-btn" class="secondary" disabled>Blend</button>
+                    <button type="button" id="refine-btn" class="secondary">Refine with AI</button>
+                    <button type="button" id="toggle-advanced-btn" class="secondary">Advanced Settings</button>
+                </div>
+                <div class="right">
+                    <button type="submit" id="submit-button">Imagine</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="gallery" id="gallery"></div>
+
+    <div id="json-modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+        <div style="background-color: #fff; padding: 2rem; border-radius: 8px; width: 80%; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+            <h2 style="margin-top: 0;">Job Metadata (JSON)</h2>
+            <pre id="json-content" style="background-color: #f4f4f4; padding: 1rem; border-radius: 4px;"></pre>
+            <button id="close-modal-btn">Close</button>
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = '/api';
+    const gallery = document.getElementById('gallery');
+    const imagineForm = document.getElementById('imagine-form');
+    const promptInput = document.getElementById('prompt-input');
+    const submitButton = document.getElementById('submit-button');
+    const uploadBtn = document.getElementById('upload-btn');
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const toggleAdvancedBtn = document.getElementById('toggle-advanced-btn');
+    const advancedSettings = document.getElementById('advanced-settings');
+    const arCustomInput = document.getElementById('ar-custom-input');
+    const jsonModal = document.getElementById('json-modal');
+    const jsonContent = document.getElementById('json-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    
+    let uploadedImages = []; 
+
+    closeModalBtn.onclick = () => {
+        jsonModal.style.display = 'none';
+    }; 
+
+    async function checkJobExists(taskId) {
+        try {
+            const response = await fetch(`${API_BASE}/midjourney/jobs/${taskId}`);
+            return response.ok;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('image_file', file);
+        try {
+            const response = await fetch(`${API_BASE}/upload-image`, { method: 'POST', body: formData });
+            if (!response.ok) throw new Error((await response.json()).detail || 'Upload failed');
+            return await response.json();
+        } catch (error) {
+            alert(`Error uploading image: ${error.message}`);
+            return null;
+        }
+    }
+
+    function createJobCard(job) {
+        const card = document.createElement('div');
+        card.className = 'job';
+        if(job && job.task_id) card.id = `job-${job.task_id}`;
+
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
+
+        if (job && job.quadrant_image_urls && job.quadrant_image_urls.length === 4) {
+            const quadGallery = document.createElement('div');
+            quadGallery.className = 'quadrant-gallery';
+            job.quadrant_image_urls.forEach(url => {
+                const quadContainer = document.createElement('div');
+                quadContainer.className = 'quadrant-container';
+                const img = document.createElement('img');
+                img.src = url;
+                quadContainer.appendChild(img);
+                
+                const actions = document.createElement('div');
+                actions.className = 'quadrant-actions';
+                const crefBtn = document.createElement('button');
+                crefBtn.textContent = 'cref';
+                crefBtn.onclick = () => { if(document.getElementById('cref-input')) document.getElementById('cref-input').value = url; };
+                actions.appendChild(crefBtn);
+                const srefBtn = document.createElement('button');
+                srefBtn.textContent = 'sref';
+                srefBtn.onclick = () => { if(document.getElementById('sref-input')) document.getElementById('sref-input').value = url; };
+                actions.appendChild(srefBtn);
+                quadContainer.appendChild(actions);
+                quadGallery.appendChild(quadContainer);
+            });
+            imageContainer.innerHTML = '';
+            imageContainer.appendChild(quadGallery);
+        } else if (job && (job.status === 'completed' || job.status === 'finished')) {
+            const img = document.createElement('img');
+            img.src = `/jobs/${job.task_id}/original.png`;
+            img.onerror = () => { imageContainer.innerHTML = '<div class="progress-overlay">Image Error</div>'; };
+            imageContainer.appendChild(img);
+        } else {
+            const progress = document.createElement('div');
+            progress.className = 'progress-overlay';
+            progress.textContent = (job && job.status === 'failed') ? 'Failed' : `${job?.output?.progress || 0}%`;
+            imageContainer.appendChild(progress);
+        }
+        card.appendChild(imageContainer);
+
+        const info = document.createElement('div');
+        info.className = 'info';
+        const prompt = document.createElement('p');
+        prompt.className = 'prompt';
+        
+        if (job && job.input && job.input.prompt) {
+            prompt.textContent = job.input.prompt;
+        } else if (job && job.error) {
+            prompt.textContent = `[Failed Job] Error: ${JSON.stringify(job.error)}`;
+            prompt.style.color = 'red';
+        } else {
+            prompt.textContent = '[Prompt not available]';
+        }
+        info.appendChild(prompt);
+
+        const refreshBtn = document.createElement('button');
+        refreshBtn.textContent = '↻';
+        refreshBtn.title = 'Refresh Job Status';
+        refreshBtn.style.float = 'right';
+        refreshBtn.onclick = async () => {
+            const cardElement = document.getElementById(`job-${job.task_id}`);
+            try {
+                const response = await fetch(`${API_BASE}/midjourney/jobs/${job.task_id}`);
+                if (response.ok) {
+                    const newJobData = await response.json();
+                    const newCard = createJobCard(newJobData);
+                    if(cardElement) cardElement.replaceWith(newCard);
+                } else {
+                     alert('Job has expired or could not be found.');
+                     if(cardElement) cardElement.style.opacity = '0.5';
+                }
+            } catch (e) {
+                alert('Could not refresh job status.');
+            }
+        };
+        info.appendChild(refreshBtn);
+
+        const viewJsonBtn = document.createElement('button');
+        viewJsonBtn.textContent = 'JSON';
+        viewJsonBtn.title = 'View Full JSON Metadata';
+        viewJsonBtn.onclick = () => {
+            document.getElementById('json-content').textContent = JSON.stringify(job, null, 2);
+            document.getElementById('json-modal').style.display = 'flex';
+        };
+        info.appendChild(viewJsonBtn);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        
+        if (job.meta && job.meta.ended_at) {
+            const endedAt = new Date(job.meta.ended_at);
+            const now = new Date();
+            const hoursElapsed = (now - endedAt) / (1000 * 60 * 60);
+            const isStale = hoursElapsed > 24;
+
+            if ((job.status === 'completed' || job.status === 'finished') && job.task_type === 'imagine' && (!job.quadrant_image_urls || job.quadrant_image_urls.length !== 4)) {
+                const splitBtn = document.createElement('button');
+                splitBtn.textContent = 'Split Grid';
+                splitBtn.disabled = isStale;
+                splitBtn.onclick = async () => {
+                    if (!await checkJobExists(job.task_id)) {
+                        alert('Job has expired and can no longer be split.');
+                        splitBtn.disabled = true;
+                        return;
+                    }
+                    splitBtn.disabled = true;
+                    splitBtn.textContent = 'Splitting...';
+                    try {
+                        const response = await fetch(`${API_BASE}/midjourney/split-grid/${job.task_id}`, { method: 'POST' });
+                        if (!response.ok) throw new Error((await response.json()).detail || 'Failed to split grid');
+                        await fetchAndRenderGallery();
+                    } catch (error) {
+                        alert(`Error: ${error.message}`);
+                        splitBtn.disabled = false;
+                        splitBtn.textContent = 'Split Grid';
+                    }
+                };
+                actions.appendChild(splitBtn);
+            }
+
+            if ((job.status === 'completed' || job.status === 'finished') && job.output.actions) {
+                job.output.actions.forEach(actionLabel => {
+                    const actionBtn = document.createElement('button');
+                    actionBtn.textContent = actionLabel;
+                    actionBtn.disabled = isStale;
+                    actionBtn.onclick = async () => {
+                         if (!await checkJobExists(job.task_id)) {
+                            alert(`Job has expired. Cannot perform action: ${actionLabel}`);
+                            actionBtn.disabled = true;
+                            return;
+                        }
+                        actionBtn.disabled = true;
+                        try {
+                            const response = await fetch(`${API_BASE}/midjourney/action`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ origin_task_id: job.task_id, action: actionLabel }),
+                            });
+                            if (!response.ok) throw new Error((await response.json()).detail || 'Action failed');
+                            const result = await response.json();
+                            alert(`New task started: ${result.task_id}`);
+                            setTimeout(fetchAndRenderGallery, 1500);
+                        } catch (error) {
+                            alert(`Error: ${error.message}`);
+                            actionBtn.disabled = false;
+                        }
+                    };
+                    actions.appendChild(actionBtn);
+                });
+            }
+        
+            if (isStale && actions.hasChildNodes()) {
+                const forceBtn = document.createElement('button');
+                forceBtn.textContent = 'Force Enable';
+                forceBtn.style.fontSize = '0.7rem';
+                forceBtn.onclick = () => {
+                    actions.querySelectorAll('button').forEach(b => b.disabled = false);
+                    forceBtn.remove();
+                };
+                actions.appendChild(forceBtn);
+            }
+        }
+
+        info.appendChild(actions);
+        card.appendChild(info);
+        return card;
+    }
+
+    async function fetchAndRenderGallery() {
+        try {
+            const response = await fetch(`${API_BASE}/midjourney/jobs`);
+            if (!response.ok) throw new Error('Failed to fetch jobs');
+            const jobs = await response.json();
+            gallery.innerHTML = '';
+            jobs.forEach(job => {
+                if(job) gallery.appendChild(createJobCard(job));
+            });
+        } catch (error) {
+            console.error('Error rendering gallery:', error);
+        }
+    }
+
+    uploadBtn.addEventListener('click', () => imageUploadInput.click());
+    toggleAdvancedBtn.addEventListener('click', () => {
+        advancedSettings.style.display = advancedSettings.style.display === 'none' ? 'grid' : 'none';
+    });
+
+    document.querySelectorAll('input[name="aspect_ratio"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const customInput = document.getElementById('ar-custom-input');
+            if(customInput) customInput.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+    });
+
+    document.querySelectorAll('input[name="version"]').forEach(radio => {
+        radio.addEventListener('change', renderImagePreviews); // Re-render to show/hide weights
+    });
+
+    imageUploadInput.addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (!files.length) return;
+        
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
+
+        for (const file of files) {
+            const result = await uploadFile(file);
+            if (result) {
+                uploadedImages.push({
+                    id: `img-${Date.now()}`,
+                    url: result.url,
+                    role: 'prompt',
+                    weight: 1.0, 
+                });
+            }
+        }
+        renderImagePreviews();
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload Image(s)';
+        event.target.value = '';
+    });
+
+    function renderImagePreviews() {
+        imagePreviewContainer.innerHTML = '';
+        const isV7 = document.querySelector('input[name="version"]:checked')?.value === '7';
+
+        uploadedImages.forEach(imgData => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'preview-image-wrapper';
+            
+            const img = document.createElement('img');
+            img.src = imgData.url;
+            wrapper.appendChild(img);
+            
+            if (!isV7) {
+                const weightInput = document.createElement('input');
+                weightInput.type = 'number';
+                weightInput.className = 'weight-input';
+                weightInput.value = imgData.weight;
+                weightInput.step = 0.5;
+                weightInput.title = "Image Weight (multi-prompt)";
+                weightInput.addEventListener('change', (e) => {
+                    imgData.weight = parseFloat(e.target.value);
+                });
+                wrapper.appendChild(weightInput);
+            }
+
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'ref-buttons';
+            
+            const crefBtn = document.createElement('button');
+            crefBtn.textContent = 'Use as --cref';
+            crefBtn.className = 'secondary';
+            crefBtn.onclick = () => setRole(imgData.id, 'cref');
+            buttonsDiv.appendChild(crefBtn);
+
+            const srefBtn = document.createElement('button');
+            srefBtn.textContent = 'Use as --sref';
+            srefBtn.className = 'secondary';
+            srefBtn.onclick = () => setRole(imgData.id, 'sref');
+            buttonsDiv.appendChild(srefBtn);
+            wrapper.appendChild(buttonsDiv);
+
+            if (imgData.role !== 'prompt') {
+                const badge = document.createElement('div');
+                badge.className = 'ref-badge';
+                badge.textContent = imgData.role.toUpperCase();
+                wrapper.appendChild(badge);
+            }
+            
+            imagePreviewContainer.appendChild(wrapper);
+        });
+    }
+
+    function setRole(id, role) {
+        const targetImage = uploadedImages.find(img => img.id === id);
+        if (!targetImage) return;
+
+        if (role === 'cref' || role === 'sref') {
+            uploadedImages.forEach(img => {
+                if (img.role === role) img.role = 'prompt';
+            });
+             targetImage.role = role;
+             document.getElementById(`${role}-input`).value = targetImage.url;
+        } else {
+             targetImage.role = 'prompt';
+        }
+        renderImagePreviews();
+    }
+    
+    imagineForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+
+        try {
+            const formData = new FormData();
+            let promptParts = [];
+            
+            const isV7 = document.querySelector('input[name="version"]:checked')?.value === '7';
+            uploadedImages.forEach(img => {
+                if (img.role === 'prompt') {
+                    if (isV7) {
+                        promptParts.push(img.url); // No weights for V7
+                    } else {
+                        promptParts.push(`${img.url}::${img.weight}`);
+                    }
+                }
+            });
+
+            promptParts.push(promptInput.value.trim());
+
+            const getVal = id => document.getElementById(id).value.trim();
+            const addParam = (id, param) => {
+                const val = getVal(id);
+                if (val) promptParts.push(`${param} ${val}`);
+            };
+
+            addParam('cref-input', '--cref');
+            addParam('cw-input', '--cw');
+            addParam('sref-input', '--sref');
+            addParam('sw-input', '--sw');
+            addParam('iw-input', '--iw');
+            addParam('no-input', '--no');
+            addParam('seed-input', '--seed');
+            addParam('stylize-input', '--s');
+            addParam('chaos-input', '--c');
+            addParam('weird-input', '--w');
+            
+            const arRadio = document.querySelector('input[name="aspect_ratio"]:checked');
+            if (arRadio) {
+                if (arRadio.value === 'custom') {
+                    const customAr = document.getElementById('ar-custom-input').value.trim();
+                    if (customAr) promptParts.push(`--ar ${customAr}`);
+                } else {
+                    promptParts.push(`--ar ${arRadio.value}`);
+                }
+            }
+
+            const version = document.querySelector('input[name="version"]:checked');
+            if (version) {
+                if (version.value === '7') {
+                    promptParts.push('--v 7');
+                } else if (version.value === 'niji 6') {
+                    promptParts.push('--niji 6');
+                } else {
+                    promptParts.push(`--v ${version.value}`);
+                }
+            }
+
+            if (document.getElementById('tile-input').checked) promptParts.push('--tile');
+            if (document.getElementById('style-raw-input').checked) promptParts.push('--style raw');
+
+            formData.append('prompt', promptParts.join(' ').trim());
+            
+            const processMode = document.querySelector('input[name="process_mode"]:checked');
+            formData.append('process_mode', processMode ? processMode.value : 'relax');
+            
+            const response = await fetch(`${API_BASE}/midjourney/imagine`, { method: 'POST', body: formData });
+            if (!response.ok) throw new Error((await response.json()).detail || 'Failed');
+            
+            const result = await response.json();
+            alert(`Task submitted with ID: ${result.task_id}`);
+            imagineForm.reset();
+            if(document.getElementById('ar-custom-input')) document.getElementById('ar-custom-input').style.display = 'none';
+            uploadedImages = [];
+            renderImagePreviews();
+            setTimeout(fetchAndRenderGallery, 1500);
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Imagine';
+        }
+    });
+
+    fetchAndRenderGallery();
+    setInterval(fetchAndRenderGallery, 15000);
+});
+</script>
+</body>
+</html>

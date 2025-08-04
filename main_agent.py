@@ -1,12 +1,25 @@
 import logging
 import os
 from agents.core.reasoner import KnowledgeGraphReasoner
+from agents.utils.email_integration import send_email
 from rdflib import Graph, Namespace, Literal, URIRef
 from uuid import uuid4
 from kg.models import Artifact, ARTIFACT
 from typing import List, Dict, Any
 from datetime import datetime
-from tavily import TavilyClient
+
+# Optional deps
+try:
+    from tavily import TavilyClient
+except ImportError:
+    TavilyClient = None  # type: ignore
+
+# Optional OpenAI
+try:
+    import openai
+except ImportError:
+    openai = None  # type: ignore
+
 from dotenv import load_dotenv
 import pathlib
 
@@ -59,8 +72,8 @@ class MainAgent:
             return await self.reasoner.investigate_research_topic(topic)
         
         try:
-            # 1. Query Tavily for research papers
-            tavily_results = await self.tavily.search(topic)
+            # 1. Query Tavily for research papers. The Tavily Python client is synchronous, so no await.
+            tavily_results = self.tavily.search(topic)
             
             # 2. Process results and update knowledge graph
             processed_data = self._process_tavily_results(tavily_results)
@@ -76,6 +89,7 @@ class MainAgent:
             )
             
             return {
+                'topic': topic,
                 'confidence': analysis['confidence'],
                 'key_insights': analysis['key_insights'],
                 'sources': processed_data['papers'],
@@ -92,8 +106,14 @@ class MainAgent:
             'concepts': set(),
             'relationships': []
         }
-        
-        for result in results:
+
+        # Tavily may return a dict or a list of dicts depending on query parameters.
+        if isinstance(results, dict):
+            iterable_results = [results]
+        else:
+            iterable_results = results or []
+
+        for result in iterable_results:
             paper = {
                 'id': str(uuid4()),
                 'title': result.get('title', ''),
@@ -191,9 +211,53 @@ class MainAgent:
                 logger.error(f"Traversal error: {e}")
 
             if response_components:
-                response = "I've been busy analyzing your message! Here's what I found:\n\n" + "\n".join(response_components)
+                # If an OpenAI API key is configured, use LLM to craft the response
+                openai_key = os.getenv("OPENAI_API_KEY")
+                if openai_key and openai is not None:
+                    try:
+                        openai.api_key = openai_key
+                        system_prompt = (
+                            "You are Semant, a helpful AI assistant that reasons over a knowledge graph. "
+                            "Use the provided knowledge graph evidence to answer the user clearly."
+                        )
+                        msg_prompt = (
+                            f"User message: {message}\n\nKnowledge-graph evidence:\n" + "\n".join(response_components)
+                        )
+                        chat_resp = openai.ChatCompletion.create(
+                            model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo-0613"),
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": msg_prompt}
+                            ],
+                            temperature=0.4,
+                        )
+                        response = chat_resp["choices"][0]["message"]["content"].strip()
+                        chain_of_thought.append("Generated response with OpenAI LLM.")
+                    except Exception as e:
+                        logger.error(f"OpenAI call failed: {e}")
+                        response = "I've been busy analyzing your message! Here's what I found:\n\n" + "\n".join(response_components)
+                else:
+                    response = "I've been busy analyzing your message! Here's what I found:\n\n" + "\n".join(response_components)
             else:
-                response = "I'm processing your request and consulting with my knowledge base. Let me know if you'd like me to investigate any specific aspects further."
+                response = "I don't have enough information yet. Try the Investigate or Traverse buttons, or ask a longer question."
+
+        # Optional e-mail dispatch if user explicitly requests it
+        if message.lower().startswith("email "):
+            try:
+                # expected format:  email someone@example.com your message text
+                parts = message.split(maxsplit=2)
+                if len(parts) >= 3:
+                    to_addr = parts[1]
+                    body = parts[2]
+                    await send_email(
+                        subject="Message from Semant agent",
+                        body=f"{body}\n\n---\nAgent reply:\n{response}",
+                        to=to_addr,
+                    )
+                    chain_of_thought.append(f"Sent e-mail to {to_addr}")
+            except Exception as e:
+                logger.error(f"Email send failed: {e}")
+                chain_of_thought.append("Attempted to send email but encountered an error.")
 
         response_artifact_id = str(uuid4())
         self.artifacts.append(Artifact(

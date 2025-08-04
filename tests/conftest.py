@@ -11,9 +11,21 @@ from agents.core.capability_types import CapabilityType, Capability
 from kg.models.graph_manager import KnowledgeGraphManager
 from tests.utils.test_agents import TestAgent, TestCapabilityAgent
 import sys
+import os
 
 # Load environment variables from .env file
 load_dotenv()
+
+EXTERNAL_MARKER = pytest.mark.skip(reason="External credential tests skipped in OSS CI")
+
+
+def pytest_collection_modifyitems(config, items):
+    for item in list(items):
+        # Skip Gmail / Vertex integration tests unless explicit env flag ENABLE_EXT_EXTERNAL set
+        if "test_gmail_api" in item.nodeid or "vertex_integration" in item.nodeid:
+            if not os.getenv("ENABLE_EXT_EXTERNAL"):
+                item.add_marker(EXTERNAL_MARKER)
+
 
 @pytest.fixture(scope="session")
 def event_loop():

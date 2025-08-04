@@ -30,7 +30,7 @@ class AgentMessage(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-        allow_population_by_field_name = True
+        validate_by_name = True
         
     def __init__(self, **data):
         # Handle legacy field names

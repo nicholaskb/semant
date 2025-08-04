@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Agent Diary Viewer</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      input[type="text"] { width: 200px; }
+      table { border-collapse: collapse; margin-top: 1rem; width: 100%; }
+      th, td { border: 1px solid #ccc; padding: 0.5rem; }
+      th { background: #f2f2f2; }
+      .triples { font-size: 0.85rem; color: #555; }
+    </style>
+  </head>
+  <body>
+    <h1>Agent Diary Viewer</h1>
+
+    <label>
+      Agent ID:
+      <input id="agentId" type="text" placeholder="agent123" />
+    </label>
+    <button id="loadBtn">Load Diary</button>
+
+    <h2>Diary Entries</h2>
+    <table id="diaryTable">
+      <thead>
+        <tr><th>Timestamp</th><th>Message</th><th>Details</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Extracted Triples</h2>
+    <table id="tripleTable">
+      <thead>
+        <tr><th>Subject</th><th>Predicate</th><th>Object</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script>
+      async function fetchJSON(url, token) {
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(url, { headers });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      }
+
+      async function loadDiary() {
+        const id = document.getElementById("agentId").value.trim();
+        if (!id) return alert("Enter agent id");
+        const token = localStorage.getItem("SEMANT_TOKEN") || prompt("Bearer token (leave blank if none)");
+        if (token) localStorage.setItem("SEMANT_TOKEN", token);
+        try {
+          const diary = await fetchJSON(`/diary/${id}`, token);
+          const triples = await fetchJSON(`/diary/${id}/triples`, token);
+          renderDiary(diary);
+          renderTriples(triples);
+        } catch (e) {
+          alert(e);
+        }
+      }
+
+      function renderDiary(entries) {
+        const tbody = document.querySelector("#diaryTable tbody");
+        tbody.innerHTML = "";
+        entries.forEach(e => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${e.timestamp}</td><td>${e.message}</td><td><pre>${JSON.stringify(e.details, null, 2)}</pre></td>`;
+          tbody.appendChild(row);
+        });
+      }
+
+      function renderTriples(results) {
+        const tbody = document.querySelector("#tripleTable tbody");
+        tbody.innerHTML = "";
+        // results is list of dicts from query_knowledge_graph
+        results.forEach(r => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${r.entry || r.s || ""}</td><td>${r.p || r.predicate || ""}</td><td>${r.o || r.object || ""}</td>`;
+          tbody.appendChild(row);
+        });
+      }
+
+      document.getElementById("loadBtn").addEventListener("click", loadDiary);
+    </script>
+  </body>
+</html> 

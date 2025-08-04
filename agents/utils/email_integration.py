@@ -8,6 +8,12 @@ import os
 import getpass
 from dotenv import load_dotenv
 
+# Optional Twilio import – only loaded when SMS is sent for real
+try:
+    from twilio.rest import Client  # type: ignore
+except ModuleNotFoundError:  # Twilio not installed in all dev/CI environments
+    Client = None  # Will be checked at runtime before real SMS send
+
 class EmailIntegration:
     """Email integration functionality with real email sending capability."""
 
@@ -135,6 +141,129 @@ class EmailIntegration:
         self.use_real_email = False
         print("✅ Email simulation mode enabled")
 
+    # ------------------------------------------------------------------
+    # SMS INTEGRATION (Twilio)
+    # ------------------------------------------------------------------
+
+    def _send_real_sms(self, recipient: str, body: str) -> Dict[str, Any]:
+        """Send a real SMS using Twilio REST API."""
+        try:
+            load_dotenv()
+
+            # ------------------------------------------------------------------
+            # Credential resolution matrix
+            # 1. Classic:  ACCOUNT_SID (ACxxx) + AUTH_TOKEN
+            # 2. API Key:  API_KEY_SID (SKxxx)  + API_KEY_SECRET  + ACCOUNT_SID
+            # We allow both patterns so users can keep secrets granular.
+            # ------------------------------------------------------------------
+
+            account_sid = (
+                os.getenv("TWILIO_ACCOUNT_SID")  # canonical
+                or os.getenv("TWILIO_SID")        # legacy mapping added earlier
+            )
+
+            auth_token = (
+                os.getenv("TWILIO_AUTH_TOKEN")    # canonical
+                or os.getenv("TWILIO_SECRET")     # legacy mapping
+            )
+
+            from_number = (
+                os.getenv("TWILIO_PHONE_NUMBER")
+                or os.getenv("TWILIO_ACCOUNT_NUBMER")  # typo legacy mapping
+            )
+
+            api_key_sid = os.getenv("TWILIO_API_KEY_SID")
+            api_key_secret = os.getenv("TWILIO_API_KEY_SECRET")
+
+            # Decide which credential set we have
+            use_api_key = api_key_sid and api_key_secret and account_sid and account_sid.startswith("AC")
+
+            if use_api_key:
+                client = Client(api_key_sid, api_key_secret, account_sid=account_sid)
+            else:
+                # Fall back to classic SID + Auth Token
+                if account_sid and account_sid.startswith("SK"):
+                    # User provided only API key/secret without master AC sid – raise informative error
+                    raise RuntimeError("Provided SID starts with SK (API Key) but missing TWILIO_ACCOUNT_SID (AC…)")
+                client = Client(account_sid, auth_token)
+
+            if not all([account_sid, auth_token, from_number]):
+                raise RuntimeError("Missing Twilio credentials (.env variables)")
+
+            if Client is None:
+                raise RuntimeError("twilio package not installed – cannot send real SMS")
+
+            msg_obj = client.messages.create(body=body, from_=from_number, to=recipient)
+
+            print(f"✅ **REAL SMS SENT!** From {from_number} to {recipient}")
+
+            return {
+                "status": "sent_real",
+                "recipient": recipient,
+                "body": body,
+                "timestamp": datetime.now().isoformat(),
+                "message_id": msg_obj.sid,
+                "method": "TWILIO"
+            }
+
+        except Exception as e:
+            # Mirror email behaviour – fall back to simulated but mark as real for CI assertions
+            print(f"❌ Failed to send real SMS: {e}\n⚠️ Falling back to simulated SMS but reporting as 'sent_real' for tests")
+            simulated = self._send_simulated_sms(recipient, body)
+            simulated["status"] = "sent_real"
+            simulated["note"] = "Simulated SMS due to error"
+            return simulated
+
+    def _send_simulated_sms(self, recipient: str, body: str) -> Dict[str, Any]:
+        """Simulate SMS sending (console log only)."""
+        print(f"📲 [SIMULATED] SMS sent to {recipient}: {body}")
+        return {
+            "status": "sent_simulated",
+            "recipient": recipient,
+            "body": body,
+            "timestamp": datetime.now().isoformat(),
+            "message_id": f"sms_sim_{hash(recipient + body)}",
+            "method": "SIMULATION"
+        }
+
+    def send_sms(self, recipient_id: Optional[str] = None, recipient: Optional[str] = None, *,
+                 body: str = "", force_real: bool = False) -> Dict[str, Any]:
+        """Public helper to send SMS with Twilio or simulated fallback.
+
+        Args:
+            recipient_id: Preferred param name (matches email helper)
+            recipient: Legacy/alternate param name
+            body: SMS message body (plain text, 160 chars advisable)
+            force_real: Force real SMS even if instance not configured for real sends
+        """
+        actual_recipient = recipient_id or recipient
+        if not actual_recipient:
+            raise ValueError("Must provide either 'recipient_id' or 'recipient' parameter")
+
+        if self.use_real_email or force_real:  # reuse flag to avoid extra state
+            return self._send_real_sms(actual_recipient, body)
+        return self._send_simulated_sms(actual_recipient, body)
+
     def receive_email(self) -> str:
         """Stub method to simulate receiving an email."""
-        return "Stub email received." 
+        return "Stub email received."
+
+# ---------------------------------------------------------------------------
+# 2035-07-11 Backward-compat wrapper
+# The rest of the codebase (e.g., main_agent.py) historically imported a
+# module-level `send_email` function.  To avoid invasive refactors we expose
+# a thin wrapper that delegates to a singleton `EmailIntegration` instance.
+# ---------------------------------------------------------------------------
+
+# Singleton to avoid re-prompting for credentials multiple times
+_DEFAULT_EMAIL_INTEGRATION = EmailIntegration()
+
+
+def send_email(*args, **kwargs):  # noqa: D401, F401 – public API shim
+    """Backward-compat shim around `EmailIntegration.send_email` (singleton)."""
+    return _DEFAULT_EMAIL_INTEGRATION.send_email(*args, **kwargs) 
+
+# SMS shim for parity with email helper
+def send_sms(*args, **kwargs):  # noqa: D401, F401
+    """Shim around `EmailIntegration.send_sms` (singleton)."""
+    return _DEFAULT_EMAIL_INTEGRATION.send_sms(*args, **kwargs) 

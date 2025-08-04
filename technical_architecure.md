@@ -289,6 +289,45 @@ classDiagram
 - Configuration management
 - Environment setup
 
+## Midjourney Integration Architecture (Planned — 2035-07-23)
+
+### Overview
+The Midjourney module will extend the *Integration Layer* to provide first-class image generation capabilities.  No new standalone scripts will be created; instead, existing HTTP helper utilities and capability definitions will be augmented.
+
+### Component Diagram
+```mermaid
+graph TD
+    subgraph Integration Layer
+        MJ[Midjourney Client] -- uses --> HTTP[AsyncHTTP Helper]
+    end
+    subgraph Agent Layer
+        IMG_AGENT[MidjourneyAgent]
+    end
+    subgraph Web App
+        UI[Frontend]
+    end
+    UI -->|prompt| IMG_AGENT
+    IMG_AGENT -->|generate_image| MJ
+    MJ -->|image_url| IMG_AGENT
+    IMG_AGENT --> UI
+```
+
+### Planned Modifications
+1. **Capability Enum** – Add `IMAGE_GENERATION` and `IMAGE_UPSCALE` constants.
+2. **Agent Hooks** – Extend existing agent type or create `MidjourneyAgent` *within* `agents/domain/`.
+3. **HTTP Helper** – Inject Midjourney `Authorization` header and handle rate-limit responses.
+4. **Tests** – Mock Midjourney API endpoints in `tests/integration/` using `httpx_mock`.
+
+### Debug Circuit (copy into PRs touching Midjourney code)
+```
+1. pytest -q                        # baseline
+2. ripgrep -n "midjourney" agents/ tests/ | cat
+3. Implement atomic diff (no new files)
+4. pytest -q && pylint agents/ integrations/
+5. Update KG triples & docs
+6. Commit with signed message
+```
+
 ### 9. System Requirements
 
 #### Hardware
@@ -547,3 +586,36 @@ graph TD
 ```
 
 *Rationale*: removes an orphan file flagged as unused by static analysis and clarifies ownership.
+
+## 🛠️ Script Consolidation Blueprint (main.py + main_agent.py + main_api.py)
+
+> 2035-07-11 – GOD-LEVEL CODER
+
+### Purpose
+Consolidate three separate scripts into a single `main.py` while preserving all functionality.
+
+### 6-Step Debug Circuit
+1. **Test Census** – `pytest -q`
+2. **Interface Mapping** – generate call graph (`pyan *.py`)
+3. **Merge Skeleton** – copy existing code blocks to scratch buffer
+4. **Line Audit** – verify imports, side-effects, globals
+5. **Regression Guard** – `pytest -q && uvicorn main:app --reload`
+6. **Doc Sync** – update docs & changelog
+
+### Refactor Diagram
+```mermaid
+flowchart TD
+    subgraph Before
+        A1[main.py]
+        A2[main_agent.py]
+        A3[main_api.py]
+        A2 --> A1
+        A3 --> A2
+    end
+    subgraph After
+        B1[main.py – unified]
+    end
+```
+
+### Message to Future Agents
+Copy this section into every PR that touches `main.py` until all tests pass.

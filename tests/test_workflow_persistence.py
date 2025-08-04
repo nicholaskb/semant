@@ -12,10 +12,12 @@ from agents.core.agent_registry import AgentRegistry
 
 @pytest_asyncio.fixture
 async def persistence():
-    """Create a WorkflowPersistence instance for testing."""
-    persistence = WorkflowPersistence()
+    """Create a WorkflowPersistence instance for testing using a temp directory."""
+    import tempfile
+    temp_dir = tempfile.mkdtemp()
+    persistence = WorkflowPersistence(storage_dir=temp_dir)
     yield persistence
-    # Cleanup test files
+    # Cleanup test files and remove temp dir
     if os.path.exists(persistence.storage_dir):
         for file in os.listdir(persistence.storage_dir):
             os.remove(os.path.join(persistence.storage_dir, file))
@@ -28,9 +30,13 @@ async def monitor():
 
 @pytest_asyncio.fixture
 async def workflow_manager():
-    """Create a WorkflowManager instance for testing."""
+    """Create a WorkflowManager instance for testing with isolated persistence."""
+    import tempfile
+    temp_dir = tempfile.mkdtemp()
     registry = AgentRegistry()
+    # Inject custom persistence with temp_dir into manager AFTER instantiation
     manager = WorkflowManager(registry)
+    manager.persistence = WorkflowPersistence(storage_dir=temp_dir)
     await manager.initialize()
     yield manager
     # Cleanup test files

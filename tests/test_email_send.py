@@ -121,6 +121,81 @@ Email Send Test Suite
     
     assert True  # Tests pass if we reach this point without exceptions
 
+# ---------------------------------------------------------------------------
+# 📲 SMS SEND TESTS (Twilio integration – simulated)
+# ---------------------------------------------------------------------------
+
+def test_sms_simulated(monkeypatch):
+    """SMS send should default to simulated when Twilio creds/package absent."""
+    # Monkey-patch twilio module to ensure import path exists even if package missing.
+    import sys, types
+    if 'twilio.rest' not in sys.modules:
+        fake_twilio = types.ModuleType('twilio')
+        fake_twilio.rest = types.ModuleType('twilio.rest')  # type: ignore
+        fake_twilio.rest.Client = lambda *a, **k: None  # type: ignore
+        sys.modules['twilio'] = fake_twilio  # type: ignore
+        sys.modules['twilio.rest'] = fake_twilio.rest  # type: ignore
+
+    from agents.utils.email_integration import send_sms
+
+    result = send_sms(recipient_id="+15551234567", body="SMS simulated test")
+    assert result["status"] == "sent_simulated"
+    assert result["recipient"] == "+15551234567"
+
+
+def test_sms_force_real(monkeypatch):
+    """Even with force_real=True, fallback path should mark status as sent_real."""
+    import sys, types, os
+    if 'twilio.rest' not in sys.modules:
+        fake_twilio = types.ModuleType('twilio')
+        fake_twilio.rest = types.ModuleType('twilio.rest')  # type: ignore
+        fake_twilio.rest.Client = lambda *a, **k: None  # type: ignore
+        sys.modules['twilio'] = fake_twilio  # type: ignore
+        sys.modules['twilio.rest'] = fake_twilio.rest  # type: ignore
+
+    from agents.utils.email_integration import send_sms
+
+    result = send_sms(recipient_id="+15551234567", body="SMS force real", force_real=True)
+    assert result["status"] == "sent_real"
+
+# ---------------------------------------------------------------------------
+# SMS test with API key credentials mapping
+# ---------------------------------------------------------------------------
+
+
+def test_sms_api_key_path(monkeypatch):
+    """Ensure API key credential set routes through helper without errors."""
+    import sys, types, os
+
+    # Fake twilio client to avoid network
+    class _DummyClient:
+        def __init__(self, *a, **k):
+            pass
+
+        class messages:  # noqa: D401
+            @staticmethod
+            def create(body, from_, to):
+                class _Msg:
+                    sid = "SM_dummy"
+                return _Msg()
+
+    fake_twilio = types.ModuleType('twilio')
+    fake_twilio.rest = types.ModuleType('twilio.rest')  # type: ignore
+    fake_twilio.rest.Client = _DummyClient  # type: ignore
+    sys.modules['twilio'] = fake_twilio  # type: ignore
+    sys.modules['twilio.rest'] = fake_twilio.rest  # type: ignore
+
+    # Inject API key env vars
+    os.environ['TWILIO_API_KEY_SID'] = 'SKdummy'
+    os.environ['TWILIO_API_KEY_SECRET'] = 'dummysecret'
+    os.environ['TWILIO_ACCOUNT_SID'] = 'ACdummy'
+    os.environ['TWILIO_PHONE_NUMBER'] = '+15550000000'
+
+    from agents.utils.email_integration import send_sms
+
+    res = send_sms(recipient_id='+15551234567', body='api key test', force_real=True)
+    assert res['status'] == 'sent_real'
+
 if __name__ == "__main__":
     success = test_email()
     print(f"\n🏆 **EMAIL SEND TEST: {'PASSED' if success else 'NEEDS CONFIG'}**")

@@ -71,39 +71,8 @@ def setup_logging():
 
 class TestRecoveryAgent(EnhancedMockAgent):
     """Test agent with recovery capabilities."""
-    
-    def __init__(self, agent_id: str, agent_type: str, capabilities: Set[Capability]):
-        """Initialize the test recovery agent."""
-        self._status = AgentStatus.IDLE  # Initialize status before super().__init__
-        super().__init__(agent_id, agent_type, capabilities)
-        self._recovery_attempts = 0
-        self._max_recovery_attempts = 3
-        self._recovery_strategy = "retry"
-        self._recovery_metrics = {
-            "total_attempts": 0,
-            "successful_recoveries": 0,
-            "failed_recoveries": 0,
-            "strategy_metrics": {
-                "timeout": {"attempts": 0, "successes": 0, "failures": 0, "avg_duration_ms": 0},
-                "state_corruption": {"attempts": 0, "successes": 0, "failures": 0, "avg_duration_ms": 0},
-                "default": {"attempts": 0, "successes": 0, "failures": 0, "avg_duration_ms": 0}
-            },
-            "resource_metrics": {
-                "memory_usage_mb": 0,
-                "cpu_usage_percent": 0,
-                "lock_contention_count": 0
-            }
-        }
-        self.recovery_timeout = 15.0  # Increased timeout to avoid race conditions
-        self._recovery_success = True
-        self._pending_operations = []
-        self._resources = {}
-        self._connections = {}
-        self._state_backup = None
-        self._lock = asyncio.Lock()
-        self._status_lock = asyncio.Lock()  # Separate lock for status updates
-        self._metrics_lock = asyncio.Lock()  # Separate lock for metrics updates
-        self._role = None
+    pass
+
 
     @property
     def role(self) -> Optional[str]:
@@ -926,7 +895,7 @@ async def test_agent_recovery_success(recovery_agent, agent_registry):
             
             # Attempt recovery
             success = await agent_registry.recover_agent(recovery_agent.agent_id)
-            assert success
+            assert success, "Recovery should succeed"
             assert recovery_agent.status == AgentStatus.IDLE
             assert recovery_agent.recovery_attempts == 1
             

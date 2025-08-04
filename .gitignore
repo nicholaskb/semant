@@ -41,10 +41,17 @@ logs/
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
 # Scratch space
 scratch_space/*
 !scratch_space/README.md
 **/__pycache__/
 credentials/*.json
 credentials/token.pickle
+
+# Workflows
+workflows/
+
+# Midjourney
+midjourney_integration/jobs/
+midjourney_integration/uploads/

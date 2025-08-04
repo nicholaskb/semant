@@ -35,6 +35,7 @@ class CapabilityType(str, Enum):
     ERROR_HANDLING = "error_handling"
     LOGGING = "logging"
     MESSAGE_PROCESSING = "message_processing"
+    SMS_NOTIFICATION = "sms_notification"  # New capability for outbound SMS via Twilio
     
     # Core coding agent capabilities
     CODE_REVIEW = "code_review"

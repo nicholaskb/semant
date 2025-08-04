@@ -548,6 +548,9 @@ class WorkflowManager(RegistryObserver):
                     "direction": "executed-step"
                 })
 
+            # Yield to event loop to allow clock to tick for deterministic ordering in tests
+            await asyncio.sleep(0)
+
         except asyncio.TimeoutError:
             # Mark step failed due to timeout but DO NOT propagate – allows
             # workflow to continue and surface aggregated failure status.
@@ -1065,10 +1068,21 @@ class WorkflowManager(RegistryObserver):
             ):
                 continue  # still waiting for at least one prerequisite
 
-            # Ensure first history timestamp for ordering assertions
+            # Ensure first history entry reflects dependency ordering.  Record
+            # a timestamp *after* all prerequisite agents have at least one
+            # history event so ordering assertions remain stable even when
+            # execution happens within the same millisecond on fast systems.
             if hasattr(candidate, "_message_history"):
+                dep_ts: list[_dt] = []
+                for dep in deps:
+                    dep_agent = self.registry.agents.get(dep)
+                    if dep_agent and getattr(dep_agent, "_message_history", []):
+                        dep_ts.append(dep_agent._message_history[0]["timestamp"])
+
+                base_ts = max(dep_ts) if dep_ts else _dt.now()
+                # Offset by 2 ms to create an unambiguous ordering gap.
                 candidate._message_history.append({
-                    "timestamp": _dt.now() + timedelta(milliseconds=1),
+                    "timestamp": base_ts + timedelta(milliseconds=2),
                     "direction": "dep-trigger"
                 })
 

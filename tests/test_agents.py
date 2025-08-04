@@ -298,3 +298,49 @@ class TestPromptAgent:
         response = await agent.process_message(message)
         assert response.message_type == "error"
         assert "error" in response.content 
+
+# -------------------------------------------------------------
+# Diary Integration – T7 coverage
+# -------------------------------------------------------------
+
+import asyncio
+
+@pytest.mark.asyncio
+async def test_all_agents_write_diary():
+    """Every representative agent should write at least two diary entries
+    (RECV + SEND) per processed message when auto_diary is enabled."""
+    from agents.core.data_handler_agent import SensorAgent, DataProcessorAgent
+
+    agents = [
+        SensorAgent(agent_id="sensor_diary"),
+        DataProcessorAgent(agent_id="processor_diary"),
+    ]
+
+    # Disable triple extraction during this test to avoid background asyncio tasks
+    import utils.triple_extractor as _te
+    _orig_extract = _te.extract_triples
+    _te.extract_triples = lambda _text: []  # type: ignore[assignment]
+
+    # Initialise and send a simple ping message
+    for ag in agents:
+        await ag.initialize()
+        msg = AgentMessage(sender_id="tester", recipient_id=ag.agent_id, content={"ping": True})
+        await ag.process_message(msg)
+        entries = ag.read_diary()
+        assert len(entries) >= 2, f"{ag.agent_id} expected >=2 diary entries, got {len(entries)}"  # RECV + SEND
+
+    # Graceful shutdown / cleanup to avoid interference with subsequent tests
+    for ag in agents:
+        await ag.shutdown()
+
+    # Ensure disabling auto_diary works
+    disabled_agent = SensorAgent(agent_id="sensor_no_diary")
+    disabled_agent.config["auto_diary"] = False  # disable after construction (positional-arg quirk)
+    await disabled_agent.initialize()
+    await disabled_agent.process_message(AgentMessage(sender_id="tester", recipient_id=disabled_agent.agent_id, content={"sensor_id": "s1", "reading": 1}))
+    assert disabled_agent.read_diary() == [], "auto_diary=False should record no entries"
+
+    await disabled_agent.shutdown() 
+
+    # Restore original triple extractor
+    _te.extract_triples = _orig_extract 

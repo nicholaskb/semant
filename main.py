@@ -117,6 +117,10 @@ _MJ_FLAG_PATTERNS = {
     "stylize": re.compile(r"\s--s\s+\S+", re.IGNORECASE),
     "cref": re.compile(r"\s--cref\s+\S+", re.IGNORECASE),
     "cw": re.compile(r"\s--cw\s+\S+", re.IGNORECASE),
+    # Remove inline version flags; version is passed via payload separately
+    "version": re.compile(r"\s--v\s+\S+", re.IGNORECASE),
+    # Remove inline niji flags as version as well
+    "niji": re.compile(r"\s--niji\s+\S+", re.IGNORECASE),
 }
 
 def _ensure_space_before_flags(text: str) -> str:
@@ -136,8 +140,17 @@ def _sanitize_mj_prompt(raw_prompt: str, *, remove_ar: bool, v7: bool) -> str:
     """
     prompt = raw_prompt or ""
     try:
+        # Normalize unicode dashes to prevent GoAPI parser confusion (em/en/minus)
+        prompt = (
+            prompt.replace("\u2014", " - ")  # em dash —
+                  .replace("\u2013", " - ")  # en dash –
+                  .replace("\u2212", "-")    # minus sign −
+        )
         if remove_ar:
             prompt = _MJ_FLAG_PATTERNS["ar"].sub("", prompt)
+        # Always strip inline version flags; we pass model_version explicitly.
+        prompt = _MJ_FLAG_PATTERNS["version"].sub("", prompt)
+        prompt = _MJ_FLAG_PATTERNS["niji"].sub("", prompt)
         if v7:
             prompt = _MJ_FLAG_PATTERNS["stylize"].sub("", prompt)
             prompt = _MJ_FLAG_PATTERNS["cref"].sub("", prompt)
@@ -394,6 +407,9 @@ async def api_midjourney_imagine(
                     final_prompt = final_prompt.replace("URL_PLACEHOLDER", url, 1)
 
         
+        # Extract aspect ratio from the raw prompt BEFORE sanitization (so we don't lose it)
+        ar_match_pre = re.search(r'--ar\s+(\S+)', final_prompt)
+
         # Additive server-side normalization to protect against stale clients
         version_match = re.search(r"--v\s+(7|6|5\.2)|\bniji\s+6\b", final_prompt, re.IGNORECASE)
         model_version: Optional[str] = None
@@ -412,9 +428,8 @@ async def api_midjourney_imagine(
 
         _logger.info("Submitting imagine task with final prompt: '%s'", final_prompt)
 
-        # Extract aspect ratio from the prompt string to ensure the correct one is passed
-        ar_match = re.search(r'--ar\s+(\S+)', final_prompt)
-        aspect_ratio_to_pass = ar_match.group(1) if ar_match else "1:1"
+        # Prefer aspect ratio detected pre-sanitize; otherwise fall back to provided form field
+        aspect_ratio_to_pass = ar_match_pre.group(1) if ar_match_pre else (aspect_ratio or "1:1")
 
         # 2. Submit the task to Midjourney
         response = await _midjourney_client.submit_imagine(

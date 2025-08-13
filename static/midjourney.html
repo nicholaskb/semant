@@ -860,16 +860,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const _customAr = document.getElementById('ar-custom-input').value.trim();
             }
 
+            // Do not inject inline version flags; backend sends version via payload
             const version = document.querySelector('input[name="version"]:checked');
-            if (version) {
-                if (version.value === '7') {
-                    promptParts.push('--v 7');
-                } else if (version.value === 'niji 6') {
-                    promptParts.push('--niji 6');
-                } else {
-                    promptParts.push(`--v ${version.value}`);
-                }
-            }
 
             if (document.getElementById('tile-input').checked) promptParts.push('--tile');
             if (document.getElementById('style-raw-input').checked) promptParts.push('--style raw');

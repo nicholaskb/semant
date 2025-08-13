@@ -109,6 +109,48 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 
+# ------------------------------------------------------------
+# Midjourney prompt sanitization helpers (additive, non-destructive)
+# ------------------------------------------------------------
+_MJ_FLAG_PATTERNS = {
+    "ar": re.compile(r"\s--ar\s+\S+", re.IGNORECASE),
+    "stylize": re.compile(r"\s--s\s+\S+", re.IGNORECASE),
+    "cref": re.compile(r"\s--cref\s+\S+", re.IGNORECASE),
+    "cw": re.compile(r"\s--cw\s+\S+", re.IGNORECASE),
+}
+
+def _ensure_space_before_flags(text: str) -> str:
+    """Ensure a space exists before any --flag (GoAPI can enforce this)."""
+    try:
+        return re.sub(r"([^\s])(--\w+)", r"\1 \2", text)
+    except Exception:
+        return text
+
+def _sanitize_mj_prompt(raw_prompt: str, *, remove_ar: bool, v7: bool) -> str:
+    """
+    Additive normalizer for Midjourney prompts.
+    - Removes --ar when aspect_ratio is provided separately
+    - For v7, removes unsupported or problematic flags like --s, --cref, --cw
+    - Ensures a space exists before any --flag
+    Does not delete user text; only trims problematic flag segments.
+    """
+    prompt = raw_prompt or ""
+    try:
+        if remove_ar:
+            prompt = _MJ_FLAG_PATTERNS["ar"].sub("", prompt)
+        if v7:
+            prompt = _MJ_FLAG_PATTERNS["stylize"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["cref"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["cw"].sub("", prompt)
+        prompt = _ensure_space_before_flags(prompt)
+        # collapse multiple spaces
+        prompt = re.sub(r"\s{2,}", " ", prompt).strip()
+    except Exception:
+        # Fail open: return the original prompt if anything goes wrong
+        return raw_prompt
+    return prompt
+
+
 from agents.core.agentic_prompt_agent import AgenticPromptAgent
 from agents.core.message_types import AgentMessage
 
@@ -352,6 +394,14 @@ async def api_midjourney_imagine(
                     final_prompt = final_prompt.replace("URL_PLACEHOLDER", url, 1)
 
         
+        # Additive server-side normalization to protect against stale clients
+        is_v7 = "--v 7" in final_prompt or re.search(r"\bv7\b", final_prompt, re.IGNORECASE)
+        final_prompt = _sanitize_mj_prompt(
+            final_prompt,
+            remove_ar=True,  # aspect_ratio is provided via field
+            v7=is_v7,
+        )
+
         _logger.info("Submitting imagine task with final prompt: '%s'", final_prompt)
 
         # Extract aspect ratio from the prompt string to ensure the correct one is passed

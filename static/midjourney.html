@@ -844,18 +844,20 @@ document.addEventListener('DOMContentLoaded', () => {
             addParam('iw-input', '--iw');
             addParam('no-input', '--no');
             addParam('seed-input', '--seed');
-            addParam('stylize-input', '--s');
+            // V7 often rejects --s; only include stylize for non-V7
+            if (!isV7) {
+                addParam('stylize-input', '--s');
+            }
             addParam('chaos-input', '--c');
             addParam('weird-input', '--w');
             
+            // Aspect ratio is passed separately via form field; avoid duplicating --ar in prompt
+            // (GoAPI can reject prompts that include both JSON aspect_ratio and --ar flag)
+            // Keeping the UI selection logic intact, but not appending --ar to the prompt string.
             const arRadio = document.querySelector('input[name="aspect_ratio"]:checked');
-            if (arRadio) {
-                if (arRadio.value === 'custom') {
-                    const customAr = document.getElementById('ar-custom-input').value.trim();
-                    if (customAr) promptParts.push(`--ar ${customAr}`);
-                } else {
-                    promptParts.push(`--ar ${arRadio.value}`);
-                }
+            if (arRadio && arRadio.value === 'custom') {
+                // still read custom value to preserve UX state; do not push to prompt
+                const _customAr = document.getElementById('ar-custom-input').value.trim();
             }
 
             const version = document.querySelector('input[name="version"]:checked');

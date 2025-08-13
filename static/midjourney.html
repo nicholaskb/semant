@@ -147,7 +147,7 @@
                     <button type="button" id="describe-btn" class="secondary" disabled>Describe</button>
                     <input type="file" id="describe-upload-input" style="display:none;" accept="image/*">
                     <button type="button" id="blend-btn" class="secondary" disabled>Blend</button>
-                    <select id="blend-dimension" style="margin-left: 6px;">
+                    <select id="blend-dimension" style="margin-left: 6px; display: none;">
                         <option value="portrait">portrait</option>
                         <option value="square" selected>square</option>
                         <option value="landscape">landscape</option>
@@ -572,7 +572,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Prefer URL-based submission to avoid CORS on GCS fetches
                 const formData = new FormData();
-                const dim = (blendDimension && blendDimension.value) ? blendDimension.value : 'square';
+                // Default to 'square' dimension since selector is hidden
+                const dim = 'square';
                 formData.append('dimension', dim);
                 formData.append('image_urls', JSON.stringify(selected.map(i => i.url)));
 

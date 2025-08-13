@@ -102,6 +102,15 @@ class CapabilityType(str, Enum):
     DATA_COLLECTION = "data_collection"
     MODULE_MANAGEMENT = "module_management"
 
+    # Scientific Reasoning Workflow
+    LOGO_ANALYSIS = "logo_analysis"
+    AESTHETICS_ANALYSIS = "aesthetics_analysis"
+    COLOR_PALETTE_ANALYSIS = "color_palette_analysis"
+    COMPOSITION_ANALYSIS = "composition_analysis"
+    PROMPT_SYNTHESIS = "prompt_synthesis"
+    PROMPT_CRITIQUE = "prompt_critique"
+    PROMPT_JUDGMENT = "prompt_judgment"
+
 @dataclass(frozen=True)
 class Capability:
     """Represents a capability that an agent can have."""
@@ -374,4 +383,4 @@ class CapabilitySet:
                 (cap.type == item) or (isinstance(cap.type, CapabilityType) and cap.type.value == item)
                 for cap in self._capabilities
             )
-        return False 
+        return False

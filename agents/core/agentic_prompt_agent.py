@@ -105,6 +105,12 @@ class AgenticPromptAgent(BaseAgent):
                 
             # Generate structured prompt
             prompt = await self._generate_prompt(prompt_type, context, objective)
+
+            # Special-case: Midjourney prompt refinement should return a
+            # concrete 'refined_prompt' field expected by the UI/endpoint.
+            if prompt_type == "midjourney_refinement":
+                user_prompt = (context or {}).get("user_prompt", "")
+                prompt["refined_prompt"] = self._refine_midjourney_prompt(user_prompt)
             
             # Store prompt in history
             self.review_history.append({
@@ -304,6 +310,34 @@ class AgenticPromptAgent(BaseAgent):
             review_result['status'] = 'error'
             review_result['error'] = str(e)
             return review_result
+
+    def _refine_midjourney_prompt(self, user_prompt: str) -> str:
+        """Produce a deterministic refinement for Midjourney prompts.
+
+        This is a lightweight, local enhancer that appends high-value
+        descriptors when absent and preserves any existing flags (e.g. --ar).
+        """
+        base = (user_prompt or "").strip()
+        if not base:
+            return base
+
+        # Split off any trailing flags to avoid duplicating descriptors within them
+        parts = base.split(" --")
+        core = parts[0].strip()
+        flags = (" --" + " --".join(parts[1:])) if len(parts) > 1 else ""
+
+        enhancements = [
+            "highly detailed",
+            "photorealistic",
+            "cinematic lighting",
+            "sharp focus",
+            "depth of field",
+            "dramatic composition",
+        ]
+        lower = core.lower()
+        missing = [e for e in enhancements if e not in lower]
+        refined = core if not missing else f"{core}, " + ", ".join(missing)
+        return (refined + flags).strip()
         
     async def update_knowledge_graph(self, update_data: Dict[str, Any]) -> None:
         """Update the knowledge graph with prompt and review information."""

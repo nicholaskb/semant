@@ -537,8 +537,8 @@ async def test_workflow_dependency_execution(workflow_manager, setup_agents):
     assert len(agent2_history) > 0
     assert len(agent3_history) > 0
     
-    # Verify that agent2 executed after agent1
     assert agent2_history[0]["timestamp"] > agent1_history[0]["timestamp"]
+    await asyncio.sleep(0.2)
     # Verify that agent3 executed after agent2
     assert agent3_history[0]["timestamp"] > agent2_history[0]["timestamp"]
 

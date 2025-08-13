@@ -65,3 +65,4 @@ nest_asyncio>=1.5.6
 
 # Added for FastAPI file uploads
 python-multipart>=0.0.20
+Pillow

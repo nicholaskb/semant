@@ -103,6 +103,7 @@ class BaseAgent(ABC):
             
         self.agent_id = agent_id
         self.agent_type = agent_type
+        self.logger = logger.bind(agent_id=agent_id, agent_type=agent_type)
         self._capabilities = CapabilitySet()
 
         # ------------------------------------------------------------------
@@ -169,6 +170,15 @@ class BaseAgent(ABC):
         if not hasattr(BaseAgent, "_GLOBAL_AGENTS"):
             BaseAgent._GLOBAL_AGENTS: ClassVar[Dict[str, "BaseAgent"]] = {}
         BaseAgent._GLOBAL_AGENTS[self.agent_id] = self
+        
+    def _create_error_response(self, recipient_id: str, error_message: str) -> AgentMessage:
+        """Creates a standardized error response message."""
+        return AgentMessage(
+            sender_id=self.agent_id,
+            recipient_id=recipient_id,
+            content={"error": error_message},
+            message_type="error",
+        )
         
     async def initialize(self) -> None:
         """Initialize the agent and its resources."""

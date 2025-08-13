@@ -338,7 +338,7 @@ class WorkflowNotifier:
 class AgentRegistry:
     """Registry for managing agent instances and their capabilities."""
     
-    def __init__(self):
+    def __init__(self, disable_auto_discovery: bool = False):
         """Initialize the registry."""
         self._agents: Dict[str, BaseAgent] = {}
         self._registration_counter: int = 0
@@ -352,6 +352,7 @@ class AgentRegistry:
         self._initialization_lock = asyncio.Lock()
         self._observers = []
         self.logger = logger.bind(component="AgentRegistry")
+        self._disable_auto_discovery = disable_auto_discovery
         
     async def _auto_discover_agents(self) -> None:
         """Auto-discover and register agents from the environment."""
@@ -365,7 +366,7 @@ class AgentRegistry:
             agent_dir = os.path.join(os.path.dirname(__file__), "..")
             for root, _, files in os.walk(agent_dir):
                 for file in files:
-                    if file.endswith(".py") and not file.startswith("__"):
+                    if file.endswith(".py") and not file.startswith("__") and not file.startswith("test_") and not file.startswith("demo_"):
                         module_path = os.path.join(root, file)
                         module_name = os.path.splitext(os.path.basename(module_path))[0]
                         
@@ -378,9 +379,17 @@ class AgentRegistry:
                                 
                                 # Look for agent classes
                                 for name, obj in inspect.getmembers(module):
-                                    if (inspect.isclass(obj) and 
-                                        issubclass(obj, BaseAgent) and 
-                                        obj != BaseAgent):
+                                    if inspect.isclass(obj) and issubclass(obj, BaseAgent) and obj != BaseAgent:
+                                        # Check constructor signature
+                                        sig = inspect.signature(obj.__init__)
+                                        params = sig.parameters
+                                        
+                                        # Skip agents with complex constructors
+                                        required_params = {p for p, v in params.items() if v.default == inspect.Parameter.empty and p != 'self'}
+                                        if len(required_params) > 1 or (len(required_params) == 1 and 'agent_id' not in required_params):
+                                            self.logger.debug(f"Skipping agent {name} due to complex constructor")
+                                            continue
+                                            
                                         # Register the agent class
                                         agent_id = f"{name.lower()}_{uuid.uuid4().hex[:8]}"
                                         agent = obj(agent_id=agent_id)
@@ -415,7 +424,8 @@ class AgentRegistry:
                 self._capability_map = defaultdict(set)
                 
                 # Auto-discover agents
-                await self._auto_discover_agents()
+                if not self._disable_auto_discovery:
+                    await self._auto_discover_agents()
                 
                 self._is_initialized = True
                 self.logger.debug("AgentRegistry initialized")
@@ -448,6 +458,10 @@ class AgentRegistry:
     def agents(self) -> Dict[str, BaseAgent]:
         """Get all registered agents."""
         return self._agents.copy()
+        
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get a list of all registered agent instances."""
+        return list(self._agents.values())
         
     async def register_agent(self, agent: BaseAgent, capabilities: Optional[Set[Capability]] = None) -> None:
         """Register an agent with its capabilities.
@@ -979,4 +993,4 @@ class AgentRegistry:
                         notification["capabilities"]
                     )
             except Exception as e:
-                self.logger.error(f"Error notifying observer: {str(e)}") 
+                self.logger.error(f"Error notifying observer: {str(e)}")

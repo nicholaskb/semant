@@ -11,11 +11,13 @@ This document outlines the features and usage of the comprehensive Midjourney we
 *   **Post-Processing Actions:** Perform follow-up actions on completed jobs, such as **Upscale**, **Reroll**, and **Variation**.
 *   **Grid Splitting:** Automatically split a completed 2x2 image grid into four individual quadrant images, which are saved to GCS and can be used in future prompts.
 *   **Command-Line Interface (CLI):** A `cli.py` script provides direct command-line access to submit `imagine` and `action` commands, and list local jobs.
+*   **Describe (image → prompts):** Submit an image to receive suggested prompts. The UI button posts to backend endpoints and renders suggestions; clicking **Use** fills the prompt and opens Advanced Settings so you can tweak parameters before pressing **Imagine**.
+*   **Blend (2–5 images):** Merge 2–5 images by dimension (portrait/square/landscape). The UI prefers URL-based submission to the backend (no browser-side GCS fetch), with an automatic fallback to file-upload.
 
 ## Known Issues & Limitations
 
-*   **`--cref` with V7 Models:** There is a known bug where using `--cref` with Midjourney version 7 models fails to include the reference image in the final prompt. The `--cref` flag works correctly with other versions. This is a high-priority issue to be fixed.
-*   **"Refine with AI" Button:** The "Refine with AI" button in the UI is currently non-functional. Efforts to fix this have been unsuccessful so far.
+*   **`--cref` with V7 Models:** Known limitation; `--cref` is not supported by V7. Use V6 or omit `--cref` when `--v 7` is selected.
+*   **GCS URL accessibility:** Ensure uploaded images are publicly readable. The backend verifies accessibility before task submission, but private buckets will still fail.
 
 ## Quick Start
 
@@ -94,6 +96,14 @@ The backend provides several key endpoints to support the UI:
 *   `GET /api/midjourney/jobs/{task_id}`: Returns the metadata for a single job.
 *   `POST /api/midjourney/split-grid/{task_id}`: Triggers the grid-splitting process for a completed job.
 *   `POST /api/midjourney/action`: Performs a follow-up action (upscale, etc.) on a job.
+*   `POST /api/midjourney/describe`: Describe via file upload (`image_file` form field). Returns `{ "prompts": [ ... ] }`.
+*   `POST /api/midjourney/describe-url`: Describe via URL (`image_url` form field). Returns `{ "prompts": [ ... ] }`.
+*   `POST /api/midjourney/blend`: Blend via either `image_urls` (JSON array or comma-separated string) or `image_files` (2–5 uploads) plus `dimension`.
+
+## Troubleshooting
+
+*   **Failed to fetch / CORS errors:** The UI now prefers URL-based submissions so the server (not the browser) verifies and submits GCS URLs. If you still see failures, confirm bucket objects are public and that `GCS_BUCKET_NAME` and `GOOGLE_APPLICATION_CREDENTIALS` are set.
+*   **Authentication:** Ensure `MIDJOURNEY_API_TOKEN` is present and valid.
 
 ## Command-Line Interface (CLI)
 

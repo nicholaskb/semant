@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from pathlib import Path
 from io import BytesIO
 
@@ -122,7 +122,13 @@ class MidjourneyClient:
             return response.json()
 
     async def submit_imagine(
-        self, prompt: str, *, aspect_ratio: Optional[str], process_mode: Optional[str]
+        self,
+        prompt: str,
+        *,
+        aspect_ratio: Optional[str],
+        process_mode: Optional[str],
+        oref_url: Optional[str] = None,
+        oref_weight: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Submit an imagine request using the V1 endpoint."""
         payload: Dict[str, Any] = {
@@ -135,6 +141,10 @@ class MidjourneyClient:
         }
         if aspect_ratio:
             payload["input"]["aspect_ratio"] = aspect_ratio
+        if oref_url:
+            payload["input"]["oref"] = oref_url
+        if oref_weight is not None:
+            payload["input"]["ow"] = oref_weight
             
         logger.info("Submitting imagine request with payload: %s", payload)
         return await self._request("POST", self._TASK_ENDPOINT, json=payload)
@@ -153,9 +163,18 @@ class MidjourneyClient:
             "input": {"origin_task_id": origin_task_id},
         }
         
-        # The API requires the index to be an integer if it exists
+        # The API requires the index to be a STRING if it exists
         if index_str:
-            payload["input"]["index"] = int(index_str)
+            payload["input"]["index"] = index_str
+
+        # ADDITIVE NORMALIZATION: map special labels to supported unified task types
+        # Do not remove existing logic; only augment payload before sending.
+        try:
+            if task_type in ("high_variation", "low_variation"):
+                payload["task_type"] = "variation"
+                payload["input"]["strength"] = "high" if task_type.startswith("high_") else "low"
+        except Exception:
+            pass
 
         logger.info("Submitting action request with payload: %s", payload)
         return await self._request("POST", self._TASK_ENDPOINT, json=payload)

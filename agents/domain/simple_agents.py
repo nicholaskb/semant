@@ -61,20 +61,20 @@ class SimpleResponderAgent(BaseAgent):
 
 
 class FinanceAgent(SimpleResponderAgent):
-    def __init__(self, agent_id: str = "finance_agent"):
+    def __init__(self, agent_id: str = "finance_agent", **kwargs):
         super().__init__(agent_id, "finance", "Finance information not available.")
 
 
 class CoachingAgent(SimpleResponderAgent):
-    def __init__(self, agent_id: str = "coaching_agent"):
+    def __init__(self, agent_id: str = "coaching_agent", **kwargs):
         super().__init__(agent_id, "coaching", "Keep learning and growing!")
 
 
 class IntelligenceAgent(SimpleResponderAgent):
-    def __init__(self, agent_id: str = "intelligence_agent"):
+    def __init__(self, agent_id: str = "intelligence_agent", **kwargs):
         super().__init__(agent_id, "intelligence", "No intelligence reports.")
 
 
 class DeveloperAgent(SimpleResponderAgent):
-    def __init__(self, agent_id: str = "developer_agent"):
+    def __init__(self, agent_id: str = "developer_agent", **kwargs):
         super().__init__(agent_id, "developer", "Code generation not supported.")

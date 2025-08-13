@@ -71,7 +71,27 @@ def setup_logging():
 
 class TestRecoveryAgent(EnhancedMockAgent):
     """Test agent with recovery capabilities."""
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._lock = asyncio.Lock()
+        self._max_recovery_attempts = 3
+        self._recovery_attempts = 0
+        self._recovery_metrics = {
+            "total_attempts": 0,
+            "successful_recoveries": 0,
+            "failed_recoveries": 0,
+            "strategy_metrics": {},
+            "resource_metrics": {}
+        }
+        self._recovery_strategy = "default"
+        self._recovery_success = True
+        self._knowledge_graph_queries = []
+        self._message_history = []
+        self._default_response = "default response"
+        self._pending_operations = []
+        self._resources = {}
+        self._connections = {}
+        self._state_backup = None
 
 
     @property

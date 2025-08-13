@@ -1,0 +1,35 @@
+# Overview
+A multi-agent orchestration system for building and managing complex AI-driven workflows. The system is designed for scalability, robustness, and enterprise-grade capabilities, featuring a semantic knowledge graph for data management, dynamic agent creation, and transaction-based workflow execution. The project is currently in a recovery and enhancement phase, with a strong focus on achieving 100% test coverage and stabilizing all core features.
+
+# Core Features
+- **Multi-Agent System**: Dynamic creation, registration, and management of diverse agents. Capability-based routing and lifecycle management.
+- **Knowledge Graph**: Enterprise-grade RDF-based semantic store with SPARQL, caching, versioning, and validation.
+- **Workflow Orchestration**: Transactional, fault-tolerant workflow engine for composing and executing complex tasks across multiple agents.
+- **Integration Layer**: Connectivity with external systems like Google Cloud (Vertex AI, Gmail) and planned integration with Midjourney.
+- **Testing & Debugging**: Comprehensive test suite, performance monitoring, and built-in diagnostic tools.
+
+# User Experience
+The primary users are developers building and deploying agent-based applications. The "UI" is primarily the API and CLI tools for managing the system. A secondary UI is the `static/midjourney.html` for image generation.
+
+# Technical Architecture
+- **Frontend**: Minimal HTML/JS for specific demos (e.g., Midjourney).
+- **Backend**: Python-based, using FastAPI for API endpoints.
+- **Agents**: Core logic in `agents/` directory, built on an async `BaseAgent`.
+- **Data Store**: Knowledge Graph based on `rdflib` and custom management layers.
+- **Infrastructure**: Runs on a standard Python environment, with dependencies managed in `requirements.txt`.
+
+# Development Roadmap
+- **MVP**: The current system is post-MVP and is being stabilized. The immediate goal is to fix all remaining failing tests and resolve critical issues outlined in the `README.md`.
+- **Future Enhancements**:
+    - Complete Midjourney integration.
+    - Implement the "Refine with AI" functionality on the frontend.
+    - Consolidate `main.py`, `main_agent.py`, and `main_api.py` into a single entry point.
+    - Address medium-priority integration issues (e.g., missing agent methods).
+
+# Logical Dependency Chain
+1.  Fix all failing tests in `tests/test_workflow_manager.py` and `tests/test_agent_recovery.py`.
+2.  Resolve all critical issues from the "WORK-PACK BACKLOG" (constructor mismatches, comparison errors, etc.).
+3.  Address the JSON serialization crisis to unblock workflow persistence.
+4.  Implement the script consolidation plan.
+5.  Enhance and complete the Midjourney integration.
+

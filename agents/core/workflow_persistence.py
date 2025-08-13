@@ -1,4 +1,5 @@
 from typing import Dict, List, Any, Optional, Union
+import asyncio
 from loguru import logger
 import json
 import os
@@ -34,6 +35,24 @@ class WorkflowPersistence:
 
         self.storage_dir = storage_dir
         self.logger = logger.bind(component="WorkflowPersistence", storage_dir=self.storage_dir)
+        self._is_initialized = False
+        self._initialization_lock = asyncio.Lock()
+
+    async def initialize(self) -> None:
+        """Initialize the persistence layer."""
+        if self._is_initialized:
+            return
+        async with self._initialization_lock:
+            if self._is_initialized:
+                return
+            # Ensure storage directory exists
+            os.makedirs(self.storage_dir, exist_ok=True)
+            self._is_initialized = True
+            self.logger.debug("WorkflowPersistence initialized")
+
+    async def shutdown(self) -> None:
+        """Shutdown the persistence layer."""
+        self.logger.info("WorkflowPersistence shut down")
         
     async def save_workflow(self, workflow: Union[Dict, Workflow]) -> None:
         """Save workflow state."""

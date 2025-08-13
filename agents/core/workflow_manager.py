@@ -21,13 +21,13 @@ class WorkflowManager(RegistryObserver):
         self.registry = registry
         self.knowledge_graph = knowledge_graph
         self._workflows = {}
-        self.persistence = WorkflowPersistence()  # Initialize persistence
-        self.monitor = WorkflowMonitor()  # Initialize monitor
+        self.persistence = WorkflowPersistence()
+        self.monitor = WorkflowMonitor()
         self._workflow_locks: Dict[str, asyncio.Lock] = {}
         self._lock = asyncio.Lock()
         self.logger = logger.bind(component="WorkflowManager")
         self._capability_cache: Dict[str, List[BaseAgent]] = {}
-        self._cache_ttl = 60  # Cache TTL in seconds
+        self._cache_ttl = 60
         self._last_cache_update = time.time()
         self.metrics = {
             "workflow_count": 0,
@@ -37,26 +37,34 @@ class WorkflowManager(RegistryObserver):
             "total_execution_time": 0.0,
             "average_execution_time": 0.0
         }
-        # Default per-step timeout (seconds). 1s keeps SlowTestAgent(10s) failing internally
-        # while allowing outer tests to impose stricter global timeout via asyncio.wait_for().
         self._step_timeout_default: float = 5.0
-        
+        self._is_initialized = False
+        self._initialization_lock = asyncio.Lock()
+
     async def initialize(self) -> None:
         """Initialize the workflow manager."""
-        # Initialize metrics
-        self.metrics = {
-            "workflow_count": 0,
-            "active_workflows": 0,
-            "completed_workflows": 0,
-            "failed_workflows": 0,
-            "total_execution_time": 0.0,
-            "average_execution_time": 0.0
-        }
-        
-        # Clear any existing workflows
+        if self._is_initialized:
+            return
+        async with self._initialization_lock:
+            if self._is_initialized:
+                return
+            await self.persistence.initialize()
+            await self.monitor.initialize()
+            self._is_initialized = True
+            self.logger.debug("WorkflowManager initialized")
+
+    async def shutdown(self) -> None:
+        """Shutdown the workflow manager."""
         async with self._lock:
-            self._workflows.clear()
-            self._capability_cache.clear()
+            for workflow_id, workflow in self._workflows.items():
+                if workflow.status == WorkflowStatus.RUNNING:
+                    workflow.status = WorkflowStatus.CANCELLED
+                    workflow.error = "Workflow cancelled due to system shutdown"
+                    workflow.updated_at = time.time()
+                    await self.persistence.save_workflow(workflow)
+        await self.persistence.shutdown()
+        await self.monitor.shutdown()
+        self.logger.info("WorkflowManager shut down")
             
     async def create_workflow(
         self,

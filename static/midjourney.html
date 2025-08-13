@@ -16,6 +16,10 @@
         .prompt-form button:disabled { background-color: #ccc; color: #888; cursor: not-allowed; }
         .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
         .job { background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
+        .transcript { margin-top: 1rem; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; max-height: 220px; overflow-y: auto; font-size: 0.9rem; }
+        .transcript h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
+        .transcript ul { padding-left: 1.1rem; margin: 0; }
+        .transcript li { margin: 0.25rem 0; }
         .job .image-container { position: relative; width: 100%; padding-top: 100%; background-color: #eee; }
         .job img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
         .job .quadrant-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; position: absolute; top:0; left:0; width:100%; height:100%;}
@@ -61,9 +65,17 @@
                     <label for="cw-input">Character Weight (--cw, 0-100)</label>
                     <input type="number" id="cw-input" placeholder="100" min="0" max="100">
                 </div>
-                 <div class="setting full-width">
+                <div class="setting full-width">
                     <label for="sref-input">Style Reference (--sref)</label>
                     <input type="text" id="sref-input" placeholder="Assign from an uploaded image">
+                </div>
+                <div class="setting full-width" id="oref-container" style="display: none;">
+                    <label for="oref-input">Omni Reference (--oref, V7 only)</label>
+                    <input type="text" id="oref-input" placeholder="Assign from an uploaded image (V7 only)">
+                </div>
+                <div class="setting" id="ow-container" style="display: none;">
+                    <label for="ow-input">Omni Weight (--ow, 0-1000)</label>
+                    <input type="number" id="ow-input" placeholder="100" min="0" max="1000">
                 </div>
                 <div class="setting">
                     <label for="sw-input">Style Weight (--sw, 0-1000)</label>
@@ -133,13 +145,29 @@
                 <div class="left">
                     <button type="button" id="upload-btn" class="secondary">Upload Image(s)</button>
                     <button type="button" id="describe-btn" class="secondary" disabled>Describe</button>
+                    <input type="file" id="describe-upload-input" style="display:none;" accept="image/*">
                     <button type="button" id="blend-btn" class="secondary" disabled>Blend</button>
+                    <select id="blend-dimension" style="margin-left: 6px;">
+                        <option value="portrait">portrait</option>
+                        <option value="square" selected>square</option>
+                        <option value="landscape">landscape</option>
+                    </select>
                     <button type="button" id="refine-btn" class="secondary">Refine with AI</button>
                     <button type="button" id="toggle-advanced-btn" class="secondary">Advanced Settings</button>
                 </div>
                 <div class="right">
                     <button type="submit" id="submit-button">Imagine</button>
                 </div>
+            </div>
+
+            <div id="refine-transcript" class="transcript" style="display:none;">
+                <h3>Refinement Conversation</h3>
+                <ul id="refine-transcript-list"></ul>
+            </div>
+
+            <div id="describe-suggestions" class="transcript" style="display:none;">
+                <h3>Describe Suggestions</h3>
+                <ul id="describe-suggestions-list"></ul>
             </div>
         </form>
     </div>
@@ -163,6 +191,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const promptInput = document.getElementById('prompt-input');
     const submitButton = document.getElementById('submit-button');
     const uploadBtn = document.getElementById('upload-btn');
+    const refineBtn = document.getElementById('refine-btn');
+    const describeBtn = document.getElementById('describe-btn');
+    const describeUploadInput = document.getElementById('describe-upload-input');
+    const blendBtn = document.getElementById('blend-btn');
+    const blendDimension = document.getElementById('blend-dimension');
     const imageUploadInput = document.getElementById('image-upload-input');
     const imagePreviewContainer = document.getElementById('image-preview-container');
     const toggleAdvancedBtn = document.getElementById('toggle-advanced-btn');
@@ -234,10 +267,14 @@ document.addEventListener('DOMContentLoaded', () => {
             imageContainer.innerHTML = '';
             imageContainer.appendChild(quadGallery);
         } else if (job && (job.status === 'completed' || job.status === 'finished')) {
+            const imgLink = document.createElement('a');
+            imgLink.href = `/jobs/${job.task_id}/original.png`;
+            imgLink.target = '_blank';
             const img = document.createElement('img');
             img.src = `/jobs/${job.task_id}/original.png`;
             img.onerror = () => { imageContainer.innerHTML = '<div class="progress-overlay">Image Error</div>'; };
-            imageContainer.appendChild(img);
+            imgLink.appendChild(img);
+            imageContainer.appendChild(imgLink);
         } else {
             const progress = document.createElement('div');
             progress.className = 'progress-overlay';
@@ -428,6 +465,13 @@ document.addEventListener('DOMContentLoaded', () => {
         event.target.value = '';
     });
 
+    // Enable Describe when there is at least one uploaded image OR allow standalone upload
+    function updateDescribeEnabled() {
+        if (describeBtn) describeBtn.disabled = uploadedImages.length === 0;
+        if (blendBtn) blendBtn.disabled = !(uploadedImages.length >= 2 && uploadedImages.length <= 5);
+    }
+    updateDescribeEnabled();
+
     function renderImagePreviews() {
         imagePreviewContainer.innerHTML = '';
         const isV7 = document.querySelector('input[name="version"]:checked')?.value === '7';
@@ -467,8 +511,17 @@ document.addEventListener('DOMContentLoaded', () => {
             srefBtn.className = 'secondary';
             srefBtn.onclick = () => setRole(imgData.id, 'sref');
             buttonsDiv.appendChild(srefBtn);
-            wrapper.appendChild(buttonsDiv);
 
+            if (isV7) {
+                const orefBtn = document.createElement('button');
+                orefBtn.textContent = 'Use as --oref';
+                orefBtn.className = 'secondary';
+                orefBtn.onclick = () => setRole(imgData.id, 'oref');
+                buttonsDiv.appendChild(orefBtn);
+            }
+
+            wrapper.appendChild(buttonsDiv);
+   
             if (imgData.role !== 'prompt') {
                 const badge = document.createElement('div');
                 badge.className = 'ref-badge';
@@ -478,13 +531,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             imagePreviewContainer.appendChild(wrapper);
         });
+        updateDescribeEnabled();
+        
+        // Toggle visibility of V7-only fields
+        const orefContainer = document.getElementById('oref-container');
+        const owContainer = document.getElementById('ow-container');
+        if (orefContainer && owContainer) {
+            const display = isV7 ? 'block' : 'none';
+            orefContainer.style.display = display;
+            owContainer.style.display = display;
+        }
     }
 
     function setRole(id, role) {
         const targetImage = uploadedImages.find(img => img.id === id);
         if (!targetImage) return;
 
-        if (role === 'cref' || role === 'sref') {
+        if (role === 'cref' || role === 'sref' || role === 'oref') {
+            // Unset any other image assigned to this role
             uploadedImages.forEach(img => {
                 if (img.role === role) img.role = 'prompt';
             });
@@ -495,7 +559,238 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderImagePreviews();
     }
+
+    // Blend: submit 2-5 images and dimension to backend
+    if (blendBtn) {
+        blendBtn.addEventListener('click', async () => {
+            try {
+                const selected = uploadedImages.slice(0, 5);
+                if (selected.length < 2) {
+                    alert('Blend requires 2 to 5 images.');
+                    return;
+                }
+
+                // Prefer URL-based submission to avoid CORS on GCS fetches
+                const formData = new FormData();
+                const dim = (blendDimension && blendDimension.value) ? blendDimension.value : 'square';
+                formData.append('dimension', dim);
+                formData.append('image_urls', JSON.stringify(selected.map(i => i.url)));
+
+                blendBtn.disabled = true;
+                const original = blendBtn.textContent;
+                blendBtn.textContent = 'Blending…';
+
+                let response = await fetch(`${API_BASE}/midjourney/blend`, { method: 'POST', body: formData });
+                let data = await response.json();
+                if (!response.ok) {
+                    // Fallback: upload files via backend if URL path fails
+                    const fd2 = new FormData();
+                    fd2.append('dimension', dim);
+                    let idx = 0;
+                    for (const img of selected) {
+                        const res = await fetch(img.url);
+                        const blob = await res.blob();
+                        const file = new File([blob], `blend_${idx++}.png`, { type: blob.type || 'image/png' });
+                        fd2.append('image_files', file);
+                    }
+                    response = await fetch(`${API_BASE}/midjourney/blend`, { method: 'POST', body: fd2 });
+                    data = await response.json();
+                    if (!response.ok) throw new Error(data?.detail || 'Blend failed');
+                }
+                alert(`Blend task started: ${data.task_id}`);
+                setTimeout(fetchAndRenderGallery, 1500);
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            } finally {
+                blendBtn.disabled = false;
+                blendBtn.textContent = 'Blend';
+            }
+        });
+    }
+
+    // Describe button flow (no deletions to existing code):
+    if (describeBtn) {
+        describeBtn.addEventListener('click', async () => {
+            try {
+                // Prefer the first uploaded image; if none, let user pick one
+                if (!uploadedImages.length) {
+                    if (describeUploadInput) describeUploadInput.click();
+                    return;
+                }
+
+                const url = uploadedImages[0].url;
+                // Prefer URL-based describe: send image_url field (no file upload)
+                const formData = new FormData();
+                formData.append('image_url', url);
+
+                describeBtn.disabled = true;
+                const originalText = describeBtn.textContent;
+                describeBtn.textContent = 'Describing…';
+
+                // Prefer URL-based describe first; fall back to file-upload describe
+                let response = await fetch(`${API_BASE}/midjourney/describe-url`, { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const res = await fetch(url);
+                    const blob = await res.blob();
+                    const file2 = new File([blob], 'describe.png', { type: blob.type || 'image/png' });
+                    const fd2 = new FormData();
+                    fd2.append('image_file', file2);
+                    response = await fetch(`${API_BASE}/midjourney/describe`, { method: 'POST', body: fd2 });
+                }
+                const data = await response.json();
+                if (!response.ok) throw new Error(data?.detail || 'Describe failed');
+
+                const suggestions = Array.isArray(data.prompts) ? data.prompts : [];
+                const box = document.getElementById('describe-suggestions');
+                const list = document.getElementById('describe-suggestions-list');
+                if (box && list) {
+                    list.innerHTML = '';
+                    if (suggestions.length) {
+                        suggestions.forEach(text => {
+                            const li = document.createElement('li');
+                            const btn = document.createElement('button');
+                            btn.textContent = 'Use';
+                            btn.style.marginRight = '0.5rem';
+                            btn.onclick = () => {
+                                promptInput.value = text;
+                                if (advancedSettings) {
+                                    advancedSettings.style.display = 'grid';
+                                    try { advancedSettings.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+                                }
+                            };
+                            const span = document.createElement('span');
+                            span.textContent = text;
+                            li.appendChild(btn);
+                            li.appendChild(span);
+                            list.appendChild(li);
+                        });
+                        box.style.display = 'block';
+                    } else {
+                        const li = document.createElement('li');
+                        li.textContent = 'No suggestions returned.';
+                        list.appendChild(li);
+                        box.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            } finally {
+                describeBtn.disabled = false;
+                describeBtn.textContent = 'Describe';
+            }
+        });
+    }
+
+    // If user selects a local file specifically for describe
+    if (describeUploadInput) {
+        describeUploadInput.addEventListener('change', async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('image_file', file);
+            try {
+                const response = await fetch(`${API_BASE}/midjourney/describe`, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data?.detail || 'Describe failed');
+                const suggestions = Array.isArray(data.prompts) ? data.prompts : [];
+                const box = document.getElementById('describe-suggestions');
+                const list = document.getElementById('describe-suggestions-list');
+                if (box && list) {
+                    list.innerHTML = '';
+                    suggestions.forEach(text => {
+                        const li = document.createElement('li');
+                        const btn = document.createElement('button');
+                        btn.textContent = 'Use';
+                        btn.style.marginRight = '0.5rem';
+                        btn.onclick = () => {
+                            promptInput.value = text;
+                            if (advancedSettings) {
+                                advancedSettings.style.display = 'grid';
+                                try { advancedSettings.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+                            }
+                        };
+                        const span = document.createElement('span');
+                        span.textContent = text;
+                        li.appendChild(btn);
+                        li.appendChild(span);
+                        list.appendChild(li);
+                    });
+                    box.style.display = 'block';
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            } finally {
+                event.target.value = '';
+            }
+        });
+    }
     
+    // Restore "Refine with AI" functionality
+    if (refineBtn) {
+        refineBtn.addEventListener('click', async () => {
+            const current = (promptInput?.value || '').trim();
+            if (!current) {
+                alert('Enter a prompt to refine.');
+                return;
+            }
+
+            // Immediate visual feedback: show transcript panel with a starting line
+            const tBox = document.getElementById('refine-transcript');
+            const tList = document.getElementById('refine-transcript-list');
+            if (tBox && tList) {
+                tList.innerHTML = '';
+                const startLi = document.createElement('li');
+                startLi.textContent = 'Initializing refinement workflow…';
+                tList.appendChild(startLi);
+                const refs = uploadedImages.filter(i => i.role !== 'prompt');
+                if (refs.length) {
+                    const refsLi = document.createElement('li');
+                    refsLi.textContent = `Using ${refs.length} reference image${refs.length>1?'s':''}…`;
+                    tList.appendChild(refsLi);
+                }
+                tBox.style.display = 'block';
+            }
+
+            refineBtn.disabled = true;
+            const originalText = refineBtn.textContent;
+            refineBtn.textContent = 'Refining…';
+            try {
+                const response = await fetch(`${API_BASE}/midjourney/refine-prompt`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // Include any reference images currently assigned to roles as context
+                    body: JSON.stringify({
+                        prompt: current,
+                        image_urls: uploadedImages.filter(i => i.role !== 'prompt').map(i => i.url)
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data?.detail || 'Refinement failed');
+                if (data && data.refined_prompt) {
+                    promptInput.value = data.refined_prompt;
+                    // Render transcript if provided
+                    const t = Array.isArray(data.transcript) ? data.transcript : [];
+                    if (tBox && tList) {
+                        tList.innerHTML = '';
+                        t.forEach(line => {
+                            const li = document.createElement('li');
+                            li.textContent = line;
+                            tList.appendChild(li);
+                        });
+                        tBox.style.display = t.length ? 'block' : 'none';
+                    }
+                } else {
+                    alert('No refined prompt returned.');
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            } finally {
+                refineBtn.disabled = false;
+                refineBtn.textContent = originalText;
+            }
+        });
+    }
+
     imagineForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
@@ -507,10 +802,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let promptParts = [];
             
             const isV7 = document.querySelector('input[name="version"]:checked')?.value === '7';
+            
+            // Handle uploaded images for prompt (multi-prompting)
             uploadedImages.forEach(img => {
                 if (img.role === 'prompt') {
                     if (isV7) {
-                        promptParts.push(img.url); // No weights for V7
+                        promptParts.push(img.url); // V7 doesn't use weights for image prompts this way
                     } else {
                         promptParts.push(`${img.url}::${img.weight}`);
                     }
@@ -519,16 +816,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
             promptParts.push(promptInput.value.trim());
 
-            const getVal = id => document.getElementById(id).value.trim();
+            const getVal = id => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : '';
+            };
             const addParam = (id, param) => {
                 const val = getVal(id);
                 if (val) promptParts.push(`${param} ${val}`);
             };
 
+            // Add standard parameters
             addParam('cref-input', '--cref');
             addParam('cw-input', '--cw');
             addParam('sref-input', '--sref');
             addParam('sw-input', '--sw');
+            
+            // Add V7-only Omni-Reference parameters if applicable
+            if (isV7) {
+                addParam('oref-input', '--oref');
+                addParam('ow-input', '--ow');
+            }
+
             addParam('iw-input', '--iw');
             addParam('no-input', '--no');
             addParam('seed-input', '--seed');

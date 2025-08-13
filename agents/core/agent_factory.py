@@ -397,6 +397,18 @@ class AgentFactory:
             workload[agent.agent_type] += status.get("message_count", 0)
         return dict(workload)
         
+    async def cleanup(self) -> None:
+        """Clean up factory resources."""
+        self._agent_classes.clear()
+        self._agent_instances.clear()
+        self._capability_map.clear()
+        self._agent_locks.clear()
+        self._capability_locks.clear()
+        self._capabilities_cache.clear()
+        self._capabilities_cache_time.clear()
+        self._is_initialized = False
+        self.logger.info("AgentFactory cleaned up")
+        
     async def auto_scale(self, workload_threshold: int = 5) -> None:
         """Automatically scale agents based on workload."""
         workload = await self.monitor_workload()

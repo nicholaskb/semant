@@ -4,7 +4,6 @@ from agents.core.agent_factory import AgentFactory
 from agents.core.capability_types import Capability, CapabilityType
 from agents.core.agent_registry import AgentRegistry
 from rdflib import Graph
-from tests.utils.test_agents import TestAgent, TestCapabilityAgent
 
 # Using the global agent_factory fixture from conftest.py which properly registers test agents
 

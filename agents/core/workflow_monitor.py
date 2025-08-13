@@ -210,6 +210,22 @@ class WorkflowMonitor:
             "stuck_timeout": 3600  # 1 hour
         }
         self.logger = logger.bind(component="WorkflowMonitor")
+        self._is_initialized = False
+        self._initialization_lock = asyncio.Lock()
+
+    async def initialize(self) -> None:
+        """Initialize the monitor."""
+        if self._is_initialized:
+            return
+        async with self._initialization_lock:
+            if self._is_initialized:
+                return
+            self._is_initialized = True
+            self.logger.debug("WorkflowMonitor initialized")
+
+    async def shutdown(self) -> None:
+        """Shutdown the monitor."""
+        self.logger.info("WorkflowMonitor shut down")
         self._lock = asyncio.Lock()
         self._metrics: Dict[str, List[MetricValue]] = {}
         self._registry = registry

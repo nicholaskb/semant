@@ -5,7 +5,7 @@ from agents.utils.email_integration import send_email
 from rdflib import Graph, Namespace, Literal, URIRef
 from uuid import uuid4
 from kg.models import Artifact, ARTIFACT
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 # Optional deps
@@ -16,9 +16,9 @@ except ImportError:
 
 # Optional OpenAI
 try:
-    import openai
+    from openai import OpenAI
 except ImportError:
-    openai = None  # type: ignore
+    OpenAI = None  # type: ignore
 
 from dotenv import load_dotenv
 import pathlib
@@ -52,6 +52,12 @@ class MainAgent:
             self.tavily = None
             logger.warning("Tavily API key not found. Research capabilities will be limited.")
         
+        self.openai_client = OpenAI() if OpenAI else None
+        if self.openai_client:
+            logger.info("OpenAI client initialized.")
+        else:
+            logger.warning("OpenAI client not initialized. Chat capabilities will be limited.")
+
         logger.info("MainAgent initialized.")
 
     def store_artifact(self, content, author):
@@ -211,11 +217,9 @@ class MainAgent:
                 logger.error(f"Traversal error: {e}")
 
             if response_components:
-                # If an OpenAI API key is configured, use LLM to craft the response
-                openai_key = os.getenv("OPENAI_API_KEY")
-                if openai_key and openai is not None:
+                # If an OpenAI client is provided, use it to craft the response
+                if self.openai_client:
                     try:
-                        openai.api_key = openai_key
                         system_prompt = (
                             "You are Semant, a helpful AI assistant that reasons over a knowledge graph. "
                             "Use the provided knowledge graph evidence to answer the user clearly."
@@ -223,15 +227,15 @@ class MainAgent:
                         msg_prompt = (
                             f"User message: {message}\n\nKnowledge-graph evidence:\n" + "\n".join(response_components)
                         )
-                        chat_resp = openai.ChatCompletion.create(
-                            model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo-0613"),
+                        chat_resp = self.openai_client.chat.completions.create(
+                            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
                             messages=[
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": msg_prompt}
                             ],
                             temperature=0.4,
                         )
-                        response = chat_resp["choices"][0]["message"]["content"].strip()
+                        response = chat_resp.choices[0].message.content.strip()
                         chain_of_thought.append("Generated response with OpenAI LLM.")
                     except Exception as e:
                         logger.error(f"OpenAI call failed: {e}")
@@ -283,4 +287,4 @@ class MainAgent:
                 "graph_traversed": bool(traversal_results),
                 "artifacts_created": 2
             }
-        } 
+        }

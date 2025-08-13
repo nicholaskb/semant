@@ -132,6 +132,52 @@ _prompt_agent = AgenticPromptAgent(
 async def startup_event():
     await _prompt_agent.initialize()
 
+# --- ADDED: optional multi-agent prompt refinement registry (no deletions) ---
+try:
+    from agents.core.agent_registry import AgentRegistry
+    from agents.domain.planner_agent import PlannerAgent
+    from agents.domain.logo_analysis_agent import LogoAnalysisAgent
+    from agents.domain.aesthetics_agent import AestheticsAgent
+    from agents.domain.color_palette_agent import ColorPaletteAgent
+    from agents.domain.composition_agent import CompositionAgent
+    from agents.domain.prompt_synthesis_agent import PromptSynthesisAgent
+    from agents.domain.prompt_critic_agent import PromptCriticAgent
+    from agents.domain.prompt_judge_agent import PromptJudgeAgent
+    from agents.core.capability_types import CapabilityType
+    _MA_IMPORTS_OK = True
+except Exception as _e:
+    _MA_IMPORTS_OK = False
+    _logger.info("Multi-agent refinement modules not loaded: %s", _e)
+
+_refine_registry = None  # type: ignore[var-annotated]
+_planner = None          # type: ignore[var-annotated]
+
+@app.on_event("startup")
+async def startup_multi_agent_refiner():
+    """ADDED: Initialize multi-agent refinement (tolerates missing deps)."""
+    global _refine_registry, _planner
+    if not _MA_IMPORTS_OK:
+        return
+    try:
+        _refine_registry = AgentRegistry(disable_auto_discovery=True)
+        await _refine_registry.initialize()
+        agents_to_register = [
+            PlannerAgent("planner", _refine_registry),
+            LogoAnalysisAgent("logo_analyzer", capabilities={CapabilityType.LOGO_ANALYSIS}),
+            AestheticsAgent("aesthetics_analyzer", capabilities={CapabilityType.AESTHETICS_ANALYSIS}),
+            ColorPaletteAgent("color_palette_analyzer", capabilities={CapabilityType.COLOR_PALETTE_ANALYSIS}),
+            CompositionAgent("composition_analyzer", capabilities={CapabilityType.COMPOSITION_ANALYSIS}),
+            PromptSynthesisAgent("synthesis_agent", capabilities={CapabilityType.PROMPT_SYNTHESIS}),
+            PromptCriticAgent("critic_agent", capabilities={CapabilityType.PROMPT_CRITIQUE}),
+            PromptJudgeAgent("judge_agent", capabilities={CapabilityType.PROMPT_JUDGMENT}),
+        ]
+        for ag in agents_to_register:
+            await _refine_registry.register_agent(ag)
+        _planner = await _refine_registry.get_agent("planner")
+        _logger.info("Multi-agent refinement planner initialized")
+    except Exception as e:
+        _logger.warning("Multi-agent refinement not available: %s", e)
+
 
 # --------------------- Pydantic request models --------------------
 class InvestigateRequest(BaseModel):
@@ -411,6 +457,28 @@ async def api_midjourney_describe(image_file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# --- ADDED: URL-based describe endpoint (does not replace existing) ---
+@app.post("/api/midjourney/describe-url")
+async def api_midjourney_describe_url(image_url: str = Form(...)):
+    """ADDED endpoint to describe an already-public image URL.
+    Leaves the original file-upload describe endpoint intact.
+    """
+    try:
+        await verify_image_is_public(image_url)
+        response = await _midjourney_client.submit_describe(image_url)
+        task_id = response.get("data", response).get("task_id")
+        if not task_id:
+            raise MidjourneyError(f"Could not get task_id from describe response: {response}")
+        final_payload = await poll_until_complete(client=_midjourney_client, task_id=task_id)
+        description = final_payload.get("output", {}).get("description")
+        if not description:
+            raise MidjourneyError("Describe task finished but no description was found.")
+        prompts = [p.strip() for p in description.split("--") if p.strip()]
+        return {"prompts": prompts}
+    except Exception as e:
+        _logger.error("/api/midjourney/describe-url error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/midjourney/seed")
 async def api_midjourney_seed(request: MidjourneySeedRequest):
     """
@@ -439,27 +507,46 @@ async def api_midjourney_seed(request: MidjourneySeedRequest):
 async def api_midjourney_blend(
     background_tasks: BackgroundTasks,
     dimension: str = Form(...),
-    image_files: List[UploadFile] = File(...),
+    image_files: List[UploadFile] = File([]),
+    image_urls: Optional[str] = Form(None),
 ):
     """
     Submit a new Midjourney blend task.
     """
     try:
-        if not (2 <= len(image_files) <= 5):
+        public_urls: List[str] = []
+
+        # Path A: Prefer URL-based blend if provided to avoid browser CORS issues
+        if image_urls:
+            try:
+                # Accept JSON array or comma-separated string
+                if image_urls.strip().startswith("["):
+                    public_urls = json.loads(image_urls)
+                else:
+                    public_urls = [u.strip() for u in image_urls.split(",") if u.strip()]
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid image_urls format. Provide JSON array or comma-separated URLs.")
+
+        # Path B: Fallback to file-upload based blend (existing behavior)
+        if not public_urls:
+            if not (2 <= len(image_files) <= 5):
+                raise HTTPException(status_code=400, detail="Blend requires 2 to 5 images.")
+
+            for image_file in image_files:
+                if not image_file.filename:
+                    continue
+                ext = Path(image_file.filename).suffix
+                unique_filename = f"{uuid.uuid4()}{ext}"
+                local_save_path = UPLOADS_DIR / unique_filename
+                with open(local_save_path, "wb") as f:
+                    f.write(await image_file.read())
+                public_url = upload_to_gcs_and_get_public_url(local_save_path, unique_filename)
+                public_urls.append(public_url)
+
+        if not (2 <= len(public_urls) <= 5):
             raise HTTPException(status_code=400, detail="Blend requires 2 to 5 images.")
 
-        public_urls = []
-        for image_file in image_files:
-            if not image_file.filename:
-                continue
-            ext = Path(image_file.filename).suffix
-            unique_filename = f"{uuid.uuid4()}{ext}"
-            local_save_path = UPLOADS_DIR / unique_filename
-            with open(local_save_path, "wb") as f:
-                f.write(await image_file.read())
-            public_url = upload_to_gcs_and_get_public_url(local_save_path, unique_filename)
-            public_urls.append(public_url)
-
+        # Verify the URLs are publicly reachable
         verification_tasks = [verify_image_is_public(url) for url in public_urls]
         await asyncio.gather(*verification_tasks)
 
@@ -497,7 +584,9 @@ async def api_midjourney_refine_prompt(request: RefinePromptRequest):
                 "objective": "Refine the user's prompt.",
             },
         )
-        response_message = await _prompt_agent.handle_message(message)
+        # BaseAgent exposes `process_message` as the unified async API.
+        # Older code referenced `handle_message`, which doesn't exist.
+        response_message = await _prompt_agent.process_message(message)
         refined_prompt = response_message.content.get("prompt", {}).get("objective", "")
         # The template returns a full sentence, so we extract the part after the colon
         final_prompt = refined_prompt.split("User's original prompt:")[-1].strip()
@@ -506,6 +595,38 @@ async def api_midjourney_refine_prompt(request: RefinePromptRequest):
         _logger.error("/api/midjourney/refine-prompt error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# --- ADDED: Multi-agent refinement endpoint (keeps original endpoint) ---
+@app.post("/api/midjourney/refine-prompt-workflow")
+async def api_midjourney_refine_prompt_workflow(request: RefinePromptRequest):
+    """Run the multi-agent Planner workflow to refine prompts.
+    Returns { refined_prompt, transcript }.
+    """
+    try:
+        if _planner is None:
+            raise HTTPException(status_code=503, detail="Multi-agent refiner not available")
+
+        transcript: List[str] = []
+
+        async def on_stream(text: str):
+            transcript.append(text)
+
+        msg = AgentMessage(
+            sender_id="api",
+            recipient_id="planner",
+            content={
+                "prompt": request.prompt,
+                "image_urls": [],
+                "streaming_callback": on_stream,
+            },
+            message_type="refine_request",
+        )
+        result = await _planner.process_message(msg)
+        final_prompt = result.content.get("final_prompt") or request.prompt
+        return {"refined_prompt": final_prompt, "transcript": transcript}
+    except Exception as e:
+        _logger.error("/api/midjourney/refine-prompt-workflow error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/midjourney/jobs")

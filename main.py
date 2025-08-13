@@ -117,6 +117,15 @@ _MJ_FLAG_PATTERNS = {
     "stylize": re.compile(r"\s--s\s+\S+", re.IGNORECASE),
     "cref": re.compile(r"\s--cref\s+\S+", re.IGNORECASE),
     "cw": re.compile(r"\s--cw\s+\S+", re.IGNORECASE),
+    # Additional flags that can trigger GoAPI prompt parser for v7
+    "sref": re.compile(r"\s--sref\s+\S+", re.IGNORECASE),
+    "sw": re.compile(r"\s--sw\s+\S+", re.IGNORECASE),
+    "iw": re.compile(r"\s--iw\s+\S+", re.IGNORECASE),
+    "seed": re.compile(r"\s--seed\s+\S+", re.IGNORECASE),
+    "chaos": re.compile(r"\s--c\s+\S+", re.IGNORECASE),
+    "weird": re.compile(r"\s--w\s+\S+", re.IGNORECASE),
+    "tile": re.compile(r"\s--tile\b", re.IGNORECASE),
+    "style_raw": re.compile(r"\s--style\s+raw\b", re.IGNORECASE),
     # Remove inline version flags; version is passed via payload separately
     "version": re.compile(r"\s--v\s+\S+", re.IGNORECASE),
     # Remove inline niji flags as version as well
@@ -155,6 +164,16 @@ def _sanitize_mj_prompt(raw_prompt: str, *, remove_ar: bool, v7: bool) -> str:
             prompt = _MJ_FLAG_PATTERNS["stylize"].sub("", prompt)
             prompt = _MJ_FLAG_PATTERNS["cref"].sub("", prompt)
             prompt = _MJ_FLAG_PATTERNS["cw"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["sref"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["sw"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["iw"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["seed"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["chaos"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["weird"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["tile"].sub("", prompt)
+            prompt = _MJ_FLAG_PATTERNS["style_raw"].sub("", prompt)
+            # For negative prompts, remove the segment until the next flag or end of string
+            prompt = re.sub(r"\s--no\s+.*?(?=(\s--|$))", " ", prompt, flags=re.IGNORECASE)
         prompt = _ensure_space_before_flags(prompt)
         # collapse multiple spaces
         prompt = re.sub(r"\s{2,}", " ", prompt).strip()
@@ -363,6 +382,7 @@ async def api_midjourney_imagine(
     prompt: str = Form(...),
     aspect_ratio: str = Form("1:1"),
     process_mode: str = Form("relax"),
+    version: str | None = Form(None),
     image_files: List[UploadFile] = File([]),
 ):
     """
@@ -407,17 +427,35 @@ async def api_midjourney_imagine(
                     final_prompt = final_prompt.replace("URL_PLACEHOLDER", url, 1)
 
         
+        # Extract --oref URL and --ow weight from the raw prompt BEFORE sanitization
+        oref_match = re.search(r"--oref\s+(\S+)", final_prompt, re.IGNORECASE)
+        ow_match = re.search(r"--ow\s+(\d+)", final_prompt, re.IGNORECASE)
+        oref_url: Optional[str] = oref_match.group(1) if oref_match else None
+        oref_weight: Optional[int] = int(ow_match.group(1)) if ow_match else None
+
+        # Remove --oref <url> and --ow <int> segments from the prompt to avoid GoAPI parser errors
+        if oref_match:
+            final_prompt = re.sub(r"\s--oref\s+\S+", "", final_prompt, flags=re.IGNORECASE)
+        if ow_match:
+            final_prompt = re.sub(r"\s--ow\s+\d+", "", final_prompt, flags=re.IGNORECASE)
+
         # Extract aspect ratio from the raw prompt BEFORE sanitization (so we don't lose it)
         ar_match_pre = re.search(r'--ar\s+(\S+)', final_prompt)
 
-        # Additive server-side normalization to protect against stale clients
-        version_match = re.search(r"--v\s+(7|6|5\.2)|\bniji\s+6\b", final_prompt, re.IGNORECASE)
-        model_version: Optional[str] = None
-        if version_match:
-            if version_match.group(1) in {"7", "6", "5.2"}:
-                model_version = f"v{version_match.group(1)}"
-            elif re.search(r"niji\s+6", final_prompt, re.IGNORECASE):
-                model_version = "niji 6"
+        # Determine model_version: prefer explicit form field, else detect from prompt
+        model_version: Optional[str] = (version.strip() if version else None)
+        if not model_version:
+            version_match = re.search(r"--v\s+(7|6|5\.2)|\bniji\s+6\b", final_prompt, re.IGNORECASE)
+            if version_match:
+                if version_match.group(1) in {"7", "6", "5.2"}:
+                    model_version = f"v{version_match.group(1)}"
+                elif re.search(r"niji\s+6", final_prompt, re.IGNORECASE):
+                    model_version = "niji 6"
+
+        # Force/upgrade to v7 if --oref/--ow were detected and version is not already v7/niji 6
+        if (oref_url or (oref_weight is not None)) and model_version not in {"v7", "niji 6"}:
+            model_version = "v7"
+            _logger.info("Model_version set to v7 due to presence of --oref/--ow flags")
 
         is_v7 = (model_version == "v7") or ("--v 7" in final_prompt)
         final_prompt = _sanitize_mj_prompt(
@@ -430,12 +468,18 @@ async def api_midjourney_imagine(
 
         # Prefer aspect ratio detected pre-sanitize; otherwise fall back to provided form field
         aspect_ratio_to_pass = ar_match_pre.group(1) if ar_match_pre else (aspect_ratio or "1:1")
+        # Validate AR format: must be like "1:1" or "7:4"
+        if not re.match(r"^\d{1,2}:\d{1,2}$", aspect_ratio_to_pass):
+            _logger.info("Normalizing invalid aspect_ratio '%s' to '1:1' to satisfy GoAPI", aspect_ratio_to_pass)
+            aspect_ratio_to_pass = "1:1"
 
         # 2. Submit the task to Midjourney
         response = await _midjourney_client.submit_imagine(
             prompt=final_prompt,
             aspect_ratio=aspect_ratio_to_pass,
             process_mode=process_mode,
+            oref_url=oref_url,
+            oref_weight=oref_weight,
             model_version=model_version,
         )
         task_id = response.get("data", response).get("task_id")

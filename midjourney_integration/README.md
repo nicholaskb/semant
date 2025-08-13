@@ -19,6 +19,16 @@ This document outlines the features and usage of the comprehensive Midjourney we
 *   **`--cref` with V7 Models:** Known limitation; `--cref` is not supported by V7. Use V6 or omit `--cref` when `--v 7` is selected.
 *   **GCS URL accessibility:** Ensure uploaded images are publicly readable. The backend verifies accessibility before task submission, but private buckets will still fail.
 
+## Omni Reference (V7) — `--oref` and `--ow`
+
+V7 supports the new Omni Reference parameters. The backend now parses these from the prompt, removes them from the inline text to avoid GoAPI prompt parser errors, and sends them explicitly in the JSON payload:
+
+- Input mapping: `--oref <url>` → `input.oref`, `--ow <int>` → `input.ow`
+- Version enforcement: If `--oref` or `--ow` are present, the backend uses `model_version: v7`.
+- Prompt sanitization: For V7 requests, the backend strips v7-incompatible inline flags (e.g., `--cref`, `--cw`, and other problematic `--*` flags) from the text prompt to prevent “Unrecognized Param: --” errors.
+
+Tip: It’s fine to type `--oref <url> --ow <int>` in the UI prompt; the server will move them into payload fields and keep the prompt clean for GoAPI.
+
 ## Quick Start
 
 1.  **Set Environment Variables:**
@@ -104,6 +114,7 @@ The backend provides several key endpoints to support the UI:
 
 *   **Failed to fetch / CORS errors:** The UI now prefers URL-based submissions so the server (not the browser) verifies and submits GCS URLs. If you still see failures, confirm bucket objects are public and that `GCS_BUCKET_NAME` and `GOOGLE_APPLICATION_CREDENTIALS` are set.
 *   **Authentication:** Ensure `MIDJOURNEY_API_TOKEN` is present and valid.
+*   **GoAPI “Unrecognized Param: --”:** For V7, avoid leaving inline `--*` flags in the text prompt. The backend already removes most common flags and relocates `--oref/--ow` into the payload. If you still encounter this error, check logs to ensure the final prompt contains no stray `--` segments.
 
 ## Command-Line Interface (CLI)
 

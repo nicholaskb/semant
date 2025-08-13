@@ -756,32 +756,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalText = refineBtn.textContent;
             refineBtn.textContent = 'Refining…';
             try {
-                const response = await fetch(`${API_BASE}/midjourney/refine-prompt`, {
+                // Try workflow endpoint first to get a transcript; fallback to simple endpoint
+                let response = await fetch(`${API_BASE}/midjourney/refine-prompt-workflow`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // Include any reference images currently assigned to roles as context
                     body: JSON.stringify({
                         prompt: current,
                         image_urls: uploadedImages.filter(i => i.role !== 'prompt').map(i => i.url)
                     })
                 });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data?.detail || 'Refinement failed');
-                if (data && data.refined_prompt) {
-                    promptInput.value = data.refined_prompt;
-                    // Render transcript if provided
-                    const t = Array.isArray(data.transcript) ? data.transcript : [];
-                    if (tBox && tList) {
-                        tList.innerHTML = '';
-                        t.forEach(line => {
-                            const li = document.createElement('li');
-                            li.textContent = line;
-                            tList.appendChild(li);
-                        });
-                        tBox.style.display = t.length ? 'block' : 'none';
-                    }
-                } else {
-                    alert('No refined prompt returned.');
+                let data = await response.json();
+                if (!response.ok || !data?.refined_prompt) {
+                    response = await fetch(`${API_BASE}/midjourney/refine-prompt`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: current })
+                    });
+                    data = await response.json();
+                    if (!response.ok || !data?.refined_prompt) throw new Error(data?.detail || 'Refinement failed');
+                }
+                promptInput.value = data.refined_prompt;
+                const t = Array.isArray(data.transcript) ? data.transcript : ['Refined prompt generated.'];
+                if (tBox && tList) {
+                    tList.innerHTML = '';
+                    t.forEach(line => {
+                        const li = document.createElement('li');
+                        li.textContent = line;
+                        tList.appendChild(li);
+                    });
+                    tBox.style.display = 'block';
                 }
             } catch (err) {
                 alert(`Error: ${err.message}`);

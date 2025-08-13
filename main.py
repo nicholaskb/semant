@@ -395,7 +395,15 @@ async def api_midjourney_imagine(
 
         
         # Additive server-side normalization to protect against stale clients
-        is_v7 = "--v 7" in final_prompt or re.search(r"\bv7\b", final_prompt, re.IGNORECASE)
+        version_match = re.search(r"--v\s+(7|6|5\.2)|\bniji\s+6\b", final_prompt, re.IGNORECASE)
+        model_version: Optional[str] = None
+        if version_match:
+            if version_match.group(1) in {"7", "6", "5.2"}:
+                model_version = f"v{version_match.group(1)}"
+            elif re.search(r"niji\s+6", final_prompt, re.IGNORECASE):
+                model_version = "niji 6"
+
+        is_v7 = (model_version == "v7") or ("--v 7" in final_prompt)
         final_prompt = _sanitize_mj_prompt(
             final_prompt,
             remove_ar=True,  # aspect_ratio is provided via field
@@ -413,6 +421,7 @@ async def api_midjourney_imagine(
             prompt=final_prompt,
             aspect_ratio=aspect_ratio_to_pass,
             process_mode=process_mode,
+            model_version=model_version,
         )
         task_id = response.get("data", response).get("task_id")
         if not task_id:

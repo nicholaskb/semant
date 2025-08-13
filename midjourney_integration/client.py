@@ -129,6 +129,7 @@ class MidjourneyClient:
         process_mode: Optional[str],
         oref_url: Optional[str] = None,
         oref_weight: Optional[int] = None,
+        model_version: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Submit an imagine request using the V1 endpoint."""
         payload: Dict[str, Any] = {
@@ -145,6 +146,12 @@ class MidjourneyClient:
             payload["input"]["oref"] = oref_url
         if oref_weight is not None:
             payload["input"]["ow"] = oref_weight
+        # Additive: attempt to pass version explicitly if provided (API may ignore)
+        if model_version:
+            try:
+                payload["input"]["model_version"] = model_version
+            except Exception:
+                pass
             
         logger.info("Submitting imagine request with payload: %s", payload)
         return await self._request("POST", self._TASK_ENDPOINT, json=payload)

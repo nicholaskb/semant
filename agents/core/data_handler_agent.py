@@ -40,7 +40,13 @@ class DataHandlerAgent(BaseStreamingAgent):
         if handler_type not in self._TYPE_SETTINGS:
             raise ValueError(f"Unknown handler_type '{handler_type}'.")
         settings = self._TYPE_SETTINGS[handler_type]
-        super().__init__(agent_id, handler_type, capabilities, None, config)
+        super().__init__(
+            agent_id=agent_id,
+            agent_type=handler_type,
+            capabilities=capabilities,
+            knowledge_graph=None,
+            config=config
+        )
 
         # Apply per-type settings
         self._required_fields = settings["required_fields"]

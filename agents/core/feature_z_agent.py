@@ -9,8 +9,20 @@ class FeatureZAgent(BaseAgent):
     Agent that implements Feature Z.
     Message content should include {'feature_data': ...}
     """
-    def __init__(self, agent_id: str = "feature_z_agent", capabilities: Optional[List[str]] = None, config: Optional[Dict[str, Any]] = None):
-        super().__init__(agent_id, "feature_z", capabilities, config)
+    def __init__(
+        self,
+        agent_id: str = "feature_z_agent",
+        capabilities: Optional[List[str]] = None,
+        knowledge_graph: Optional[Any] = None,
+        config: Optional[Dict[str, Any]] = None
+    ):
+        super().__init__(
+            agent_id=agent_id,
+            agent_type="feature_z",
+            capabilities=capabilities,
+            knowledge_graph=knowledge_graph,
+            config=config
+        )
 
     async def initialize(self) -> None:
         self.logger.info("Feature Z Agent initialized")

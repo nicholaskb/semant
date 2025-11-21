@@ -1,127 +1,139 @@
-# Midjourney UI & Integration
 
-This document outlines the features and usage of the comprehensive Midjourney web interface and its backend API. The UI provides a powerful tool for generating and managing images, giving users direct access to a wide range of Midjourney parameters.
+Midjourney GoAPI Integration & TaskMaster Workflow
+This README provides a high‑level overview and step‑by‑step guidance for integrating Midjourney’s GoAPI into the Semant framework while leveraging TaskMaster for planning and execution. The objective is to build a comprehensive suite of agent‑callable tools for every GoAPI feature (imagine, action, describe, blend, inpaint, outpaint, pan, zoom, seed, get_task, cancel_tasks) and to record all inputs and outputs in the knowledge graph. The process described here emphasises careful project management, incremental development, and continuous documentation.
 
-## Core Features
+Overview
+The integration is designed for a swarm of agents working collaboratively. Agents will:
 
-*   **Advanced Prompting:** A full suite of controls for Midjourney parameters, including aspect ratio, versions, stylize, chaos, weird, and more.
-*   **Image Prompts & Weighting:** Upload images to use as part of your prompt, with per-image weighting using the correct `URL::weight` syntax.
-*   **Character & Style Referencing:** Upload images to easily generate URLs for use with `--cref` and `--sref`, with a UI designed to assign them correctly.
-*   **Historical Job Gallery:** View all your past and in-progress jobs in a gallery that loads on startup and refreshes automatically.
-*   **Post-Processing Actions:** Perform follow-up actions on completed jobs, such as **Upscale**, **Reroll**, and **Variation**.
-*   **Grid Splitting:** Automatically split a completed 2x2 image grid into four individual quadrant images, which are saved to GCS and can be used in future prompts.
-*   **Command-Line Interface (CLI):** A `cli.py` script provides direct command-line access to submit `imagine` and `action` commands, and list local jobs.
-*   **Describe (image → prompts):** Submit an image to receive suggested prompts. The UI button posts to backend endpoints and renders suggestions; clicking **Use** fills the prompt and opens Advanced Settings so you can tweak parameters before pressing **Imagine**.
-*   **Blend (2–5 images):** Merge 2–5 images by dimension (portrait/square/landscape). The UI prefers URL-based submission to the backend (no browser-side GCS fetch), with an automatic fallback to file-upload.
+Create new modules under a dedicated semant/agent_tools/midjourney namespace without altering the existing midjourney_integration code. This prevents duplication and preserves existing UI and CLI functionality.
 
-## Known Issues & Limitations
+Implement a GoAPIClient to abstract HTTP requests to the unified GoAPI endpoints, supporting all Midjourney task types and handling authentication.
 
-*   **`--cref` with V7 Models:** Known limitation; `--cref` is not supported by V7. Use V6 or omit `--cref` when `--v 7` is selected.
-*   **GCS URL accessibility:** Ensure uploaded images are publicly readable. The backend verifies accessibility before task submission, but private buckets will still fail.
+Build a KGLogger to capture every tool invocation as RDF triples, ensuring complete traceability in the knowledge graph.
 
-## Omni Reference (V7) — `--oref` and `--ow`
+Provide individual wrapper classes for each GoAPI feature, along with a registry exposing metadata (name, description, input and output schemas, and run method). This enables other agents to discover and call tools without reading the underlying code.
 
-V7 supports the new Omni Reference parameters. The backend now parses these from the prompt, removes them from the inline text to avoid GoAPI prompt parser errors, and sends them explicitly in the JSON payload:
+Orchestrate complex workflows such as “Generate Themed Portraits” that upload multiple face images, choose the correct reference mode (--cref or --oref), submit imagination tasks, describe results, and reroll or upscale as needed.
 
-- Input mapping: `--oref <url>` → `input.oref`, `--ow <int>` → `input.ow`
-- Version enforcement: If `--oref` or `--ow` are present, the backend uses `model_version: v7`.
-- Prompt sanitization: For V7 requests, the backend strips v7-incompatible inline flags (e.g., `--cref`, `--cw`, and other problematic `--*` flags) from the text prompt to prevent “Unrecognized Param: --” errors.
+Agents will also use TaskMaster to plan and manage the work, breaking tasks into subtasks, tracking progress, and updating the README as the project evolves.
 
-Tip: It’s fine to type `--oref <url> --ow <int>` in the UI prompt; the server will move them into payload fields and keep the prompt clean for GoAPI.
+Agent Tools & Demos
+- See `docs/midjourney_agent_tools.md` for the new agent toolset, live demos, KG queries, and GCS mirroring.
+- Quick live imagine:
+```bash
+export MIDJOURNEY_API_TOKEN='YOUR_TOKEN'
+python -m examples.midjourney_agent_tools_live_demo --prompt "a minimalist watercolor fox, soft palette" --version v7
+```
+- Quick live action (upscale2):
+```bash
+python -m examples.midjourney_agent_tools_action_live --task-id <task_id> --action upscale2
+```
 
-## Quick Start
+UI: Refine with AI
+- The “Refine with AI” button in `static/midjourney.html` is wired to:
+  - First call: `/api/midjourney/refine-prompt-workflow` (returns transcript when available)
+  - Fallback: `/api/midjourney/refine-prompt`
+- On success, the prompt textbox is updated with `refined_prompt` and the transcript panel is shown.
 
-1.  **Set Environment Variables:**
-    Ensure you have a `.env` file in the project root with the following keys:
-    ```
-    MIDJOURNEY_API_TOKEN=your-goapi-token-here
-    GCS_BUCKET_NAME=your-gcs-bucket-name
-    GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/gcs_credentials.json
-    ```
+Initial Assessment & Environment Setup
+Review existing code and documentation. Familiarise yourself with the current Midjourney integration in midjourney_integration/ and the TaskMaster rules in .cursor/rules/taskmaster/. Note any existing API endpoints, UI features, and limitations such as --cref being valid only for V6 models
+GitHub
+. Understand the core TaskMaster loop: list → next → show → expand → implement → update‑subtask → set‑status
+GitHub
+.
 
-2.  **Install Dependencies:**
-    Make sure your virtual environment is active and all requirements are installed.
-    ```bash
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
+Initialise TaskMaster. If .taskmaster/config.json or tasks.json does not exist, run initialize_project (task-master init) to generate them【410879868530904†L2-L7】. Operate within the default master tag unless there is a clear need for separate task contexts such as feature branches or experimental work
+GitHub
+.
 
-3.  **Run the Server:**
-    ```bash
-    python main.py
-    ```
+Configure AI models. Use the models tool to set up the AI provider(s) for planning, research, and fallback roles. Store sensitive API keys in .env or .cursor/mcp.json according to TaskMaster’s configuration guidelines【410879868530904†L0-L8】.
 
-4.  **Access the UI:**
-    Open your browser and navigate to `http://localhost:8000/static/midjourney.html`.
+Designing the Tool Framework
+GoAPI Client. Implement a GoAPIClient in semant/agent_tools/midjourney/goapi_client.py to encapsulate all HTTP interactions with the GoAPI. The client should support the imagine, action, describe, blend, inpaint, outpaint, pan, zoom, seed, get_task, and cancel_tasks endpoints. Include helper methods like upload_image for uploading files.
 
-## Using the UI: A Full Workflow
+Knowledge Graph Logging. Create a KGLogger in semant/agent_tools/midjourney/kg_logging.py. Each tool call should produce a mj:ToolCall node referencing a mj:Task (if applicable) and record each parameter as a mj:input literal and each result as a mj:output. Use schema:ImageObject nodes for any returned image URLs. Adhere to existing RDF namespace conventions.
 
-The UI is designed to be a powerful and flexible tool. Here is a typical workflow:
+Tool Wrappers. Write a wrapper class for each GoAPI feature. Each wrapper should accept structured inputs, invoke the correct GoAPI endpoint via GoAPIClient, log the call through KGLogger, and return the raw response. Implement version‑specific behaviour: --cref and --cw only for V6, --oref and --ow only for V7
+GitHub
+.
 
-### 1. Uploading Images (Optional)
+Tool Metadata Registry. Expose a registry in semant/agent_tools/midjourney/__init__.py mapping each tool to a ToolMeta entry (name, description, input schema, output schema, and run method). Include a higher‑level workflow like GenerateThemedPortraits for uploading images, generating portraits, verifying prompts, and rerunning actions.
 
-The UI has a single **"Upload Image(s)"** button that handles all image uploads. Once an image is uploaded to GCS, a thumbnail preview appears. Each thumbnail has its own set of controls.
+TaskMaster Planning & Execution
+Create parent tasks. Use add_task to set up high‑level tasks such as implementing the client and logger, writing tool wrappers, creating the registry, writing tests, integrating with the planner, and documenting the work. Each task should clearly describe its goal, dependencies, and acceptance criteria.
 
-*   **For Image Prompts:**
-    1.  Click "Upload Image(s)" and select one or more images.
-    2.  For each thumbnail that appears, a **weight input** is shown beneath it. You can adjust this value to control its influence in a multi-prompt (e.g., `image_url::2`).
-    3.  These images will be automatically added to the start of your prompt when you click "Imagine".
+Analyse and expand. Run analyze_project_complexity to determine which tasks are complex and then call expand_task with --force and --research to break them down into subtasks. Example subtasks include designing class interfaces, writing HTTP handling, creating RDF triples, adding tests, and updating the README.
 
-*   **For Character or Style References:**
-    1.  Click "Upload Image(s)" and select an image.
-    2.  In the thumbnail preview, click the **"Use as --cref"** or **"Use as --sref"** button.
-    3.  This will automatically populate the corresponding field in the "Advanced Settings" panel and add a visual badge to the thumbnail.
+Maintain dependencies and status. Use add_dependency to express prerequisites between tasks (e.g., tool classes depend on the client). Mark tasks as done with set_task_status when they are complete. Use update_task or update when changes arise instead of editing task files directly.
 
-### 2. Crafting Your Prompt
+Document iteratively. After each milestone, call generate to regenerate individual task markdown files and, if necessary, sync-readme to update this README. Avoid overwriting user-written sections or conflicting with other ongoing work.
 
-*   **Text Prompt:** Type your main text prompt into the large text area.
-*   **Advanced Settings:** Click the "Advanced Settings" button to reveal a comprehensive panel of Midjourney parameters. Here you can control:
-    *   `--cref` & `--sref` (populated from uploads)
-    *   `--cw` & `--sw` (weights for references)
-    *   `--iw` (global image weight for single image prompts)
-    *   `--no` (negative prompts)
-    *   Aspect Ratio (including custom)
-    *   Version, Seed, Stylize, Chaos, Weird, and more.
+Record research findings. Use the research tool to gather up‑to‑date information (e.g., on Midjourney features) and save the results to tasks or subtasks via update_subtask. This preserves findings for the entire agent team.
 
-### 3. Submitting the Job
+Review & Quality Control
+Unit testing. Create tests that exercise typical workflows (imagine → action) and ensure API calls and knowledge graph logging behave correctly. Write tasks for the tests and mark them done once they pass.
 
-Click the **"Imagine"** button. The UI will intelligently construct the final prompt string, combining your weighted image prompts, your text prompt, and all selected parameters, and send it to the backend.
+Peer review. Assign a Critic agent to review each component for code quality, error handling, and adherence to version‑specific rules. Capture feedback using update_subtask and address issues before marking tasks complete.
 
-### 4. Viewing and Managing Jobs
+Approval. A Judge agent must verify that a task meets its criteria (tests pass, documentation updated, dependencies satisfied) before it is considered done.
 
-*   Your new job will immediately appear at the top of the **Historical Gallery**.
-*   The gallery will automatically refresh every 15 seconds, updating the progress of any running jobs.
-*   Once a job is complete, its final image will be displayed.
-*   You can then perform follow-up actions:
-    *   Click **"Split Grid"** to process the image into four quadrants. The card will update to show the four new images, each with its own `--cref`/`--sref` buttons.
-    *   Click **"U1"**, **"V2"**, **"Reroll"**, etc. to start a new job based on the result. These buttons are automatically disabled for jobs older than 24 hours but can be re-enabled with the "Force Enable" button.
+Integration & Documentation
+Planner integration. Modify the Planner agent to call these tools via the registry. Implement a GenerateThemedPortraits plan that uploads face images, generates themed portraits, verifies prompts through describe, rerolls if necessary, upscales results, and logs everything to the knowledge graph. Represent each step as a subtask.
 
-## API Endpoints
+Create detailed docs. Draft a new file (e.g., docs/midjourney_agent_tools.md) explaining how to use each tool, the meaning of each parameter, and examples. Highlight differences between these new agent tools and the existing UI/CLI code.
 
-The backend provides several key endpoints to support the UI:
+Iterate documentation. After each milestone, update the documentation and regenerate task files. Encourage use of TaskMaster tags if multiple features are being developed concurrently
+GitHub
+.
 
-*   `POST /api/midjourney/imagine`: Submits a new task.
-*   `POST /api/upload-image`: Uploads a single image to GCS and returns its public URL.
-*   `GET /api/midjourney/jobs`: Returns a list of all historical jobs.
-*   `GET /api/midjourney/jobs/{task_id}`: Returns the metadata for a single job.
-*   `POST /api/midjourney/split-grid/{task_id}`: Triggers the grid-splitting process for a completed job.
-*   `POST /api/midjourney/action`: Performs a follow-up action (upscale, etc.) on a job.
-*   `POST /api/midjourney/describe`: Describe via file upload (`image_file` form field). Returns `{ "prompts": [ ... ] }`.
-*   `POST /api/midjourney/describe-url`: Describe via URL (`image_url` form field). Returns `{ "prompts": [ ... ] }`.
-*   `POST /api/midjourney/blend`: Blend via either `image_urls` (JSON array or comma-separated string) or `image_files` (2–5 uploads) plus `dimension`.
+Final Review & Continuous Improvement
+Validate dependencies. Use validate_dependencies to ensure there are no circular or missing dependencies and run fix_dependencies if issues are found.
 
-## Troubleshooting
+Swarm review. At the end of the implementation, have multiple agents review the code and documentation. Update tasks accordingly with update_task or update.
 
-*   **Failed to fetch / CORS errors:** The UI now prefers URL-based submissions so the server (not the browser) verifies and submits GCS URLs. If you still see failures, confirm bucket objects are public and that `GCS_BUCKET_NAME` and `GOOGLE_APPLICATION_CREDENTIALS` are set.
-*   **Authentication:** Ensure `MIDJOURNEY_API_TOKEN` is present and valid.
-*   **GoAPI “Unrecognized Param: --”:** For V7, avoid leaving inline `--*` flags in the text prompt. The backend already removes most common flags and relocates `--oref/--ow` into the payload. If you still encounter this error, check logs to ensure the final prompt contains no stray `--` segments.
+Future roadmap. Follow this same process when adding new Midjourney or GoAPI features: define tasks, analyse complexity, expand tasks, implement and test, log all actions, update documentation, and review. Capture future enhancements and ideas in TaskMaster to maintain a forward‑looking roadmap.
 
-## Command-Line Interface (CLI)
+By following the guidelines in this README, a team of agents can methodically implement a robust Midjourney GoAPI integration within the Semant framework. TaskMaster ensures that work is planned, tracked, and documented, while the knowledge graph provides an auditable history of all tool interactions. The combination empowers agents to produce high‑quality themed images, iterate on prompts, and maintain comprehensive project documentation.
 
-For users who prefer the command line, `midjourney_integration/cli.py` offers direct access to core functions.
+---
 
-*   **`python -m midjourney_integration.cli imagine "your prompt"`**: Submit a new prompt.
-    *   `--image-path`: Attach a local image to the prompt.
-    *   `--aspect_ratio`, `--mode`, `--nowait`
-*   **`python -m midjourney_integration.cli action <action> <task_id>`**: Perform an action (e.g., `upscale1`, `reroll`) on a completed job.
-*   **`python -m midjourney_integration.cli list`**: List all locally stored job metadata.
+## Changelog
+
+### 2025-10-25: Fixed --cref V6 Compatibility Issue
+- **Problem**: Users received error "Invalid parameter `--cref` is not compatible with `--version 7`" when using character reference
+- **Root Cause**: System wasn't detecting `--cref` usage and was defaulting to V7
+- **Solution**: 
+  - Added extraction of `--cref` and `--cw` parameters from prompts in `main.py`
+  - Auto-detect and set `model_version="v6"` when these parameters are present
+  - Pass `cref_url` and `cref_weight` to the client via payload fields
+  - Updated `client.py` to handle V6 parameters properly
+- **Files Modified**: `main.py`, `midjourney_integration/client.py`
+- **Verification**: Test with `--cref URL` in prompt - should now auto-set V6 and work correctly
+
+### 2025-11-14: Stabilized Qdrant Similarity Index IDs
+- **Problem**: Image embeddings stored in Qdrant could not be retrieved reliably after a restart because point IDs relied on Python's salted `hash()` implementation.
+- **Root Cause**: `ImageEmbeddingService` converted `image_uri` values to numeric IDs via `hash(image_uri) % (2**63)`, producing different IDs per process and risking silent duplicates.
+- **Solution**:
+  - Added deterministic SHA-256 based point IDs with legacy fallback logic.
+  - Included `point_id_version` in Qdrant payloads for observability.
+  - Added regression tests covering the new helper functions.
+- **Files Modified**: `kg/services/image_embedding_service.py`, `tests/test_qdrant_point_ids.py`, `RISK_ANALYSIS_QDRANT_DEMO.md`
+- **Verification**: Unit tests for the helper functions (`pytest tests/test_qdrant_point_ids.py`) and manual ingestion/search flows now work across service restarts.
+
+### 2025-11-14: Restored Kids Monsters GCS Download Fix
+- **Problem**: Local operators no longer had the helper script that automates downloading `input_kids_monster/` and `generated_images/` assets from the GCS bucket, forcing manual `gsutil` usage for each drop.
+- **Root Cause**: `scripts/tools/download_and_batch.py` had been removed, so there was no checked-in workflow to batch images for Apple Photos uploads.
+- **Fix**:
+  - Re-created the script with argument parsing, extension filtering, folder batching, and type-based organization exactly as used previously.
+  - Ensured the CLI validates mutually exclusive flags, surfaces helpful logging, and cleans staging folders after batching.
+- **Files Modified**: `scripts/tools/download_and_batch.py`
+- **Verification**: Logic review only (GCS credentials unavailable in sandbox); run `python3 scripts/tools/download_and_batch.py --help` locally to confirm importability.
+
+### 2025-11-21: Implemented Nano-Banana Model Support
+- **Problem**: Users needed access to the new "Nano-Banana" model, which is distinct from Niji.
+- **Solution**:
+  - Added "Nano-Banana" option to the UI version selector.
+  - Updated `midjourney_integration/client.py` to explicitly handle `model_version="nano-banana"` and set the correct GoAPI payload.
+  - Updated `midjourney_integration/cli.py` to support `--version nano-banana`.
+- **Files Modified**: `static/midjourney.html`, `midjourney_integration/client.py`, `midjourney_integration/cli.py`
+- **Verification**: Verified via code review and manual testing of the new option in UI and CLI.

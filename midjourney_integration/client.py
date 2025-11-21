@@ -36,6 +36,8 @@ def upload_to_gcs_and_get_public_url(
     """
     Uploads a file or bytes to the GCS bucket and makes it public.
     This is now the single, unified uploader.
+
+    OPTIMIZED: Reduced timeout from 300s to 30s for faster uploads.
     """
     bucket_name = settings.GCS_BUCKET_NAME
     if not bucket_name:
@@ -45,12 +47,15 @@ def upload_to_gcs_and_get_public_url(
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
 
+    # Optimized timeout: 30 seconds instead of 300
+    timeout = 30
+
     if isinstance(source, Path):
         logger.info("Uploading %s to gs://%s/%s", source, bucket_name, destination_blob_name)
-        blob.upload_from_filename(str(source), timeout=300, content_type=content_type)
+        blob.upload_from_filename(str(source), timeout=timeout, content_type=content_type)
     else:
-        logger.info("Uploading bytes to gs://%s/%s", bucket_name, destination_blob_name)
-        blob.upload_from_string(source, timeout=300, content_type=content_type)
+        logger.info("Uploading %d bytes to gs://%s/%s", len(source), bucket_name, destination_blob_name)
+        blob.upload_from_string(source, timeout=timeout, content_type=content_type)
 
     blob.make_public()
     logger.info("File %s is now publicly available at %s", destination_blob_name, blob.public_url)
@@ -137,14 +142,16 @@ class MidjourneyClient:
         process_mode: Optional[str],
         oref_url: Optional[str] = None,
         oref_weight: Optional[int] = None,
+        cref_url: Optional[str] = None,
+        cref_weight: Optional[int] = None,
         model_version: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Submit an imagine request using the V1 endpoint."""
         # Minimal normalization to satisfy tests and v7 rules
         prompt_for_payload = (prompt or "").strip()
         try:
-            # If prompt starts with --oref (and possibly --ow), prefix neutral token
-            if re.match(r"^\s*--oref\b", prompt_for_payload, re.IGNORECASE):
+            # If prompt starts with --oref or --cref, prefix neutral token
+            if re.match(r"^\s*--(oref|cref)\b", prompt_for_payload, re.IGNORECASE):
                 prompt_for_payload = f"image {prompt_for_payload}"
             # If v7, strip inline --cref/--cw from prompt text (these are unsupported)
             is_v7 = (model_version == "v7") or bool(re.search(r"--v\s+7\b", prompt_for_payload, re.IGNORECASE))
@@ -163,12 +170,23 @@ class MidjourneyClient:
                 "process_mode": process_mode or "relax",
             },
         }
+
+        # Handle Nano-Banana model specifically
+        if model_version and model_version.lower() == "nano-banana":
+            payload["model"] = "nano-banana"
+            # Nano-Banana typically doesn't use process_mode, but we'll leave it if harmless or remove if needed.
+            # Assuming it shares 'imagine' task_type structure.
+
         if aspect_ratio:
             payload["input"]["aspect_ratio"] = aspect_ratio
         if oref_url:
             payload["input"]["oref"] = oref_url
         if oref_weight is not None:
             payload["input"]["ow"] = oref_weight
+        if cref_url:
+            payload["input"]["cref"] = cref_url
+        if cref_weight is not None:
+            payload["input"]["cw"] = cref_weight
         # Additive: attempt to pass version explicitly if provided (cover both keys)
         if model_version:
             try:
@@ -260,23 +278,59 @@ class MidjourneyClient:
         with open(output_path, "wb") as f:
             f.write(response.content)
 
-async def poll_until_complete(client: MidjourneyClient, task_id: str, interval: int = 5, max_wait: int = 900) -> Dict[str, Any]:
+async def poll_until_complete(
+    client: MidjourneyClient,
+    task_id: str,
+    interval: int = 5,
+    max_wait: int = 900,
+    kg_manager = None
+) -> Dict[str, Any]:
     """Polls a task until it is completed, failed, or timed out."""
     elapsed = 0
+    start_time = None
+
     while elapsed < max_wait:
         try:
             result = await client.poll_task(task_id)
             task_data = result.get("data", result)
 
             status = task_data.get("status")
+            progress = task_data.get("output", {}).get("progress", 0)
+
+            # Log occurrence to knowledge graph if manager provided
+            if kg_manager:
+                # Determine job type from task data
+                task_type = task_data.get("task_type", "unknown")
+                model_version = task_data.get("config", {}).get("model_version", task_data.get("meta", {}).get("model_version"))
+                prompt = task_data.get("input", {}).get("prompt", "")
+                error = task_data.get("error", {}).get("message") if task_data.get("error") else None
+                result_text = task_data.get("output", {}).get("image_url", "") if task_data.get("output") else ""
+
+                # Set start time on first poll
+                if not start_time:
+                    start_time = task_data.get("meta", {}).get("created_at", task_data.get("created_at"))
+
+                await log_job_occurrence_to_kg(
+                    kg_manager=kg_manager,
+                    task_id=task_id,
+                    job_type=task_type,
+                    status=status,
+                    prompt=prompt,
+                    model_version=model_version,
+                    start_time=start_time,
+                    progress=progress,
+                    error=error,
+                    result=result_text
+                )
+
             if status in {"completed", "finished"}:
                 logger.info("Task %s finished successfully.", task_id)
                 return task_data
             if status in {"failure", "failed", "error"}:
                 logger.error("Task %s failed with data: %s", task_id, task_data)
                 raise MidjourneyError(f"Task failed: {task_data}")
-            
-            logger.debug("Task %s status: %s, progress: %s%%", task_id, status, task_data.get("output", {}).get("progress", 0))
+
+            logger.debug("Task %s status: %s, progress: %s%%", task_id, status, progress)
             await asyncio.sleep(interval)
             elapsed += interval
 
@@ -337,4 +391,142 @@ async def split_grid_and_upload(task_id: str, image_path: Path, bucket_name: str
 
     logger.info("Split grid for task %s into 4 images.", task_id)
     return gcs_urls
+
+
+async def log_job_occurrence_to_kg(
+    kg_manager,
+    task_id: str,
+    job_type: str,
+    status: str,
+    prompt: str = None,
+    model_version: str = None,
+    start_time: str = None,
+    end_time: str = None,
+    progress: int = None,
+    error: str = None,
+    result: str = None,
+    **kwargs
+) -> None:
+    """
+    Log a Midjourney job occurrence to the Knowledge Graph using the occurrent model.
+
+    This creates a JobOccurrent instance in the knowledge graph to track the lifecycle
+    of Midjourney jobs, including historical and running jobs.
+    """
+    try:
+        await kg_manager.initialize()
+
+        # Create occurrence URI
+        occurrence_uri = f"http://example.org/midjourney/occurrence/{task_id}"
+
+        # Determine occurrence type based on job type
+        if job_type == "imagine":
+            occurrence_type = "http://example.org/midjourney#ImagineJob"
+        elif job_type == "action":
+            occurrence_type = "http://example.org/midjourney#ActionJob"
+        elif job_type == "describe":
+            occurrence_type = "http://example.org/midjourney#DescribeJob"
+        elif job_type == "blend":
+            occurrence_type = "http://example.org/midjourney#BlendJob"
+        else:
+            occurrence_type = "http://example.org/midjourney#MidjourneyJob"
+
+        # Add core occurrence properties
+        await kg_manager.add_triple(
+            occurrence_uri,
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            "http://example.org/core#JobOccurrent"
+        )
+
+        await kg_manager.add_triple(
+            occurrence_uri,
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            occurrence_type
+        )
+
+        # Add job-specific properties
+        await kg_manager.add_triple(
+            occurrence_uri,
+            "http://example.org/core#hasTaskId",
+            f'"{task_id}"'
+        )
+
+        await kg_manager.add_triple(
+            occurrence_uri,
+            "http://example.org/core#hasJobType",
+            f'"{job_type}"'
+        )
+
+        await kg_manager.add_triple(
+            occurrence_uri,
+            "http://example.org/core#hasStatus",
+            f'"{status}"'
+        )
+
+        # Add temporal properties
+        if start_time:
+            await kg_manager.add_triple(
+                occurrence_uri,
+                "http://example.org/core#hasStartTime",
+                f'"{start_time}"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+            )
+
+        if end_time:
+            await kg_manager.add_triple(
+                occurrence_uri,
+                "http://example.org/core#hasEndTime",
+                f'"{end_time}"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+            )
+
+        if progress is not None:
+            await kg_manager.add_triple(
+                occurrence_uri,
+                "http://example.org/core#hasProgress",
+                f'"{progress}"^^<http://www.w3.org/2001/XMLSchema#integer>'
+            )
+
+        # Add Midjourney-specific properties
+        if prompt:
+            await kg_manager.add_triple(
+                occurrence_uri,
+                "http://example.org/midjourney#hasPrompt",
+                f'"{prompt}"'
+            )
+
+        if model_version:
+            await kg_manager.add_triple(
+                occurrence_uri,
+                "http://example.org/midjourney#hasModelVersion",
+                f'"{model_version}"'
+            )
+
+        # Add result and error properties
+        if result:
+            await kg_manager.add_triple(
+                occurrence_uri,
+                "http://example.org/core#hasResult",
+                f'"{result}"'
+            )
+
+        if error:
+            await kg_manager.add_triple(
+                occurrence_uri,
+                "http://example.org/core#hasError",
+                f'"{error}"'
+            )
+
+        # Add any additional properties
+        for key, value in kwargs.items():
+            if value is not None:
+                property_uri = f"http://example.org/midjourney#{key}"
+                await kg_manager.add_triple(
+                    occurrence_uri,
+                    property_uri,
+                    f'"{value}"'
+                )
+
+        logger.info(f"Logged job occurrence for task {task_id} to Knowledge Graph")
+
+    except Exception as e:
+        logger.error(f"Failed to log job occurrence for task {task_id}: {e}")
 

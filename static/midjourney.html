@@ -106,6 +106,7 @@
                         <label><input type="radio" name="version" value="6" checked> V6</label>
                         <label><input type="radio" name="version" value="5.2"> V5.2</label>
                         <label><input type="radio" name="version" value="niji 6"> Niji 6</label>
+                        <label><input type="radio" name="version" value="nano-banana"> Nano-Banana</label>
                     </div>
                 </div>
                 <div class="setting">
@@ -153,11 +154,19 @@
                         <option value="landscape">landscape</option>
                     </select>
                     <button type="button" id="refine-btn" class="secondary">Refine with AI</button>
+                    <button type="button" id="undo-refine-btn" class="secondary" disabled title="Undo refinement (Ctrl+Z)">↶ Undo</button>
+                    <button type="button" id="redo-refine-btn" class="secondary" disabled title="Redo refinement (Ctrl+Shift+Z)">↷ Redo</button>
+                    <button type="button" id="themed-set-btn" class="secondary">Generate Themed Set</button>
                     <button type="button" id="toggle-advanced-btn" class="secondary">Advanced Settings</button>
                 </div>
                 <div class="right">
                     <button type="submit" id="submit-button">Imagine</button>
                 </div>
+            </div>
+
+            <div id="refine-history" class="transcript" style="display:none;">
+                <h3>Refinement History <span id="history-stats" style="font-size:0.8rem;color:#666;"></span></h3>
+                <ul id="refine-history-list"></ul>
             </div>
 
             <div id="refine-transcript" class="transcript" style="display:none;">
@@ -173,6 +182,28 @@
     </div>
     
     <div class="gallery" id="gallery"></div>
+
+    <div class="prompt-form" id="uploads-section" style="margin-top: 2rem;">
+        <div style="display:flex; justify-content: space-between; align-items:center;">
+            <h2 style="margin:0; font-size:1.1rem;">Uploaded Images (from Knowledge Graph)</h2>
+            <div>
+                <button type="button" id="refresh-uploads-btn" class="secondary">Refresh</button>
+            </div>
+        </div>
+        <div id="uploads-grid" class="gallery" style="margin-top: 1rem;"></div>
+    </div>
+
+    <div class="prompt-form" id="trace-section" style="margin-top: 2rem;">
+        <h2 style="margin-top:0; font-size:1.1rem;">Task Trace (Knowledge Graph)</h2>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap: wrap;">
+            <input id="trace-task-id" type="text" placeholder="Enter task_id (e.g., 1234abcd)" style="flex:1; min-width:260px; padding:0.5rem; border:1px solid #ccc; border-radius:4px;" />
+            <button type="button" id="trace-btn">View Trace</button>
+        </div>
+        <div id="trace-results" class="transcript" style="display:none; margin-top: 1rem;">
+            <h3>Tool Calls</h3>
+            <ul id="trace-list"></ul>
+        </div>
+    </div>
 
     <div id="json-modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
         <div style="background-color: #fff; padding: 2rem; border-radius: 8px; width: 80%; max-width: 800px; max-height: 80vh; overflow-y: auto;">
@@ -204,8 +235,81 @@ document.addEventListener('DOMContentLoaded', () => {
     const jsonModal = document.getElementById('json-modal');
     const jsonContent = document.getElementById('json-content');
     const closeModalBtn = document.getElementById('close-modal-btn');
+    const uploadsGrid = document.getElementById('uploads-grid');
+    const refreshUploadsBtn = document.getElementById('refresh-uploads-btn');
+    const traceBtn = document.getElementById('trace-btn');
+    const traceTaskIdInput = document.getElementById('trace-task-id');
+    const traceResults = document.getElementById('trace-results');
+    const traceList = document.getElementById('trace-list');
+    const themedSetBtn = document.getElementById('themed-set-btn');
+    const undoRefineBtn = document.getElementById('undo-refine-btn');
+    const redoRefineBtn = document.getElementById('redo-refine-btn');
+    const refineHistoryBox = document.getElementById('refine-history');
+    const refineHistoryList = document.getElementById('refine-history-list');
+    const historyStats = document.getElementById('history-stats');
     
-    let uploadedImages = []; 
+    let uploadedImages = [];
+    let refineSessionId = null;
+    
+    // Create refinement session on page load
+    (async () => {
+        try {
+            const response = await fetch(`${API_BASE}/midjourney/refine-history/new`, { method: 'POST' });
+            const data = await response.json();
+            if (response.ok) {
+                refineSessionId = data.session_id;
+                console.log('Created refinement session:', refineSessionId);
+            }
+        } catch (e) {
+            console.error('Failed to create refinement session:', e);
+        }
+    })();
+    
+    // Helper: Update undo/redo button states based on session stats
+    async function updateRefineButtons() {
+        if (!refineSessionId) return;
+        try {
+            const response = await fetch(`${API_BASE}/midjourney/refine-stats/${refineSessionId}`);
+            if (!response.ok) return;
+            const stats = await response.json();
+            
+            if (undoRefineBtn) undoRefineBtn.disabled = !stats.can_undo;
+            if (redoRefineBtn) redoRefineBtn.disabled = !stats.can_redo;
+            
+            if (historyStats) {
+                historyStats.textContent = `(${stats.current_position}/${stats.total_steps})`;
+            }
+        } catch (e) {
+            console.error('Failed to update refine buttons:', e);
+        }
+    }
+    
+    // Helper: Load and display refinement history
+    async function loadRefineHistory() {
+        if (!refineSessionId || !refineHistoryList) return;
+        try {
+            const response = await fetch(`${API_BASE}/midjourney/refine-history/${refineSessionId}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            refineHistoryList.innerHTML = '';
+            if (data.steps && data.steps.length > 0) {
+                data.steps.forEach((step, index) => {
+                    const li = document.createElement('li');
+                    li.style.margin = '0.5rem 0';
+                    li.innerHTML = `
+                        <b>Step ${index + 1}</b> (${step.method}) 
+                        <small>${new Date(step.timestamp).toLocaleTimeString()}</small><br>
+                        <span style="color:#666;">→ ${step.refined_prompt.substring(0, 100)}${step.refined_prompt.length > 100 ? '...' : ''}</span>
+                    `;
+                    refineHistoryList.appendChild(li);
+                });
+                if (refineHistoryBox) refineHistoryBox.style.display = 'block';
+            }
+        } catch (e) {
+            console.error('Failed to load refine history:', e);
+        }
+    }
 
     closeModalBtn.onclick = () => {
         jsonModal.style.display = 'none';
@@ -329,6 +433,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         info.appendChild(viewJsonBtn);
 
+        // New: View Trace button (auto-fills task_id and opens trace panel)
+        const traceBtn = document.createElement('button');
+        traceBtn.textContent = 'Trace';
+        traceBtn.title = 'View Knowledge Graph Trace for this task';
+        traceBtn.onclick = async () => {
+            try {
+                if (traceTaskIdInput) traceTaskIdInput.value = job.task_id || '';
+                await fetchAndRenderTrace(job.task_id);
+                const section = document.getElementById('trace-section');
+                if (section && section.scrollIntoView) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } catch (e) {
+                alert('Unable to load trace');
+            }
+        };
+        info.appendChild(traceBtn);
+
         const actions = document.createElement('div');
         actions.className = 'actions';
         
@@ -376,13 +498,43 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         actionBtn.disabled = true;
                         try {
-                            const response = await fetch(`${API_BASE}/midjourney/action`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ origin_task_id: job.task_id, action: actionLabel }),
-                            });
-                            if (!response.ok) throw new Error((await response.json()).detail || 'Action failed');
-                            const result = await response.json();
+                            let result;
+                            // Route special actions to dedicated endpoints
+                            if (actionLabel.startsWith('pan_')) {
+                                const direction = actionLabel.split('_')[1];
+                                const resp = await fetch(`${API_BASE}/midjourney/pan`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ origin_task_id: job.task_id, direction })
+                                });
+                                if (!resp.ok) throw new Error((await resp.json()).detail || 'Pan failed');
+                                result = await resp.json();
+                            } else if (actionLabel.startsWith('outpaint')) {
+                                const prompt = window.prompt('Outpaint prompt (optional):', 'extend the scene');
+                                const imgUrl = job?.output?.image_url || '';
+                                const resp = await fetch(`${API_BASE}/midjourney/outpaint`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ image_url: imgUrl, prompt })
+                                });
+                                if (!resp.ok) throw new Error((await resp.json()).detail || 'Outpaint failed');
+                                result = await resp.json();
+                            } else if (actionLabel.startsWith('variation')) {
+                                const index = parseInt(actionLabel.replace('variation','') || '0', 10) || 1;
+                                const resp = await fetch(`${API_BASE}/midjourney/variation`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ origin_task_id: job.task_id, index })
+                                });
+                                if (!resp.ok) throw new Error((await resp.json()).detail || 'Variation failed');
+                                result = await resp.json();
+                            } else {
+                                // Default to legacy action endpoint
+                                const response = await fetch(`${API_BASE}/midjourney/action`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ origin_task_id: job.task_id, action: actionLabel }),
+                                });
+                                if (!response.ok) throw new Error((await response.json()).detail || 'Action failed');
+                                result = await response.json();
+                            }
                             alert(`New task started: ${result.task_id}`);
                             setTimeout(fetchAndRenderGallery, 1500);
                         } catch (error) {
@@ -558,6 +710,198 @@ document.addEventListener('DOMContentLoaded', () => {
              targetImage.role = 'prompt';
         }
         renderImagePreviews();
+    }
+
+    // --- Knowledge Graph: Uploads Gallery ---
+    function createUploadCard(row) {
+        const card = document.createElement('div');
+        card.className = 'job';
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
+        const a = document.createElement('a');
+        a.href = row.url;
+        a.target = '_blank';
+        const img = document.createElement('img');
+        img.src = row.url;
+        a.appendChild(img);
+        imageContainer.appendChild(a);
+        card.appendChild(imageContainer);
+
+        const info = document.createElement('div');
+        info.className = 'info';
+        const p = document.createElement('p');
+        p.className = 'prompt';
+        p.textContent = `Uploaded: ${row.when || 'unknown time'}`;
+        info.appendChild(p);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy URL';
+        copyBtn.onclick = async () => { try { await navigator.clipboard.writeText(row.url); } catch(e){} };
+        actions.appendChild(copyBtn);
+
+        const crefBtn = document.createElement('button');
+        crefBtn.textContent = 'Use as --cref';
+        crefBtn.onclick = () => { const el = document.getElementById('cref-input'); if (el) el.value = row.url; };
+        actions.appendChild(crefBtn);
+        const srefBtn = document.createElement('button');
+        srefBtn.textContent = 'Use as --sref';
+        srefBtn.onclick = () => { const el = document.getElementById('sref-input'); if (el) el.value = row.url; };
+        actions.appendChild(srefBtn);
+        const orefBtn = document.createElement('button');
+        orefBtn.textContent = 'Use as --oref (V7)';
+        orefBtn.onclick = () => { const el = document.getElementById('oref-input'); if (el) el.value = row.url; };
+        actions.appendChild(orefBtn);
+
+        info.appendChild(actions);
+        card.appendChild(info);
+        return card;
+    }
+
+    async function fetchAndRenderUploads() {
+        try {
+            const resp = await fetch(`${API_BASE}/midjourney/kg/uploads`);
+            if (!resp.ok) throw new Error('Failed to fetch uploads');
+            const rows = await resp.json();
+            uploadsGrid.innerHTML = '';
+            rows.forEach(r => {
+                if (r && r.url) uploadsGrid.appendChild(createUploadCard(r));
+            });
+        } catch (e) {
+            console.error('KG uploads fetch error:', e);
+        }
+    }
+
+    if (refreshUploadsBtn) refreshUploadsBtn.addEventListener('click', fetchAndRenderUploads);
+
+    // --- Knowledge Graph: Task Trace ---
+    function addKV(li, label, value) {
+        const div = document.createElement('div');
+        div.style.margin = '2px 0';
+        const b = document.createElement('b');
+        b.textContent = label + ': ';
+        div.appendChild(b);
+        const span = document.createElement('span');
+        span.textContent = value;
+        div.appendChild(span);
+        li.appendChild(div);
+    }
+
+    function safeParseJSON(maybe) {
+        try {
+            if (typeof maybe === 'string') return JSON.parse(maybe);
+            return maybe;
+        } catch (_) { return maybe; }
+    }
+
+    async function fetchAndRenderTrace(taskId) {
+        if (!taskId) return;
+        try {
+            const resp = await fetch(`${API_BASE}/midjourney/kg/trace/${encodeURIComponent(taskId)}`);
+            if (!resp.ok) throw new Error('Trace fetch failed');
+            const rows = await resp.json();
+            traceList.innerHTML = '';
+            rows.forEach(r => {
+                const li = document.createElement('li');
+                li.style.margin = '0.4rem 0';
+                addKV(li, 'Tool', r.name || 'unknown');
+                if (r.when) addKV(li, 'Time', r.when);
+                if (r.input) {
+                    const parsed = safeParseJSON(r.input);
+                    addKV(li, 'Inputs', typeof parsed === 'object' ? JSON.stringify(parsed) : String(parsed));
+                }
+                if (r.output) {
+                    const parsed = safeParseJSON(r.output);
+                    addKV(li, 'Output', typeof parsed === 'object' ? JSON.stringify(parsed) : String(parsed));
+                }
+                if (r.media) {
+                    const a = document.createElement('a');
+                    a.href = r.media; a.target = '_blank'; a.textContent = 'media';
+                    const mediaDiv = document.createElement('div');
+                    mediaDiv.appendChild(a);
+                    li.appendChild(mediaDiv);
+                }
+                traceList.appendChild(li);
+            });
+            traceResults.style.display = 'block';
+        } catch (e) {
+            alert(`Error: ${e.message}`);
+        }
+    }
+
+    if (traceBtn) traceBtn.addEventListener('click', () => fetchAndRenderTrace((traceTaskIdInput?.value || '').trim()));
+
+    // Generic themed-set generation: planner refines N distinct prompts and submits N jobs using first 6 face images
+    if (themedSetBtn) {
+        themedSetBtn.addEventListener('click', async () => {
+            try {
+                if (!uploadedImages.length) {
+                    alert('Upload face images first (up to 6 will be used each job).');
+                    return;
+                }
+                const faceUrls = uploadedImages.slice(0, 6).map(i => i.url).filter(Boolean);
+                if (!faceUrls.length) {
+                    alert('Could not read face image URLs.');
+                    return;
+                }
+
+                // Read Advanced Settings
+                const isV7 = true; // Planner flow requires V7 + FAST
+                const arRadio = document.querySelector('input[name="aspect_ratio"]:checked');
+                let ar = '1:1';
+                if (arRadio) {
+                    if (arRadio.value === 'custom') {
+                        const cv = document.getElementById('ar-custom-input')?.value?.trim();
+                        if (cv) ar = cv;
+                    } else {
+                        ar = arRadio.value;
+                    }
+                }
+                // Ask for theme and count on click (prefill from textarea; example updated)
+                const theme = (window.prompt('Enter a theme (e.g., Marvel superheroes cinematic universe):', (promptInput?.value || 'cinematic portrait')) || '').trim();
+                if (!theme) { return; }
+                const countStr = window.prompt('How many distinct prompts/images?', '10') || '10';
+                const count = Math.max(1, Math.min(20, parseInt(countStr, 10) || 10));
+
+                themedSetBtn.disabled = true;
+                const originalText = themedSetBtn.textContent;
+                themedSetBtn.textContent = 'Generating…';
+
+                const body = {
+                    theme,
+                    face_image_urls: faceUrls,
+                    count,
+                    version: 'v7',
+                    aspect_ratio: ar,
+                    process_mode: 'fast',
+                    // Prefer V7 oref/ow; fallback to V6 cref/cw
+                    ow: isV7 ? 120 : undefined,
+                    cw: isV7 ? undefined : 100
+                };
+
+                const resp = await fetch(`${API_BASE}/midjourney/generate-themed-set`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data?.detail || 'Generation failed');
+
+                const created = Array.isArray(data.tasks) ? data.tasks.length : 0;
+                if (faceUrls.length < 6) {
+                    alert(`Requested ${count} images (used ${faceUrls.length} face refs; upload 6 for best consistency). Started: ${created}`);
+                } else {
+                    alert(`Requested ${count} images. Started: ${created}`);
+                }
+                setTimeout(fetchAndRenderGallery, 2000);
+            } catch (e) {
+                alert(`Error: ${e.message}`);
+            } finally {
+                themedSetBtn.disabled = false;
+                themedSetBtn.textContent = 'Generate Themed Set';
+            }
+        });
     }
 
     // Blend: submit 2-5 images and dimension to backend
@@ -762,6 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         prompt: current,
+                        session_id: refineSessionId,
                         image_urls: uploadedImages.filter(i => i.role !== 'prompt').map(i => i.url)
                     })
                 });
@@ -770,7 +1115,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     response = await fetch(`${API_BASE}/midjourney/refine-prompt`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt: current })
+                        body: JSON.stringify({ 
+                            prompt: current,
+                            session_id: refineSessionId
+                        })
                     });
                     data = await response.json();
                     if (!response.ok || !data?.refined_prompt) throw new Error(data?.detail || 'Refinement failed');
@@ -786,6 +1134,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     tBox.style.display = 'block';
                 }
+                
+                // Update history display and button states
+                await loadRefineHistory();
+                await updateRefineButtons();
             } catch (err) {
                 alert(`Error: ${err.message}`);
             } finally {
@@ -794,6 +1146,77 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
+    // Undo refinement
+    if (undoRefineBtn) {
+        undoRefineBtn.addEventListener('click', async () => {
+            if (!refineSessionId) return;
+            try {
+                const response = await fetch(`${API_BASE}/midjourney/refine-undo/${refineSessionId}`, {
+                    method: 'POST'
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.detail || 'Cannot undo');
+                    return;
+                }
+                const data = await response.json();
+                if (promptInput) promptInput.value = data.previous_prompt;
+                await loadRefineHistory();
+                await updateRefineButtons();
+            } catch (err) {
+                alert(`Undo error: ${err.message}`);
+            }
+        });
+    }
+    
+    // Redo refinement
+    if (redoRefineBtn) {
+        redoRefineBtn.addEventListener('click', async () => {
+            if (!refineSessionId) return;
+            try {
+                const response = await fetch(`${API_BASE}/midjourney/refine-redo/${refineSessionId}`, {
+                    method: 'POST'
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.detail || 'Cannot redo');
+                    return;
+                }
+                const data = await response.json();
+                if (promptInput) promptInput.value = data.next_prompt;
+                await loadRefineHistory();
+                await updateRefineButtons();
+            } catch (err) {
+                alert(`Redo error: ${err.message}`);
+            }
+        });
+    }
+    
+    // Keyboard shortcuts for undo/redo
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+Z or Cmd+Z for undo
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+            e.preventDefault();
+            if (undoRefineBtn && !undoRefineBtn.disabled) {
+                undoRefineBtn.click();
+            }
+        }
+        // Ctrl+Shift+Z or Cmd+Shift+Z for redo
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+            e.preventDefault();
+            if (redoRefineBtn && !redoRefineBtn.disabled) {
+                redoRefineBtn.click();
+            }
+        }
+        // Ctrl+Y or Cmd+Y for redo (alternative)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+            e.preventDefault();
+            if (redoRefineBtn && !redoRefineBtn.disabled) {
+                redoRefineBtn.click();
+            }
+        }
+    });
 
     imagineForm.addEventListener('submit', async (event) => {
         event.preventDefault();

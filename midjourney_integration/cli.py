@@ -57,6 +57,7 @@ def cmd_imagine(args: argparse.Namespace):
             prompt=final_prompt,
             aspect_ratio=args.aspect_ratio,
             process_mode=args.mode,
+            model_version=args.version,
         )
         task_id = response.get("data", response).get("task_id")
         if not task_id:
@@ -141,6 +142,7 @@ def main() -> None:
     )
     p_im.add_argument("--aspect_ratio", default="1:1")
     p_im.add_argument("--mode", choices=["relax", "fast", "turbo"], default="relax")
+    p_im.add_argument("--version", help="Model version (v6, v7, niji 6, nano-banana)", default=None)
     p_im.add_argument("--nowait", action="store_true", help="Return immediately after submission")
     p_im.set_defaults(func=cmd_imagine)
 

@@ -39,24 +39,35 @@
 
     <script>
       async function fetchJSON(url, token) {
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const headers = token && token.trim() ? { Authorization: `Bearer ${token.trim()}` } : {};
         const res = await fetch(url, { headers });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || `HTTP ${res.status}: ${res.statusText}`);
+        }
         return res.json();
       }
 
       async function loadDiary() {
         const id = document.getElementById("agentId").value.trim();
         if (!id) return alert("Enter agent id");
-        const token = localStorage.getItem("SEMANT_TOKEN") || prompt("Bearer token (leave blank if none)");
-        if (token) localStorage.setItem("SEMANT_TOKEN", token);
+        let token = localStorage.getItem("SEMANT_TOKEN");
+        if (!token || !token.trim()) {
+          token = prompt("Bearer token (leave blank if none)");
+          if (token && token.trim()) {
+            localStorage.setItem("SEMANT_TOKEN", token.trim());
+          } else {
+            token = null;
+          }
+        }
         try {
           const diary = await fetchJSON(`/diary/${id}`, token);
           const triples = await fetchJSON(`/diary/${id}/triples`, token);
           renderDiary(diary);
           renderTriples(triples);
         } catch (e) {
-          alert(e);
+          alert(`Error: ${e.message || e}`);
+          console.error("Diary load error:", e);
         }
       }
 

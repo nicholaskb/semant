@@ -10,6 +10,13 @@ import aiofiles
 import shutil
 import tempfile
 from agents.core.workflow_types import Workflow, WorkflowStatus, WorkflowStep
+from agents.core.json_serialization import (
+    custom_json_dump,
+    custom_json_load,
+    custom_json_dumps,
+    custom_json_loads,
+    make_json_serializable
+)
 
 class WorkflowPersistence:
     """Handles persistence of workflow state."""
@@ -68,7 +75,10 @@ class WorkflowPersistence:
                 "created_at": workflow.created_at,
                 "updated_at": workflow.updated_at,
                 "error": workflow.error,
-                "metadata": workflow.metadata
+                "metadata": make_json_serializable(workflow.metadata),
+                "name": workflow.name,
+                "description": workflow.description,
+                "required_capabilities": make_json_serializable(workflow.required_capabilities)
             }
             
         # Ensure metadata block exists
@@ -80,8 +90,10 @@ class WorkflowPersistence:
 
         # Persist current version
         file_path = os.path.join(self.storage_dir, f"{workflow_data['id']}.json")
+        # Convert to JSON-serializable format (handles sets, enums, etc.)
+        serializable_data = make_json_serializable(workflow_data)
         with open(file_path, "w") as f:
-            json.dump(workflow_data, f)
+            custom_json_dump(serializable_data, f, indent=2)
 
         # Append to history file
         history_path = os.path.join(self.storage_dir, f"{workflow_data['id']}_history.json")
@@ -89,12 +101,12 @@ class WorkflowPersistence:
         if os.path.exists(history_path):
             with open(history_path, "r") as f:
                 try:
-                    history = json.load(f)
+                    history = custom_json_load(f)
                 except Exception:
                     history = []
-        history.append(metadata.copy())
+        history.append(make_json_serializable(metadata.copy()))
         with open(history_path, "w") as f:
-            json.dump(history, f)
+            custom_json_dump(history, f, indent=2)
             
     async def load_workflow(self, workflow_id: str) -> Optional[Union[Dict, Workflow]]:
         """Load workflow state."""
@@ -103,12 +115,19 @@ class WorkflowPersistence:
             return None
             
         with open(file_path, "r") as f:
-            data = json.load(f)
+            data = custom_json_load(f)
             
         # Return as dictionary if no steps field (old format)
         if 'steps' not in data:
             return data
             
+        # Reconstruct required_capabilities as a set
+        required_caps = data.get("required_capabilities", [])
+        if isinstance(required_caps, list):
+            required_caps = set(required_caps)
+        elif not isinstance(required_caps, set):
+            required_caps = set()
+        
         wf_obj = Workflow(
             id=data["id"],
             steps=[self._dict_to_step(step) for step in data["steps"]],
@@ -116,7 +135,10 @@ class WorkflowPersistence:
             created_at=data["created_at"],
             updated_at=data["updated_at"],
             error=data.get("error"),
-            metadata=data.get("metadata")
+            metadata=data.get("metadata", {}),
+            name=data.get("name", ""),
+            description=data.get("description", ""),
+            required_capabilities=required_caps
         )
 
         # Return as dictionary for test compatibility
@@ -127,7 +149,10 @@ class WorkflowPersistence:
             "updated_at": wf_obj.updated_at,
             "error": wf_obj.error,
             "metadata": wf_obj.metadata,
-            "steps": data["steps"]
+            "steps": data["steps"],
+            "name": wf_obj.name,
+            "description": wf_obj.description,
+            "required_capabilities": list(wf_obj.required_capabilities)  # Convert set to list for JSON compatibility
         }
         
     async def get_workflow_history(self, workflow_id: str) -> List[Dict]:
@@ -137,58 +162,76 @@ class WorkflowPersistence:
             return []
             
         with open(file_path, "r") as f:
-            return json.load(f)
+            return custom_json_load(f)
             
     async def save_workflow_history(self, workflow_id: str, history: List[Dict]) -> None:
         """Save workflow version history."""
         file_path = os.path.join(self.storage_dir, f"{workflow_id}_history.json")
         with open(file_path, "w") as f:
-            json.dump(history, f)
+            custom_json_dump(make_json_serializable(history), f, indent=2)
             
     def _step_to_dict(self, step: WorkflowStep) -> Dict:
         """Convert a workflow step to a dictionary."""
         # Handle capability serialization
-        capability_dict = None
-        if step.capability:
-            if hasattr(step.capability, 'to_dict'):
-                capability_dict = step.capability.to_dict()
-            else:
-                # Fallback for non-Capability objects
-                capability_dict = str(step.capability)
+        # WorkflowStep.capability is typed as str, but we need to handle
+        # both string and Capability object cases for compatibility
+        capability_value = step.capability
+        if capability_value:
+            if hasattr(capability_value, 'to_dict'):
+                # It's a Capability object
+                capability_value = capability_value.to_dict()
+            elif not isinstance(capability_value, str):
+                # Convert to string if it's not already
+                capability_value = str(capability_value)
         
         return {
             "id": step.id,
-            "capability": capability_dict,
-            "parameters": step.parameters,
-            "status": step.status.value,
+            "capability": capability_value,
+            "parameters": make_json_serializable(step.parameters),
+            "status": step.status.value if hasattr(step.status, 'value') else str(step.status),
             "assigned_agent": step.assigned_agent,
             "error": step.error,
             "start_time": step.start_time,
-            "end_time": step.end_time
+            "end_time": step.end_time,
+            "next_steps": make_json_serializable(step.next_steps) if hasattr(step, 'next_steps') else []
         }
         
     def _dict_to_step(self, data: Dict) -> WorkflowStep:
         """Convert a dictionary to a workflow step."""
         # Handle capability deserialization
-        capability = None
-        if data.get("capability"):
-            if isinstance(data["capability"], dict):
+        # WorkflowStep expects capability as a string, but we support
+        # both dict (from Capability.to_dict()) and string formats
+        capability_value = data.get("capability")
+        if capability_value:
+            if isinstance(capability_value, dict):
+                # It's a Capability dict - convert to string representation
                 # Import here to avoid circular imports
                 from agents.core.capability_types import Capability
-                capability = Capability.from_dict(data["capability"])
-            else:
-                # Fallback for string capabilities
-                capability = data["capability"]
+                cap_obj = Capability.from_dict(capability_value)
+                capability_value = str(cap_obj.type.value) if hasattr(cap_obj, 'type') else str(cap_obj)
+            elif not isinstance(capability_value, str):
+                # Ensure it's a string
+                capability_value = str(capability_value)
+        
+        # Handle status deserialization
+        status_value = data.get("status")
+        if isinstance(status_value, str):
+            status = WorkflowStatus(status_value)
+        elif hasattr(status_value, 'value'):
+            status = WorkflowStatus(status_value.value)
+        else:
+            status = WorkflowStatus.PENDING
         
         return WorkflowStep(
-            id=data["id"],
-            capability=capability,
-            parameters=data["parameters"],
-            status=WorkflowStatus(data["status"]),
+            id=data.get("id", ""),
+            capability=capability_value or "",
+            parameters=data.get("parameters", {}),
+            status=status,
             assigned_agent=data.get("assigned_agent"),
             error=data.get("error"),
             start_time=data.get("start_time"),
-            end_time=data.get("end_time")
+            end_time=data.get("end_time"),
+            next_steps=data.get("next_steps", [])
         )
 
     async def delete_workflow(self, workflow_id: str) -> None:
@@ -215,7 +258,7 @@ class WorkflowPersistence:
             filepath = os.path.join(self.storage_dir, filename)
             async with aiofiles.open(filepath, 'r') as f:
                 content = await f.read()
-                data = json.loads(content)
+                data = custom_json_loads(content)
                 md = data.get("metadata", {})
                 workflows.append({
                     "workflow_id": data.get("id"),

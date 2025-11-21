@@ -816,7 +816,9 @@ class BaseAgent(ABC):
                 g.add((diary_bnode, msg_pred, Literal(message)))
                 g.add((diary_bnode, ts_pred, Literal(timestamp)))
                 if details:
-                    g.add((diary_bnode, details_pred, Literal(json.dumps(details))))
+                    from agents.core.json_serialization import make_json_serializable, custom_json_dumps
+                    serializable_details = make_json_serializable(details)
+                    g.add((diary_bnode, details_pred, Literal(custom_json_dumps(serializable_details))))
             except Exception as e:
                 # Non-fatal – diary still stored in memory
                 self.logger.warning(f"Diary KG update failed for agent {self.agent_id}: {e}")

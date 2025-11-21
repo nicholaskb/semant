@@ -140,7 +140,7 @@ class AgenticPromptAgent(BaseAgent):
                         "rdf:type": "prompt:Prompt",
                         "prompt:generatedBy": f"agent:{self.agent_id}",
                         "prompt:timestamp": datetime.now().isoformat(),
-                        "prompt:content": json.dumps(prompt)
+                        "prompt:content": json.dumps(prompt)  # prompt is already a dict, safe for json.dumps
                     }
                 })
             
@@ -237,7 +237,7 @@ class AgenticPromptAgent(BaseAgent):
         params = {
             **context,  # user-provided context overrides
             "objective": objective or "",
-            "context": json.dumps(context, indent=2),  # for default template
+            "context": json.dumps(context, indent=2),  # context is already a dict, safe for json.dumps
         }
 
         # Provide sensible fallbacks

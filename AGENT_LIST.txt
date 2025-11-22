@@ -1,0 +1,183 @@
+================================================================================
+AGENT CAPABILITY LIST
+================================================================================
+
+CORE AGENTS
+--------------------------------------------------------------------------------
+
+BaseAgent
+  Module: core.base_agent
+  Description: Abstract base class for all agents
+  Capabilities: (inherited by subclasses)
+
+ScientificSwarmAgent
+  Module: core.scientific_swarm_agent
+  Description: Enhanced scientific agent with advanced capabilities
+  Capabilities: RESEARCH, REASONING, KNOWLEDGE_GRAPH_QUERY
+
+AgenticPromptAgent
+  Module: core.agentic_prompt_agent
+  Description: Prompt engineering and refinement agent
+  Capabilities: PROMPT_SYNTHESIS, PROMPT_CRITIQUE
+
+ResearchAgent
+  Module: core.research_agent
+  Description: Research and data analysis agent
+  Capabilities: RESEARCH, DATA_ANALYSIS
+
+CodeReviewAgent
+  Module: domain.code_review_agent
+  Description: AST-based code analysis agent
+  Capabilities: CODE_REVIEW, STATIC_ANALYSIS, CODE_QUALITY
+
+DataHandlerAgent
+  Module: core.data_handler_agent
+  Description: Data processing and transformation
+  Capabilities: DATA_PROCESSING, MESSAGE_PROCESSING
+
+SensorAgent
+  Module: core.data_handler_agent
+  Description: Sensor data collection agent
+  Capabilities: SENSOR_READING, DATA_COLLECTION
+
+DataProcessorAgent
+  Module: core.data_handler_agent
+  Description: Data processing operations
+  Capabilities: DATA_PROCESSING
+
+RemoteKGAgent
+  Module: core.remote_kg_agent
+  Description: Knowledge graph remote operations
+  Capabilities: KNOWLEDGE_GRAPH_QUERY, KNOWLEDGE_GRAPH_UPDATE
+
+TTLValidationAgent
+  Module: core.ttl_validation_agent
+  Description: TTL/RDF validation agent
+  Capabilities: (validation operations)
+
+FeatureZAgent
+  Module: core.feature_z_agent
+  Description: Feature-specific agent
+  Capabilities: (varies)
+
+SupervisorAgent
+  Module: core.__init__
+  Description: Agent coordination and management
+  Capabilities: AGENT_MANAGEMENT, SUPERVISION
+
+================================================================================
+DOMAIN AGENTS
+--------------------------------------------------------------------------------
+
+PlannerAgent
+  Module: domain.planner_agent
+  Description: Orchestrates prompt refinement workflow
+  Capabilities: TASK_EXECUTION, WORKFLOW_MANAGEMENT
+
+LogoAnalysisAgent
+  Module: domain.logo_analysis_agent
+  Description: Logo analysis capabilities
+  Capabilities: LOGO_ANALYSIS, IMAGE_ANALYSIS
+
+AestheticsAgent
+  Module: domain.aesthetics_agent
+  Description: Aesthetic analysis agent
+  Capabilities: AESTHETICS_ANALYSIS
+
+ColorPaletteAgent
+  Module: domain.color_palette_agent
+  Description: Color palette analysis agent
+  Capabilities: COLOR_PALETTE_ANALYSIS
+
+CompositionAgent
+  Module: domain.composition_agent
+  Description: Composition analysis agent
+  Capabilities: COMPOSITION_ANALYSIS
+
+PromptSynthesisAgent
+  Module: domain.prompt_synthesis_agent
+  Description: Synthesizes prompts from analysis
+  Capabilities: PROMPT_SYNTHESIS
+
+PromptCriticAgent
+  Module: domain.prompt_critic_agent
+  Description: Critiques prompts
+  Capabilities: PROMPT_CRITIQUE
+
+PromptJudgeAgent
+  Module: domain.prompt_judge_agent
+  Description: Judges prompt quality
+  Capabilities: PROMPT_JUDGMENT
+
+PromptConstructionAgent
+  Module: domain.prompt_construction_agent
+  Description: Constructs prompts
+  Capabilities: PROMPT_SYNTHESIS
+
+ImageAnalysisAgent
+  Module: domain.image_analysis_agent
+  Description: General image analysis
+  Capabilities: IMAGE_ANALYSIS
+
+CriticAgent
+  Module: domain.critic_agent
+  Description: Code criticism and feedback
+  Capabilities: CODE_REVIEW, CODE_QUALITY
+
+JudgeAgent
+  Module: domain.judge_agent
+  Description: Decision-making agent
+  Capabilities: DECISION_MAKING
+
+CorporateKnowledgeAgent
+  Module: domain.corporate_knowledge_agent
+  Description: Corporate knowledge management
+  Capabilities: KNOWLEDGE_GRAPH_QUERY, KNOWLEDGE_GRAPH_UPDATE
+
+DiaryAgent
+  Module: domain.diary_agent
+  Description: Activity logging and history
+  Capabilities: DIARY_MANAGEMENT, LOGGING
+
+VertexEmailAgent
+  Module: domain.vertex_email_agent
+  Description: Email integration via Vertex AI
+  Capabilities: EMAIL_PROCESSING, INTEGRATION_MANAGEMENT
+
+FinanceAgent
+  Module: domain.simple_agents
+  Description: Financial queries responder
+  Capabilities: MESSAGE_PROCESSING
+
+CoachingAgent
+  Module: domain.simple_agents
+  Description: Coaching assistance responder
+  Capabilities: MESSAGE_PROCESSING
+
+IntelligenceAgent
+  Module: domain.simple_agents
+  Description: Intelligence operations responder
+  Capabilities: MESSAGE_PROCESSING
+
+DeveloperAgent
+  Module: domain.simple_agents
+  Description: Development assistance responder
+  Capabilities: MESSAGE_PROCESSING
+
+================================================================================
+SUMMARY
+--------------------------------------------------------------------------------
+Total Agents Found: ~30+
+  Core Agents: ~12
+  Domain Agents: ~18+
+
+Key Capability Types:
+  - CODE_REVIEW, CODE_GENERATION, CODE_TESTING
+  - RESEARCH, REASONING, DATA_ANALYSIS
+  - KNOWLEDGE_GRAPH_QUERY, KNOWLEDGE_GRAPH_UPDATE
+  - LOGO_ANALYSIS, AESTHETICS_ANALYSIS, COLOR_PALETTE_ANALYSIS
+  - PROMPT_SYNTHESIS, PROMPT_CRITIQUE, PROMPT_JUDGMENT
+  - AGENT_MANAGEMENT, CAPABILITY_MANAGEMENT
+  - MESSAGE_PROCESSING, TASK_EXECUTION
+
+================================================================================

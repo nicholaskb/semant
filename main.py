@@ -119,8 +119,12 @@ _TOKEN = os.getenv("SEMANT_API_TOKEN")
 _http_bearer = HTTPBearer(auto_error=False)
 
 async def _require_token(credentials: HTTPAuthorizationCredentials = Depends(_http_bearer)):
-    if _TOKEN and (credentials is None or credentials.credentials != _TOKEN):
-        raise HTTPException(status_code=401, detail="Invalid or missing token")
+    # Only enforce authentication if a token is configured
+    if _TOKEN:
+        if credentials is None:
+            raise HTTPException(status_code=401, detail="Missing authorization token")
+        if credentials.credentials != _TOKEN:
+            raise HTTPException(status_code=401, detail="Invalid authorization token")
 
 # ------------------------------------------------------------------
 # FastAPI setup

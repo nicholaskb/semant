@@ -111,6 +111,8 @@ class Workflow:
         return self.name or self.id
 
     def __eq__(self, other):
+        if not isinstance(other, Workflow):
+            return False
         return self.id == other.id
 
     def __hash__(self):

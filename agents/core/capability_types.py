@@ -163,7 +163,13 @@ class Capability:
         considering a Capability equal to its own ``CapabilityType``.
         """
         if isinstance(other, CapabilityType):
-            return self.type == other or (isinstance(self.type, str) and self.type == other.value)
+            # Compare CapabilityType enum to self.type
+            if isinstance(self.type, CapabilityType):
+                return self.type == other
+            # Handle backward compatibility: if self.type is a string, compare to enum value
+            if isinstance(self.type, str):
+                return self.type == other.value
+            return False
         if not isinstance(other, Capability):
             return False
         return (self.type == other.type) and (self.version == other.version)

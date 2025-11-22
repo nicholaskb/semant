@@ -23,18 +23,19 @@ class AgenticPromptAgent(BaseAgent):
         agent_id: str,
         agent_type: str = "agentic_prompt",
         capabilities: Optional[Set[Capability]] = None,
+        knowledge_graph: Optional[Any] = None,
         config: Optional[Dict[str, Any]] = None
     ):
         super().__init__(
-            agent_id,
-            agent_type,
-            capabilities or {
+            agent_id=agent_id,
+            agent_type=agent_type,
+            capabilities=capabilities or {
                 Capability(CapabilityType.CODE_REVIEW),
                 Capability(CapabilityType.KNOWLEDGE_GRAPH_QUERY),
                 Capability(CapabilityType.KNOWLEDGE_GRAPH_UPDATE)
             },
-            None,
-            config
+            knowledge_graph=knowledge_graph,
+            config=config
         )
         # Load prompt templates from config if provided
         if config is not None and 'prompt_templates' in config:
@@ -140,7 +141,7 @@ class AgenticPromptAgent(BaseAgent):
                         "rdf:type": "prompt:Prompt",
                         "prompt:generatedBy": f"agent:{self.agent_id}",
                         "prompt:timestamp": datetime.now().isoformat(),
-                        "prompt:content": json.dumps(prompt)
+                        "prompt:content": json.dumps(prompt)  # prompt is already a dict, safe for json.dumps
                     }
                 })
             
@@ -237,7 +238,7 @@ class AgenticPromptAgent(BaseAgent):
         params = {
             **context,  # user-provided context overrides
             "objective": objective or "",
-            "context": json.dumps(context, indent=2),  # for default template
+            "context": json.dumps(context, indent=2),  # context is already a dict, safe for json.dumps
         }
 
         # Provide sensible fallbacks

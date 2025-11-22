@@ -22,6 +22,7 @@ class CodeReviewAgent(ScientificSwarmAgent):
     def __init__(
         self,
         agent_id: str = "code_review_agent",
+        knowledge_graph: Optional[Any] = None,
         config: Optional[Dict[str, Any]] = None
     ):
         capabilities = {
@@ -31,7 +32,13 @@ class CodeReviewAgent(ScientificSwarmAgent):
             Capability(CapabilityType.CODE_SMELL_DETECTION, "1.0"),
             Capability(CapabilityType.PATTERN_ANALYSIS, "1.0")
         }
-        super().__init__(agent_id, "code_review", capabilities, config)
+        super().__init__(
+            agent_id=agent_id,
+            agent_type="code_review",
+            capabilities=capabilities,
+            knowledge_graph=knowledge_graph,
+            config=config
+        )
         self.review_patterns = {
             'complexity': re.compile(r'if.*if.*if|for.*for.*for|while.*while'),
             'naming': re.compile(r'[a-z][A-Z]|[A-Z]{2,}'),

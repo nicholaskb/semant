@@ -29,7 +29,13 @@ class ResearchAgent(BaseAgent):
         managed centrally.  The test-suite sometimes instantiates the agent
         with no explicit KG, so the parameter is optional.
         """
-        super().__init__(agent_id, "research", capabilities, knowledge_graph, config)
+        super().__init__(
+            agent_id=agent_id,
+            agent_type="research",
+            capabilities=capabilities,
+            knowledge_graph=knowledge_graph,
+            config=config
+        )
         self.reasoner = None
 
     async def initialize(self) -> None:

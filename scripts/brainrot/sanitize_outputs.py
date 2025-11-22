@@ -57,23 +57,83 @@ COMPILED_PATTERNS = [re.compile(pattern, re.IGNORECASE) for pattern in INNER_MON
 
 def sanitize_text(text: str) -> str:
     """
-    Remove AI inner-monologue patterns from text.
+    Remove AI inner-monologue patterns from text while preserving valuable content.
     
     Args:
         text: Input text that may contain AI thinking patterns
         
     Returns:
-        Sanitized text with inner-monologue removed
+        Sanitized text with inner-monologue removed but content preserved
     """
     if not text or not isinstance(text, str):
         return text if text else ""
     
-    # Remove patterns
-    sanitized = text
-    for pattern in COMPILED_PATTERNS:
-        sanitized = pattern.sub('', sanitized)
+    # Split into sentences to preserve structure
+    sentences = re.split(r'([.!?]\s+)', text)
+    sanitized_sentences = []
     
-    # Clean up extra whitespace
+    for i in range(0, len(sentences), 2):
+        sentence = sentences[i] if i < len(sentences) else ""
+        punctuation = sentences[i+1] if i+1 < len(sentences) else ""
+        
+        if not sentence.strip():
+            continue
+        
+        # Remove thinking patterns but preserve the actual content
+        original_sentence = sentence
+        
+        # Remove common thinking prefixes (more surgical)
+        thinking_prefixes = [
+            r'^I am now analyzing\s+',
+            r'^I\'m now analyzing\s+',
+            r'^Let me (think|explain|analyze|consider|evaluate)\s*:?\s*',
+            r'^I think\s+',
+            r'^I believe\s+',
+            r'^Now I will\s+',
+            r'^So,?\s+here\'s what (I found|I discovered|I determined):\s*',
+            r'^Well,?\s+I believe\s+',
+            r'^Actually,?\s+I\'m (going to|confident|sure)\s+',
+            r'^You know,?\s+',
+            r'^As you can see,?\s+',
+            r'^It\'s worth noting that\s+',
+            r'^In my opinion,?\s+',
+            r'^After careful (consideration|evaluation|analysis),?\s+',
+            r'^Upon reflection,?\s+',
+            r'^It seems (like|that)\s+',
+            r'^It appears (that|like)\s+',
+            r'^It looks (like|that)\s+',
+        ]
+        
+        cleaned = sentence
+        for prefix_pattern in thinking_prefixes:
+            cleaned = re.sub(prefix_pattern, '', cleaned, flags=re.IGNORECASE)
+        
+        # Remove standalone thinking phrases (but keep if they're part of content)
+        standalone_thinking = [
+            r'\bI am now\b',
+            r'\bI\'m now\b',
+            r'\bLet me\b',
+            r'\bI think\b',
+            r'\bI believe\b',
+            r'\bNow I will\b',
+            r'\bSo,?\s+here\'s what\b',
+            r'\bWell,?\s+I believe\b',
+            r'\bActually,?\s+I\'m\b',
+        ]
+        
+        # Only remove if they're at the start or causing issues
+        # Don't remove if they're embedded in valuable content
+        
+        # If sentence still has meaningful content, keep it
+        if len(cleaned.strip()) > 10:  # Has substantial content
+            sanitized_sentences.append(cleaned + punctuation)
+        elif len(original_sentence.strip()) > 20:  # Original had content, keep cleaned version
+            sanitized_sentences.append(cleaned + punctuation)
+    
+    # Join sentences back
+    sanitized = ''.join(sanitized_sentences)
+    
+    # Final cleanup: remove extra whitespace but preserve sentence structure
     sanitized = re.sub(r'\s+', ' ', sanitized)
     sanitized = sanitized.strip()
     
@@ -85,24 +145,65 @@ def sanitize_text(text: str) -> str:
 
 def sanitize_explanation(explanation: str) -> str:
     """
-    Sanitize explanation field specifically.
+    Sanitize explanation field specifically, preserving valuable content.
     
     Args:
         explanation: Explanation text from AI
         
     Returns:
-        Clean explanation without inner-monologue
+        Clean explanation without inner-monologue but with content preserved
     """
     if not explanation:
         return ""
     
-    sanitized = sanitize_text(explanation)
+    # More intelligent sanitization for explanations
+    # Remove meta-commentary but keep the actual explanation
     
-    # If sanitization removed everything, provide a fallback
-    if not sanitized or len(sanitized.strip()) < 3:
-        return "Viral content combination"
+    # Remove common explanation prefixes that add no value
+    meta_prefixes = [
+        r'^I am now analyzing\s+',
+        r'^I\'m now analyzing\s+',
+        r'^Let me explain:?\s*',
+        r'^So,?\s+here\'s what (I found|I discovered):\s*',
+        r'^Well,?\s+I believe\s+',
+        r'^Actually,?\s+I\'m (confident|sure|going to)\s+',
+        r'^You know,?\s+',
+        r'^As you can see,?\s+',
+        r'^It\'s worth noting that\s+',
+        r'^In my opinion,?\s+',
+    ]
     
-    return sanitized
+    cleaned = explanation
+    for prefix in meta_prefixes:
+        cleaned = re.sub(prefix, '', cleaned, flags=re.IGNORECASE)
+    
+    # Remove standalone "I think" but keep content after it
+    cleaned = re.sub(r'\bI think\s+', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\bI believe\s+', '', cleaned, flags=re.IGNORECASE)
+    
+    # Clean up whitespace
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    cleaned = cleaned.strip()
+    
+    # Capitalize first letter if needed
+    if cleaned and cleaned[0].islower():
+        cleaned = cleaned[0].upper() + cleaned[1:]
+    
+    # If sanitization removed everything valuable, provide a fallback
+    if not cleaned or len(cleaned.strip()) < 10:
+        # Try to extract the core content from original
+        # Look for content after colons or after common phrases
+        core_match = re.search(r':\s*(.+?)(?:\.|$)', explanation)
+        if core_match:
+            cleaned = core_match.group(1).strip()
+        else:
+            # Fallback to original if it has content
+            if len(explanation.strip()) > 20:
+                cleaned = explanation.strip()
+            else:
+                cleaned = "Viral content combination"
+    
+    return cleaned
 
 
 def sanitize_combination(combo: Dict[str, Any]) -> Dict[str, Any]:

@@ -3,6 +3,11 @@ import pytest_asyncio
 
 from agents.domain.diary_agent import DiaryAgent
 from agents.domain.simple_agents import FinanceAgent, CoachingAgent, IntelligenceAgent, DeveloperAgent
+from agents.domain.knowledge_personas import (
+    KnowledgeGraphConsultant,
+    OpenAIKnowledgeGraphEngineer,
+    KnowledgeGraphVPLead,
+)
 from agents.core.base_agent import AgentMessage
 from tests.utils.test_agents import BaseTestAgent, TestAgent
 from agents.core.capability_types import CapabilityType, Capability
@@ -96,6 +101,17 @@ async def test_diary_write_and_query(diary_agent):
     response = await diary_agent.process_message(message)
     assert response.content["status"] == "success"
 
+    query_msg = AgentMessage(
+        sender_id="tester",
+        recipient_id=diary_agent.agent_id,
+        content={"query": "today"},
+        timestamp=0.0,
+        message_type="query_diary",
+    )
+    query_response = await diary_agent.process_message(query_msg)
+    assert query_response.message_type == "query_diary_response"
+    assert "Today I wrote tests." in str(query_response.content.get("results", []))
+
 
 @pytest.mark.asyncio
 async def test_diary_agent(diary_agent):
@@ -125,7 +141,51 @@ async def test_judge_evaluates_email(judge_agent):
 
 
 @pytest.mark.asyncio
-async def test_simple_agents_response(test_agents):
+@pytest.mark.parametrize(
+    "agent_cls",
+    [
+        FinanceAgent,
+        CoachingAgent,
+        IntelligenceAgent,
+        DeveloperAgent,
+        KnowledgeGraphConsultant,
+        OpenAIKnowledgeGraphEngineer,
+        KnowledgeGraphVPLead,
+    ],
+)
+async def test_simple_agents_response(agent_cls):
+    agent = agent_cls()
+    await agent.initialize()
+    message = AgentMessage(
+        sender_id="tester",
+        recipient_id=agent.agent_id,
+        content={},
+        timestamp=0.0,
+        message_type="any",
+    )
+    response = await agent.process_message(message)
+    assert response.message_type in ["response", "error"]
+    assert "response" in response.content or "Error" in str(response.content)
+
+
+@pytest.mark.asyncio
+async def test_vp_lead_complex_query():
+    agent = KnowledgeGraphVPLead()
+    await agent.initialize()
+    message = AgentMessage(
+        sender_id="tester",
+        recipient_id=agent.agent_id,
+        content={"query": "How to model customers and orders?"},
+        timestamp=0.0,
+        message_type="complex_query",
+    )
+    response = await agent.process_message(message)
+    assert response.message_type == "complex_query_response"
+    assert "Distilled code" in response.content["summary"]
+
+
+@pytest.mark.asyncio
+async def test_simple_agents_response_with_test_agents(test_agents):
     """Test that simple agents respond correctly."""
     expected_responses = {
         "finance": "Financial analysis complete",

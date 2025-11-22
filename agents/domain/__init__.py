@@ -6,6 +6,11 @@ from .simple_agents import (
     IntelligenceAgent,
     DeveloperAgent,
 )
+from .knowledge_personas import (
+    KnowledgeGraphConsultant,
+    OpenAIKnowledgeGraphEngineer,
+    KnowledgeGraphVPLead,
+)
 from .vertex_email_agent import VertexEmailAgent
 from .judge_agent import JudgeAgent
 
@@ -16,6 +21,9 @@ __all__ = [
     "CoachingAgent",
     "IntelligenceAgent",
     "DeveloperAgent",
+    "KnowledgeGraphConsultant",
+    "OpenAIKnowledgeGraphEngineer",
+    "KnowledgeGraphVPLead",
     "VertexEmailAgent",
     "JudgeAgent",
 ]

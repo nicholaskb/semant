@@ -8,7 +8,7 @@ class DiaryAgent(BaseAgent):
     
     def __init__(
         self,
-        agent_id: str,
+        agent_id: str = "diary_agent",
         agent_type: str = "diary",
         capabilities: Optional[Set[Capability]] = None,
         knowledge_graph: Optional[Any] = None,
@@ -96,4 +96,3 @@ class DiaryAgent(BaseAgent):
     def get_entries(self) -> list:
         """Get all diary entries."""
         return self._entries
-

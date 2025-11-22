@@ -14,6 +14,23 @@
 
 A robust and scalable multi-agent orchestration system with knowledge graph integration, workflow management, and comprehensive testing infrastructure.
 
+### Agent Types
+1. **Top Level**
+   - Master Orchestrator Agent
+   - CEO Agent (executive oversight)
+   - Judge Agent (system validation)
+
+2. **Domain Agents**
+   - Corporate Knowledge Agent
+   - Diary Agent
+   - Finance Agent
+   - Coaching Agent
+   - Intelligence Agent
+   - Developer Agent
+   - Knowledge Graph Consultant
+   - OpenAI Knowledge Graph Engineer
+   - Knowledge Graph VP Lead
+
 ## SEMANT MASTER-FIX ROADMAP  –  COPY / PASTE INTO EVERY PR
 
 ```text

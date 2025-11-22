@@ -145,63 +145,108 @@ def sanitize_text(text: str) -> str:
 
 def sanitize_explanation(explanation: str) -> str:
     """
-    Sanitize explanation field specifically, preserving valuable content.
+    Sanitize explanation field - remove ONLY meta-commentary, preserve ALL valuable content.
     
-    Args:
-        explanation: Explanation text from AI
-        
-    Returns:
-        Clean explanation without inner-monologue but with content preserved
+    Strategy: Remove thinking prefixes but keep everything after them.
     """
     if not explanation:
         return ""
     
-    # More intelligent sanitization for explanations
-    # Remove meta-commentary but keep the actual explanation
+    cleaned = explanation
     
-    # Remove common explanation prefixes that add no value
-    meta_prefixes = [
-        r'^I am now analyzing\s+',
-        r'^I\'m now analyzing\s+',
-        r'^Let me explain:?\s*',
-        r'^So,?\s+here\'s what (I found|I discovered):\s*',
-        r'^Well,?\s+I believe\s+',
-        r'^Actually,?\s+I\'m (confident|sure|going to)\s+',
-        r'^You know,?\s+',
-        r'^As you can see,?\s+',
-        r'^It\'s worth noting that\s+',
-        r'^In my opinion,?\s+',
+    # Remove ONLY the meta-commentary prefixes, keep everything after
+    # These patterns match the prefix and remove it, but preserve what follows
+    
+    meta_patterns = [
+        # "I am now analyzing X" -> "X"
+        (r'^I am now analyzing\s+', ''),
+        (r'^I\'m now analyzing\s+', ''),
+        
+        # "Let me explain: X" -> "X"  
+        (r'^Let me explain:?\s*', ''),
+        (r'^Let me (think|analyze|consider|evaluate) (about )?:?\s*', ''),
+        
+        # "So, here's what I found: X" -> "X"
+        (r'^So,?\s+here\'s what (I found|I discovered|I determined):\s*', ''),
+        
+        # "Well, I believe X" -> "X"
+        (r'^Well,?\s+I believe\s+', ''),
+        
+        # "Actually, I'm confident X" -> "X"
+        (r'^Actually,?\s+I\'m (confident|sure|going to)\s+', ''),
+        (r'^Actually,?\s+', ''),
+        
+        # "You know, X" -> "X"
+        (r'^You know,?\s+', ''),
+        
+        # "As you can see, X" -> "X"
+        (r'^As you can see,?\s+', ''),
+        
+        # "It's worth noting that X" -> "X"
+        (r'^It\'s worth noting that\s+', ''),
+        
+        # "In my opinion, X" -> "X"
+        (r'^In my opinion,?\s+', ''),
+        
+        # "After careful consideration, X" -> "X"
+        (r'^After careful (consideration|evaluation|analysis),?\s+', ''),
+        
+        # "Upon reflection, X" -> "X"
+        (r'^Upon reflection,?\s+', ''),
     ]
     
-    cleaned = explanation
-    for prefix in meta_prefixes:
-        cleaned = re.sub(prefix, '', cleaned, flags=re.IGNORECASE)
+    # Apply patterns - remove prefixes but keep content
+    for pattern, replacement in meta_patterns:
+        cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
     
-    # Remove standalone "I think" but keep content after it
+    # Remove standalone "I think" and "I believe" mid-sentence, but keep surrounding content
     cleaned = re.sub(r'\bI think\s+', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\bI believe\s+', '', cleaned, flags=re.IGNORECASE)
+    
+    # Remove "I'm confident" and similar phrases
+    cleaned = re.sub(r'\bI\'m confident\s+', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\bI\'m sure\s+', '', cleaned, flags=re.IGNORECASE)
+    
+    # Remove remaining meta-commentary phrases that might have been missed
+    remaining_meta = [
+        r'Let me explain:?\s*',  # Remove "Let me explain:" that might remain
+        r'So,?\s+here\'s what (I found|I discovered)\s*-\s*',
+        r'Well,?\s+',
+        r'Actually,?\s+',
+    ]
+    for pattern in remaining_meta:
+        cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE)
+    
+    # Clean up awkward starts like "This and" -> should be "This"
+    cleaned = re.sub(r'^This and\s+', 'This ', cleaned, flags=re.IGNORECASE)
+    
+    # Fix sentence starts - capitalize after periods
+    sentences = re.split(r'(\.\s+)', cleaned)
+    fixed_sentences = []
+    for i, part in enumerate(sentences):
+        if i % 2 == 0:  # Sentence content
+            if part and part[0].islower():
+                part = part[0].upper() + part[1:]
+        fixed_sentences.append(part)
+    cleaned = ''.join(fixed_sentences)
     
     # Clean up whitespace
     cleaned = re.sub(r'\s+', ' ', cleaned)
     cleaned = cleaned.strip()
     
-    # Capitalize first letter if needed
-    if cleaned and cleaned[0].islower():
+    # Capitalize first letter
+    if cleaned and len(cleaned) > 0 and cleaned[0].islower():
         cleaned = cleaned[0].upper() + cleaned[1:]
     
-    # If sanitization removed everything valuable, provide a fallback
-    if not cleaned or len(cleaned.strip()) < 10:
-        # Try to extract the core content from original
-        # Look for content after colons or after common phrases
-        core_match = re.search(r':\s*(.+?)(?:\.|$)', explanation)
-        if core_match:
-            cleaned = core_match.group(1).strip()
+    # If we accidentally removed too much, try to recover
+    if len(cleaned) < 15 and len(explanation) > 30:
+        # Look for content after colons (common pattern: "Let me explain: CONTENT")
+        colon_match = re.search(r':\s*(.+)$', explanation)
+        if colon_match:
+            cleaned = colon_match.group(1).strip()
         else:
-            # Fallback to original if it has content
-            if len(explanation.strip()) > 20:
-                cleaned = explanation.strip()
-            else:
-                cleaned = "Viral content combination"
+            # Fallback: use original if it's substantial
+            cleaned = explanation.strip()
     
     return cleaned
 

@@ -11,6 +11,8 @@ from .knowledge_personas import (
     OpenAIKnowledgeGraphEngineer,
     KnowledgeGraphVPLead,
 )
+from .vertex_email_agent import VertexEmailAgent
+from .judge_agent import JudgeAgent
 
 __all__ = [
     "CorporateKnowledgeAgent",
@@ -22,4 +24,6 @@ __all__ = [
     "KnowledgeGraphConsultant",
     "OpenAIKnowledgeGraphEngineer",
     "KnowledgeGraphVPLead",
+    "VertexEmailAgent",
+    "JudgeAgent",
 ]

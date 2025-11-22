@@ -1,0 +1,60 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+python scratch_space/kg_swarm_proof.py
+
+
+python scratch_space/kg_swarm_proof.py
+
+
+python scratch_space/kg_swarm_proof.py
+
+
+
+What does kg_swarm_proof.py do?
+This script is designed to load sample data into your knowledge graph and run a comprehensive set of diagnostic SPARQL queries to check the health and structure of your agent/capability data. It provides a step-by-step, human-readable proof of the state of your knowledge graph, printing results directly to the terminal.
+Key Functions:
+Loads sample agents and capabilities into the knowledge graph for testing.
+Runs a series of diagnostic queries to check for:
+All triples in the graph (raw inspection).
+Agent-capability relationships (which agents have which capabilities).
+Agents with no capabilities (orphan agents).
+Capabilities with incorrect RDF types (type validation).
+Duplicate capability assignments (same capability assigned multiple times to an agent).
+Capability change events (event propagation and logging).
+Each section prints a clear header and the results of the query, making it easy to spot issues or confirm correct structure.
+How to use it
+1. Make sure your environment is set up:
+The script expects the knowledge graph to be accessible via the KnowledgeGraphManager.
+Any required environment variables or configuration for the knowledge graph should be set.
+2. Run the script from your terminal:
+Apply
+Run
+py
+3. What you’ll see:
+The script will print to the terminal:
+All triples in the graph (for raw inspection).
+Which agents have which capabilities.
+Any agents with no capabilities.
+Any capabilities with the wrong RDF type.
+Any duplicate capability assignments.
+Any capability change events.
+Each section is clearly labeled for easy review.
+Typical Output (in terminal):
+Section headers (e.g., "Agents and Their Capabilities", "Duplicate Capability Assignments").
+Lists of agents, capabilities, and any detected issues.
+Confirmation messages if no issues are found (e.g., "All agents have at least one capability.").
+Summary Table
+| Section/Check | What it Finds |
+|--------------------------------|-----------------------------------------------------------|
+| All Triples | Raw inspection of all triples in the graph |
+| Agent-Capability Relationships | Which agents have which capabilities |
+| Orphan Agents | Agents with no capabilities |
+| Capability Type Validation | Capabilities with incorrect RDF types |
+| Duplicate Assignments | Agents assigned the same capability more than once |
+| Capability Change Events | Events indicating changes to agent capabilities |
+In short:
+Run python scratch_space/kg_swarm_proof.py to load sample data and get a step-by-step, human-readable diagnostic proof of your knowledge graph’s agent/capability structure.
+If you want to see example output or need help interpreting the results, let me know!

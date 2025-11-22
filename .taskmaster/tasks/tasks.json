@@ -1,0 +1,632 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Fix Failing Tests in Workflow Manager",
+        "description": "Resolve all failing tests in tests/test_workflow_manager.py to ensure the workflow orchestration system is functioning correctly.",
+        "details": "1. Run the test suite to identify specific failing tests\n2. Analyze each failing test to understand the root cause\n3. Fix implementation issues in the workflow manager module\n4. Focus on transaction handling, error recovery, and state management\n5. Ensure proper agent communication within workflows\n6. Verify that workflow persistence is working correctly\n7. Address any race conditions or timing issues in async operations",
+        "testStrategy": "Run the full test suite with pytest, focusing on tests/test_workflow_manager.py. Ensure all tests pass with 100% coverage. Add additional test cases for edge cases discovered during debugging.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Fix Agent Recovery Tests",
+        "description": "Address all failing tests in tests/test_agent_recovery.py to ensure agents can properly recover from failures and maintain state.",
+        "details": "1. Identify specific test failures in the agent recovery test suite\n2. Debug the agent recovery mechanism in the BaseAgent class\n3. Implement proper state persistence during agent lifecycle events\n4. Ensure clean shutdown and restart procedures\n5. Fix any issues with agent registration during recovery\n6. Verify capability routing works correctly after recovery\n7. Address any serialization issues for agent state",
+        "testStrategy": "Run tests/test_agent_recovery.py with various failure scenarios. Verify agents can recover from crashes, network issues, and other common failure modes. Test with both simple and complex agent states.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Resolve JSON Serialization Crisis",
+        "description": "Fix the JSON serialization issues that are blocking workflow persistence and agent state management.",
+        "details": "1. Identify all classes that need serialization/deserialization\n2. Implement custom JSON encoders/decoders for complex objects\n3. Ensure RDF graph data can be properly serialized and deserialized\n4. Add validation to prevent invalid states from being serialized\n5. Create helper functions for common serialization patterns\n6. Test serialization with various object types and nested structures\n7. Implement versioning for serialized data to support future changes",
+        "testStrategy": "Create comprehensive tests for serialization/deserialization of all major system objects. Verify round-trip serialization works correctly. Test with edge cases like circular references, large objects, and special characters.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Fix Constructor Mismatches in Agent Classes",
+        "description": "Resolve the critical issues related to constructor mismatches in agent classes as mentioned in the WORK-PACK BACKLOG.",
+        "details": "1. Review all agent class constructors for consistency\n2. Ensure BaseAgent and derived classes have compatible signatures\n3. Fix any parameter mismatches or incorrect default values\n4. Update documentation for constructor parameters\n5. Implement proper validation for constructor arguments\n6. Ensure backward compatibility where possible\n7. Add type hints to clarify expected parameter types",
+        "testStrategy": "Create tests that instantiate all agent types with various parameter combinations. Verify inheritance works correctly and all constructors can be called without errors.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Fix Comparison Errors in Core Components",
+        "description": "Address the comparison errors mentioned in the WORK-PACK BACKLOG that are causing issues in the system.",
+        "details": "1. Identify components with comparison errors\n2. Implement proper __eq__, __ne__, and __hash__ methods where needed\n3. Fix any type comparison issues (e.g., comparing incompatible types)\n4. Ensure consistent comparison behavior across the codebase\n5. Address any sorting-related issues in collections\n6. Fix identity vs. equality confusion in object comparisons\n7. Add validation to prevent invalid comparisons",
+        "testStrategy": "Create test cases specifically for object comparison, including edge cases. Verify that collections of objects can be properly sorted, compared, and used as dictionary keys where appropriate.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Consolidate Entry Points",
+        "description": "Consolidate main.py, main_agent.py, and main_api.py into a single entry point for improved maintainability.",
+        "details": "1. Analyze the functionality in each entry point file\n2. Design a unified command-line interface with subcommands\n3. Refactor shared code into common modules\n4. Implement a single main.py with command routing\n5. Ensure backward compatibility for existing scripts\n6. Add proper logging and error handling\n7. Update documentation to reflect the new entry point structure",
+        "testStrategy": "Create integration tests that verify all previous functionality is preserved. Test each subcommand and ensure proper error handling. Verify that all previous use cases are still supported.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Enhance Knowledge Graph Performance",
+        "description": "Optimize the RDF-based semantic store with improved caching, versioning, and validation mechanisms.",
+        "details": "1. Profile current knowledge graph operations to identify bottlenecks\n2. Implement an efficient caching layer for frequent queries\n3. Add proper versioning for graph changes\n4. Implement validation rules for graph modifications\n5. Optimize SPARQL query execution\n6. Add indexes for common query patterns\n7. Implement batch operations for better performance",
+        "testStrategy": "Create performance benchmarks for common operations. Verify that optimizations improve performance without breaking functionality. Test with large datasets to ensure scalability.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Performance Profiling and Bottleneck Identification",
+            "description": "Profile current knowledge graph operations to identify performance bottlenecks and establish baseline metrics for future comparison.",
+            "dependencies": [],
+            "details": "1. Set up performance monitoring tools for RDF operations\n2. Create test datasets of varying sizes for benchmarking\n3. Measure query execution times, memory usage, and I/O operations\n4. Identify the top 5 performance bottlenecks\n5. Document baseline performance metrics for common operations\n6. Create a performance report with recommendations\n\nAcceptance Criteria:\n- Comprehensive performance report with clear metrics\n- Identified bottlenecks with supporting data\n- Baseline benchmarks established for all key operations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Caching Layer for Frequent Queries",
+            "description": "Design and implement an efficient caching mechanism for frequently executed SPARQL queries to reduce database load and improve response times.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "1. Design cache invalidation strategy for RDF data\n2. Implement LRU cache for query results\n3. Add cache statistics and monitoring\n4. Create configuration options for cache size and TTL\n5. Implement cache warming for common queries\n\nAcceptance Criteria:\n- Cache hit rate >80% for repeated queries\n- Response time improvement of at least 70% for cached queries\n- Memory usage within defined limits\n- Proper cache invalidation when underlying data changes\n\nTesting Instructions:\n- Benchmark query performance with and without caching\n- Test cache behavior with concurrent modifications\n- Verify cache consistency after graph updates",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Graph Versioning System",
+            "description": "Add a versioning system for the knowledge graph that tracks changes, enables rollbacks, and maintains historical states.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "1. Design version tracking schema for RDF graphs\n2. Implement commit/transaction model for graph changes\n3. Create APIs for accessing historical graph states\n4. Add rollback functionality for reverting changes\n5. Implement efficient storage for version deltas\n\nAcceptance Criteria:\n- Complete history of graph changes accessible via API\n- Ability to rollback to any previous version\n- Version metadata including timestamp, author, and change description\n- Storage efficiency with delta-based versioning\n\nTesting Instructions:\n- Test version creation with various graph modifications\n- Verify rollback functionality restores correct graph state\n- Benchmark storage requirements for version history\n- Test concurrent version access",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Validation Rules Framework",
+            "description": "Implement a validation framework for graph modifications that ensures data integrity, schema compliance, and business rule enforcement.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "1. Design validation rule specification format\n2. Implement core validation engine\n3. Create standard validators for common constraints\n4. Add validation hooks for pre/post modification\n5. Implement error reporting and correction suggestions\n\nAcceptance Criteria:\n- Support for structural, semantic, and business rule validation\n- Clear error messages for validation failures\n- Performance impact <10% for typical operations\n- Ability to selectively enable/disable validation rules\n\nTesting Instructions:\n- Test validation with valid and invalid graph modifications\n- Verify all validation rules are correctly enforced\n- Benchmark performance impact of validation\n- Test validation in concurrent modification scenarios",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Optimize SPARQL Query Execution",
+            "description": "Improve SPARQL query performance through query optimization, execution planning, and result caching strategies.",
+            "dependencies": [
+              "7.1",
+              "7.2"
+            ],
+            "details": "1. Implement query plan optimization for SPARQL\n2. Add query rewriting for common patterns\n3. Optimize join operations in complex queries\n4. Implement query result pagination\n5. Add query timeout and resource limits\n\nAcceptance Criteria:\n- 50% average performance improvement for complex queries\n- Successful optimization of all benchmark queries\n- Query plan visualization for debugging\n- Resource usage within defined limits for all queries\n\nTesting Instructions:\n- Benchmark query performance before and after optimization\n- Test with various query complexities and data sizes\n- Verify correct results for all optimized queries\n- Test edge cases like highly connected nodes",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Advanced Indexing Strategies",
+            "description": "Design and implement specialized indexes for common query patterns to improve lookup performance and reduce scan operations.",
+            "dependencies": [
+              "7.1",
+              "7.5"
+            ],
+            "details": "1. Analyze common query patterns from profiling data\n2. Design specialized indexes for frequent access patterns\n3. Implement property-specific indexes\n4. Add full-text search capabilities\n5. Create maintenance routines for index optimization\n\nAcceptance Criteria:\n- 70% reduction in scan operations for indexed queries\n- Index size <20% of total graph size\n- Automatic index selection based on query patterns\n- Minimal impact on write performance\n\nTesting Instructions:\n- Benchmark query performance with and without indexes\n- Test index maintenance during large data modifications\n- Verify index consistency after system crashes\n- Measure index creation and update performance",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Add Batch Operations Support",
+            "description": "Implement efficient batch operations for graph modifications, queries, and exports to improve throughput and reduce overhead.",
+            "dependencies": [
+              "7.1",
+              "7.3",
+              "7.4"
+            ],
+            "details": "1. Design batch operation APIs for graph modifications\n2. Implement transaction support for batch operations\n3. Add batch query execution capabilities\n4. Create batch export/import functionality\n5. Implement progress tracking and resumable operations\n\nAcceptance Criteria:\n- 80% reduction in overhead for batch vs. individual operations\n- Atomic transaction support for all batch operations\n- Proper error handling with partial success reporting\n- Support for batches of at least 100,000 operations\n\nTesting Instructions:\n- Benchmark batch operations vs. individual operations\n- Test transaction rollback on partial failures\n- Verify data consistency after interrupted batch operations\n- Test with various batch sizes and operation types",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Complete Midjourney Integration",
+        "description": "Finish the integration with Midjourney for image generation capabilities as specified in the roadmap.",
+        "details": "1. Review the current Midjourney integration code\n2. Implement missing API endpoints for Midjourney communication\n3. Create a proper agent wrapper for Midjourney services\n4. Update the static/midjourney.html frontend to use the new integration\n5. Add proper error handling and rate limiting\n6. Implement image caching and management\n7. Add documentation for the Midjourney integration",
+        "testStrategy": "Create integration tests with Midjourney API mocks. Test the frontend with various image generation scenarios. Verify error handling works correctly for API failures and rate limits.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement 'Refine with AI' Frontend Functionality",
+        "description": "Develop the 'Refine with AI' feature for the frontend as mentioned in the future enhancements section.",
+        "details": "1. Design the user interface for AI refinement\n2. Implement the frontend components in HTML/JS\n3. Create backend API endpoints to support the refinement process\n4. Integrate with appropriate AI models for refinement\n5. Add proper feedback mechanisms during refinement\n6. Implement history tracking for refinement steps\n7. Add undo/redo capabilities for refinements",
+        "testStrategy": "Create end-to-end tests for the refinement workflow. Test with various input types and refinement scenarios. Verify that the UI properly reflects the refinement state and history.",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Address Missing Agent Methods",
+        "description": "Implement missing agent methods mentioned in the medium-priority integration issues section of the roadmap.",
+        "details": "1. Identify all agents with missing methods\n2. Implement the required methods according to interface specifications\n3. Ensure proper error handling in new methods\n4. Add appropriate logging for method calls\n5. Update agent documentation to reflect new methods\n6. Verify compatibility with existing workflows\n7. Add type hints and docstrings for all new methods",
+        "testStrategy": "Create unit tests for each new method. Verify that agents with the new methods work correctly in existing workflows. Test error handling and edge cases for each method.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Enhance Capability-Based Routing",
+        "description": "Improve the capability-based routing system for more efficient and accurate agent selection in workflows.",
+        "details": "1. Review the current capability registration and discovery mechanism\n2. Implement a more sophisticated matching algorithm for capabilities\n3. Add support for capability versioning and compatibility\n4. Implement capability negotiation between agents\n5. Add metrics for routing decisions\n6. Optimize routing performance for large agent networks\n7. Implement fallback mechanisms for missing capabilities",
+        "testStrategy": "Create tests with complex capability requirements. Verify that the routing system selects the most appropriate agents. Test with conflicting capabilities and version constraints.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Implement Comprehensive Monitoring System",
+        "description": "Develop a monitoring system for tracking performance, errors, and system health across all components.",
+        "details": "1. Design a metrics collection architecture\n2. Implement performance monitoring for critical operations\n3. Add error tracking and aggregation\n4. Create dashboards for system health visualization\n5. Implement alerting for critical issues\n6. Add resource usage monitoring (CPU, memory, etc.)\n7. Implement log aggregation and analysis",
+        "testStrategy": "Verify that metrics are correctly collected and reported. Test alerting with simulated failures. Ensure that monitoring has minimal performance impact on the system.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Enhance Google Cloud Integration",
+        "description": "Improve and extend the integration with Google Cloud services, particularly Vertex AI and Gmail.",
+        "details": "1. Review current Google Cloud integration code\n2. Update to latest API versions for Vertex AI and Gmail\n3. Implement proper authentication and credential management\n4. Add support for additional Vertex AI models\n5. Implement batching for efficient API usage\n6. Add proper error handling and retries\n7. Create comprehensive documentation for Google Cloud integration",
+        "testStrategy": "Create integration tests with Google Cloud API mocks. Test authentication flows, API calls, and error handling. Verify that the integration works with various Google Cloud configurations.",
+        "priority": "low",
+        "dependencies": [
+          3,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement Advanced Workflow Features",
+        "description": "Add advanced features to the workflow engine such as conditional branching, parallel execution, and dynamic workflow modification.",
+        "details": "1. Design an extended workflow definition format\n2. Implement conditional branching based on task results\n3. Add support for parallel task execution\n4. Implement dynamic workflow modification during execution\n5. Add workflow templates and reusable components\n6. Implement workflow versioning and migration\n7. Create a visual workflow editor for complex workflows",
+        "testStrategy": "Create tests for complex workflows with branching and parallelism. Verify that workflows execute correctly in all scenarios. Test workflow modifications during execution.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          3,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Implement Comprehensive Documentation System",
+        "description": "Develop a comprehensive documentation system covering API references, tutorials, and best practices.",
+        "details": "1. Design a documentation structure for the project\n2. Implement automatic API documentation generation\n3. Create tutorials for common use cases\n4. Document best practices for agent development\n5. Add examples for workflow creation and management\n6. Create troubleshooting guides for common issues\n7. Implement a search function for the documentation",
+        "testStrategy": "Verify that documentation is accurate and up-to-date. Test examples to ensure they work as documented. Get feedback from users on documentation clarity and completeness.",
+        "priority": "medium",
+        "dependencies": [
+          6,
+          10,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-07T04:22:03.382Z",
+      "updated": "2025-08-07T04:22:03.382Z",
+      "description": "Tasks for master context"
+    }
+  },
+  "feature-kontext": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Create Kontext Integration Module",
+        "description": "Develop a new kontext_integration module that mirrors the structure and functionality of the existing midjourney_integration module, including a GoAPI client, CLI interface, README documentation, and scratch space for testing.",
+        "details": "The kontext_integration module should be implemented following these steps:\n\n1. Study the existing midjourney_integration module to understand its structure, components, and interfaces.\n2. Create a new directory structure for kontext_integration with similar components:\n   - `/kontext_integration/` as the main module directory\n   - `/kontext_integration/client/` for the GoAPI client implementation\n   - `/kontext_integration/cli/` for command-line interface tools\n   - `/kontext_integration/scratch/` for testing and experimentation\n\n3. Implement the GoAPI client:\n   - Create necessary data structures and models for Kontext API\n   - Implement authentication mechanisms required by Kontext\n   - Develop methods for all required API endpoints (image generation, status checking, etc.)\n   - Add proper error handling and logging\n   - Ensure the client follows Go best practices for API clients\n\n4. Develop the CLI interface:\n   - Create command-line tools that utilize the GoAPI client\n   - Implement similar command structure to midjourney_integration CLI\n   - Add appropriate flags and options specific to Kontext requirements\n   - Ensure proper help documentation is available\n\n5. Create comprehensive README documentation:\n   - Installation instructions\n   - Usage examples for both the API client and CLI\n   - Configuration requirements\n   - Troubleshooting section\n   - API reference\n\n6. Set up the scratch space:\n   - Add example scripts and usage patterns\n   - Include sample configuration files\n   - Create test cases for common operations\n\n7. Ensure proper error handling, logging, and documentation throughout the codebase.\n\nThe implementation should maintain consistency with the existing codebase while adapting to any specific requirements of the Kontext API.",
+        "testStrategy": "To verify the correct implementation of the kontext_integration module:\n\n1. Unit Testing:\n   - Write comprehensive unit tests for the GoAPI client\n   - Test all API endpoints with mock responses\n   - Verify error handling for various failure scenarios\n   - Ensure authentication mechanisms work correctly\n\n2. Integration Testing:\n   - Test the integration with the actual Kontext API using test credentials\n   - Verify successful API calls for all implemented endpoints\n   - Test rate limiting and error handling with the live API\n   - Validate response parsing and data structures\n\n3. CLI Testing:\n   - Test all CLI commands with various parameters\n   - Verify help documentation is accurate and complete\n   - Test error messages and exit codes\n   - Ensure CLI properly utilizes the GoAPI client\n\n4. Documentation Verification:\n   - Review README for completeness and accuracy\n   - Verify all installation steps work as documented\n   - Test all provided examples to ensure they work correctly\n   - Check that configuration instructions are clear and correct\n\n5. Comparison Testing:\n   - Compare functionality with midjourney_integration to ensure feature parity\n   - Verify that all equivalent operations produce similar results\n   - Test any Kontext-specific features for correctness\n\n6. Performance Testing:\n   - Benchmark API client performance\n   - Test with concurrent requests\n   - Verify memory usage is reasonable\n\n7. Manual Testing:\n   - Perform end-to-end testing of common workflows\n   - Verify scratch space examples work correctly",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement KontextClient with API Methods and Error Handling",
+        "description": "Implement the KontextClient class with methods for API interaction including submit_generate, submit_action, poll_task, and poll_until_complete, with robust error handling for rate limiting and server errors.",
+        "details": "The KontextClient implementation should follow these steps:\n\n1. Create a KontextClient class in the kontext_integration/client directory that handles authentication and API interactions:\n\n```python\nclass KontextClient:\n    def __init__(self, api_key, base_url=\"https://api.kontext.com/v1\"):\n        self.api_key = api_key\n        self.base_url = base_url\n        self.session = requests.Session()\n        self.session.headers.update({\n            \"Authorization\": f\"Bearer {api_key}\",\n            \"Content-Type\": \"application/json\"\n        })\n```\n\n2. Implement the submit_generate method for initiating generation tasks:\n\n```python\ndef submit_generate(self, prompt, parameters=None):\n    \"\"\"\n    Submit a generation request to the Kontext API.\n    \n    Args:\n        prompt (str): The text prompt for generation\n        parameters (dict, optional): Additional parameters for the generation\n        \n    Returns:\n        dict: The API response containing the task ID and status\n    \"\"\"\n    endpoint = f\"{self.base_url}/generate\"\n    payload = {\"prompt\": prompt}\n    if parameters:\n        payload.update(parameters)\n    \n    return self._make_request(\"POST\", endpoint, json=payload)\n```\n\n3. Implement the submit_action method for performing actions on existing generations:\n\n```python\ndef submit_action(self, task_id, action, parameters=None):\n    \"\"\"\n    Submit an action on an existing generation.\n    \n    Args:\n        task_id (str): The ID of the task to perform an action on\n        action (str): The action to perform (e.g., \"upscale\", \"variation\")\n        parameters (dict, optional): Additional parameters for the action\n        \n    Returns:\n        dict: The API response containing the new task ID and status\n    \"\"\"\n    endpoint = f\"{self.base_url}/tasks/{task_id}/actions\"\n    payload = {\"action\": action}\n    if parameters:\n        payload.update(parameters)\n    \n    return self._make_request(\"POST\", endpoint, json=payload)\n```\n\n4. Implement the poll_task method to check task status:\n\n```python\ndef poll_task(self, task_id):\n    \"\"\"\n    Poll the status of a task.\n    \n    Args:\n        task_id (str): The ID of the task to check\n        \n    Returns:\n        dict: The API response containing the task status and results if complete\n    \"\"\"\n    endpoint = f\"{self.base_url}/tasks/{task_id}\"\n    return self._make_request(\"GET\", endpoint)\n```\n\n5. Implement the poll_until_complete method with timeout and polling interval:\n\n```python\ndef poll_until_complete(self, task_id, timeout=300, interval=2):\n    \"\"\"\n    Poll a task until it completes or times out.\n    \n    Args:\n        task_id (str): The ID of the task to check\n        timeout (int): Maximum time to wait in seconds\n        interval (int): Initial polling interval in seconds\n        \n    Returns:\n        dict: The API response when the task completes\n        \n    Raises:\n        TimeoutError: If the task doesn't complete within the timeout period\n    \"\"\"\n    start_time = time.time()\n    current_interval = interval\n    \n    while time.time() - start_time < timeout:\n        response = self.poll_task(task_id)\n        status = response.get(\"status\")\n        \n        if status in [\"completed\", \"failed\", \"canceled\"]:\n            return response\n            \n        # Wait before polling again\n        time.sleep(current_interval)\n        # Gradually increase polling interval (capped at 15 seconds)\n        current_interval = min(current_interval * 1.5, 15)\n    \n    raise TimeoutError(f\"Task {task_id} did not complete within {timeout} seconds\")\n```\n\n6. Implement a robust _make_request helper method with rate limiting and error handling:\n\n```python\ndef _make_request(self, method, url, **kwargs):\n    \"\"\"\n    Make an HTTP request with retry logic for rate limits and server errors.\n    \n    Args:\n        method (str): HTTP method (GET, POST, etc.)\n        url (str): The endpoint URL\n        **kwargs: Additional arguments to pass to requests\n        \n    Returns:\n        dict: The JSON response from the API\n        \n    Raises:\n        KontextAPIError: If the API returns an error after retries\n    \"\"\"\n    max_retries = 5\n    retry_count = 0\n    base_delay = 1  # Starting delay in seconds\n    \n    while retry_count < max_retries:\n        try:\n            response = self.session.request(method, url, **kwargs)\n            \n            # If successful, return the JSON response\n            if response.status_code < 400:\n                return response.json()\n                \n            # Handle rate limiting (429) or server errors (5xx)\n            if response.status_code == 429 or 500 <= response.status_code < 600:\n                retry_count += 1\n                \n                # Calculate delay with exponential backoff and jitter\n                delay = base_delay * (2 ** (retry_count - 1))\n                jitter = random.uniform(0, 0.1 * delay)\n                sleep_time = delay + jitter\n                \n                # Get retry-after header if available\n                retry_after = response.headers.get('Retry-After')\n                if retry_after:\n                    try:\n                        # Retry-After can be seconds or HTTP date\n                        sleep_time = max(sleep_time, float(retry_after))\n                    except ValueError:\n                        # If it's a date format, we'll just use our calculated time\n                        pass\n                \n                if retry_count < max_retries:\n                    time.sleep(sleep_time)\n                    continue\n            \n            # For other errors or if we've exhausted retries, raise an exception\n            error_message = f\"API error: {response.status_code}\"\n            try:\n                error_data = response.json()\n                if \"error\" in error_data:\n                    error_message = f\"{error_message} - {error_data['error']}\"\n            except:\n                pass\n                \n            raise KontextAPIError(error_message, response.status_code, response.text)\n            \n        except (requests.RequestException, ConnectionError) as e:\n            retry_count += 1\n            if retry_count < max_retries:\n                # Network error, retry with backoff\n                time.sleep(base_delay * (2 ** (retry_count - 1)))\n                continue\n            raise KontextAPIError(f\"Network error: {str(e)}\", None, None)\n    \n    # This should not be reached due to the raises above\n    raise KontextAPIError(\"Maximum retries exceeded\", None, None)\n```\n\n7. Implement a custom exception class for API errors:\n\n```python\nclass KontextAPIError(Exception):\n    def __init__(self, message, status_code=None, response_body=None):\n        self.message = message\n        self.status_code = status_code\n        self.response_body = response_body\n        super().__init__(self.message)\n```\n\n8. Add necessary imports at the top of the file:\n\n```python\nimport time\nimport random\nimport requests\n```\n\n9. Include comprehensive docstrings for all methods and classes to facilitate usage and future maintenance.\n\n10. Ensure all methods handle edge cases appropriately, such as invalid inputs, unexpected API responses, and network failures.",
+        "testStrategy": "To verify the correct implementation of the KontextClient:\n\n1. Unit Testing:\n   - Create a test file `test_kontext_client.py` in the appropriate test directory\n   - Use pytest and the requests-mock library to mock API responses\n   - Test each method with various inputs and expected outputs:\n\n```python\ndef test_submit_generate(requests_mock):\n    # Mock successful API response\n    requests_mock.post('https://api.kontext.com/v1/generate', json={'task_id': 'task123', 'status': 'pending'})\n    \n    client = KontextClient('test_api_key')\n    response = client.submit_generate(\"Create an image of a sunset\")\n    \n    assert response['task_id'] == 'task123'\n    assert response['status'] == 'pending'\n```\n\n2. Test rate limiting and retry logic:\n   - Mock 429 responses with and without Retry-After headers\n   - Verify exponential backoff behavior\n   - Ensure maximum retry limit is respected\n\n```python\ndef test_rate_limiting_with_retry_after(requests_mock, monkeypatch):\n    # Mock time.sleep to avoid waiting during tests\n    sleep_calls = []\n    monkeypatch.setattr(time, 'sleep', lambda seconds: sleep_calls.append(seconds))\n    \n    # Mock a 429 response with Retry-After header, then a successful response\n    requests_mock.get(\n        'https://api.kontext.com/v1/tasks/task123',\n        [\n            {'status_code': 429, 'headers': {'Retry-After': '5'}},\n            {'json': {'task_id': 'task123', 'status': 'completed'}}\n        ]\n    )\n    \n    client = KontextClient('test_api_key')\n    response = client.poll_task('task123')\n    \n    assert response['status'] == 'completed'\n    assert len(sleep_calls) == 1\n    assert sleep_calls[0] >= 5  # Should respect the Retry-After header\n```\n\n3. Test server error handling:\n   - Mock 500-series responses\n   - Verify retry behavior and exponential backoff\n   - Ensure proper error propagation after max retries\n\n```python\ndef test_server_error_max_retries(requests_mock, monkeypatch):\n    # Mock time.sleep to avoid waiting during tests\n    monkeypatch.setattr(time, 'sleep', lambda seconds: None)\n    \n    # Mock 5 consecutive 503 responses\n    requests_mock.post(\n        'https://api.kontext.com/v1/generate',\n        status_code=503,\n        text='Service Unavailable'\n    )\n    \n    client = KontextClient('test_api_key')\n    \n    with pytest.raises(KontextAPIError) as excinfo:\n        client.submit_generate(\"Create an image of a sunset\")\n    \n    assert \"API error: 503\" in str(excinfo.value)\n```\n\n4. Test poll_until_complete functionality:\n   - Mock a sequence of \"pending\" statuses followed by \"completed\"\n   - Test timeout behavior\n   - Verify polling interval increases correctly\n\n```python\ndef test_poll_until_complete_success(requests_mock, monkeypatch):\n    # Mock time functions\n    monkeypatch.setattr(time, 'time', lambda: 0)  # Fixed time for simplicity\n    sleep_calls = []\n    monkeypatch.setattr(time, 'sleep', lambda seconds: sleep_calls.append(seconds))\n    \n    # Mock a sequence of responses: 3 pending followed by completed\n    requests_mock.get(\n        'https://api.kontext.com/v1/tasks/task123',\n        [\n            {'json': {'task_id': 'task123', 'status': 'pending'}},\n            {'json': {'task_id': 'task123', 'status': 'pending'}},\n            {'json': {'task_id': 'task123', 'status': 'pending'}},\n            {'json': {'task_id': 'task123', 'status': 'completed', 'result': 'data'}}\n        ]\n    )\n    \n    client = KontextClient('test_api_key')\n    response = client.poll_until_complete('task123')\n    \n    assert response['status'] == 'completed'\n    assert len(sleep_calls) == 3\n    # Verify exponential backoff: 2, 3, 4.5\n    assert sleep_calls[0] == 2\n    assert sleep_calls[1] > sleep_calls[0]\n    assert sleep_calls[2] > sleep_calls[1]\n```\n\n5. Integration Testing:\n   - Create a separate test file that can be run against the actual API (when credentials are available)\n   - Include tests for the full workflow: submit_generate \u2192 poll_until_complete \u2192 submit_action\n   - Add configuration to skip these tests when running automated test suites\n\n6. Manual Testing:\n   - Create a simple script in the scratch space that demonstrates the client usage\n   - Test with real API credentials to verify actual API behavior\n   - Document any discrepancies between expected and actual behavior\n\n7. Edge Case Testing:\n   - Test with invalid API keys\n   - Test with malformed requests\n   - Test with very large inputs\n   - Test network failures (can be simulated with requests-mock)",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement CLI Commands for Kontext with Image Upload Support",
+        "description": "Develop CLI commands for kontext including generate, action, and list functionality, with support for image upload via GCS helper and multiple processing modes (relax, fast, turbo).",
+        "details": "Implement the CLI commands for the Kontext integration following these steps:\n\n1. Create a command-line interface in the `kontext_integration/cli` directory that leverages the KontextClient:\n\n```python\nimport argparse\nimport os\nimport sys\nfrom kontext_integration.client import KontextClient\nfrom kontext_integration.utils.gcs_helper import upload_image_to_gcs\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Kontext CLI\")\n    subparsers = parser.add_subparsers(dest=\"command\", help=\"Commands\")\n    \n    # Generate command\n    generate_parser = subparsers.add_parser(\"generate\", help=\"Generate images with Kontext\")\n    generate_parser.add_argument(\"--prompt\", required=True, help=\"Text prompt for image generation\")\n    generate_parser.add_argument(\"--image\", help=\"Path to input image file\")\n    generate_parser.add_argument(\"--process-mode\", choices=[\"relax\", \"fast\", \"turbo\"], default=\"fast\", \n                               help=\"Processing speed mode: relax (highest quality), fast (balanced), turbo (fastest)\")\n    generate_parser.add_argument(\"--output\", help=\"Output directory for generated images\")\n    \n    # Action command\n    action_parser = subparsers.add_parser(\"action\", help=\"Perform actions on existing generations\")\n    action_parser.add_argument(\"--task-id\", required=True, help=\"Task ID to perform action on\")\n    action_parser.add_argument(\"--action\", required=True, choices=[\"upscale\", \"variation\", \"zoom\"], \n                             help=\"Action to perform\")\n    action_parser.add_argument(\"--index\", type=int, help=\"Image index for the action (if applicable)\")\n    \n    # List command\n    list_parser = subparsers.add_parser(\"list\", help=\"List recent generations\")\n    list_parser.add_argument(\"--limit\", type=int, default=10, help=\"Number of results to return\")\n    list_parser.add_argument(\"--status\", choices=[\"pending\", \"completed\", \"failed\"], \n                           help=\"Filter by status\")\n    \n    args = parser.parse_args()\n    \n    # Load API key from environment or config file\n    api_key = os.environ.get(\"KONTEXT_API_KEY\")\n    if not api_key:\n        print(\"Error: KONTEXT_API_KEY environment variable not set\")\n        sys.exit(1)\n    \n    client = KontextClient(api_key)\n    \n    if args.command == \"generate\":\n        handle_generate_command(client, args)\n    elif args.command == \"action\":\n        handle_action_command(client, args)\n    elif args.command == \"list\":\n        handle_list_command(client, args)\n    else:\n        parser.print_help()\n\ndef handle_generate_command(client, args):\n    image_url = None\n    if args.image:\n        # Upload image to GCS and get public URL\n        image_url = upload_image_to_gcs(args.image)\n        if not image_url:\n            print(f\"Error: Failed to upload image {args.image}\")\n            sys.exit(1)\n    \n    try:\n        task = client.submit_generate(\n            prompt=args.prompt,\n            image_url=image_url,\n            process_mode=args.process_mode\n        )\n        \n        print(f\"Generation task submitted. Task ID: {task['id']}\")\n        print(\"Waiting for results...\")\n        \n        result = client.poll_until_complete(task['id'])\n        \n        if args.output:\n            # Save images to output directory\n            save_images(result, args.output)\n        \n        print(f\"Generation completed. Results: {result['result_url']}\")\n    \n    except Exception as e:\n        print(f\"Error: {str(e)}\")\n        sys.exit(1)\n\ndef handle_action_command(client, args):\n    try:\n        task = client.submit_action(\n            task_id=args.task_id,\n            action=args.action,\n            index=args.index\n        )\n        \n        print(f\"Action task submitted. Task ID: {task['id']}\")\n        print(\"Waiting for results...\")\n        \n        result = client.poll_until_complete(task['id'])\n        print(f\"Action completed. Results: {result['result_url']}\")\n    \n    except Exception as e:\n        print(f\"Error: {str(e)}\")\n        sys.exit(1)\n\ndef handle_list_command(client, args):\n    try:\n        tasks = client.list_tasks(limit=args.limit, status=args.status)\n        \n        print(f\"Recent tasks ({len(tasks)} results):\")\n        for task in tasks:\n            print(f\"ID: {task['id']} | Status: {task['status']} | Type: {task['type']} | Created: {task['created_at']}\")\n    \n    except Exception as e:\n        print(f\"Error: {str(e)}\")\n        sys.exit(1)\n\ndef save_images(result, output_dir):\n    # Implementation for saving images to the output directory\n    os.makedirs(output_dir, exist_ok=True)\n    # Download and save images logic here\n    pass\n\nif __name__ == \"__main__\":\n    main()\n```\n\n2. Implement the GCS helper utility in `kontext_integration/utils/gcs_helper.py`:\n\n```python\nimport os\nfrom google.cloud import storage\n\ndef upload_image_to_gcs(image_path, bucket_name=None):\n    \"\"\"\n    Upload an image to Google Cloud Storage and return the public URL.\n    \n    Args:\n        image_path: Local path to the image file\n        bucket_name: GCS bucket name (defaults to environment variable)\n        \n    Returns:\n        Public URL of the uploaded image, or None if upload failed\n    \"\"\"\n    if not os.path.exists(image_path):\n        print(f\"Error: Image file not found: {image_path}\")\n        return None\n    \n    # Get bucket name from environment if not provided\n    bucket_name = bucket_name or os.environ.get(\"KONTEXT_GCS_BUCKET\")\n    if not bucket_name:\n        print(\"Error: GCS bucket not specified and KONTEXT_GCS_BUCKET environment variable not set\")\n        return None\n    \n    try:\n        # Initialize GCS client\n        storage_client = storage.Client()\n        bucket = storage_client.bucket(bucket_name)\n        \n        # Generate a unique blob name based on timestamp and filename\n        import time\n        filename = os.path.basename(image_path)\n        blob_name = f\"kontext_uploads/{int(time.time())}_{filename}\"\n        \n        # Upload the file\n        blob = bucket.blob(blob_name)\n        blob.upload_from_filename(image_path)\n        \n        # Make the blob publicly accessible\n        blob.make_public()\n        \n        # Return the public URL\n        return blob.public_url\n    \n    except Exception as e:\n        print(f\"Error uploading to GCS: {str(e)}\")\n        return None\n```\n\n3. Update the setup.py file to include the new CLI entry point:\n\n```python\nsetup(\n    # ... existing setup parameters ...\n    entry_points={\n        'console_scripts': [\n            'kontext=kontext_integration.cli:main',\n        ],\n    },\n    install_requires=[\n        'requests',\n        'google-cloud-storage',\n        # other dependencies\n    ],\n)\n```\n\n4. Ensure the CLI properly handles all three process modes (relax, fast, turbo) by passing them to the API client:\n   - relax: Highest quality, slower processing\n   - fast: Balanced quality and speed (default)\n   - turbo: Fastest processing, potentially lower quality\n\n5. Implement proper error handling and user feedback throughout the CLI, including:\n   - Validation of input parameters\n   - Clear error messages for API failures\n   - Progress indicators for long-running operations\n   - Formatted output of results",
+        "testStrategy": "To verify the correct implementation of the Kontext CLI commands:\n\n1. Unit Testing:\n   - Create a test file `test_kontext_cli.py` in the appropriate test directory\n   - Use pytest and mock to test the CLI command handlers\n   - Test each command with various combinations of arguments\n   - Verify proper error handling for invalid inputs\n\n```python\nimport pytest\nfrom unittest.mock import patch, MagicMock\nfrom kontext_integration.cli import handle_generate_command, handle_action_command, handle_list_command\n\ndef test_generate_command_with_text_only():\n    mock_client = MagicMock()\n    mock_client.submit_generate.return_value = {\"id\": \"task123\"}\n    mock_client.poll_until_complete.return_value = {\"result_url\": \"https://results.example.com/task123\"}\n    \n    args = MagicMock()\n    args.prompt = \"a beautiful sunset\"\n    args.image = None\n    args.process_mode = \"fast\"\n    args.output = None\n    \n    with patch(\"sys.exit\") as mock_exit:\n        handle_generate_command(mock_client, args)\n        mock_exit.assert_not_called()\n    \n    mock_client.submit_generate.assert_called_once_with(\n        prompt=\"a beautiful sunset\",\n        image_url=None,\n        process_mode=\"fast\"\n    )\n    mock_client.poll_until_complete.assert_called_once_with(\"task123\")\n\ndef test_generate_command_with_image():\n    # Similar test but with image upload\n    pass\n\ndef test_generate_command_with_different_process_modes():\n    # Test with relax, fast, and turbo modes\n    pass\n\ndef test_action_command():\n    # Test action command\n    pass\n\ndef test_list_command():\n    # Test list command\n    pass\n```\n\n2. Integration Testing:\n   - Create a test script that uses the actual CLI with a test API key\n   - Test each command against a staging environment if available\n   - Verify the entire workflow from generation to actions\n\n3. Manual Testing:\n   - Test the CLI commands with real inputs:\n     ```\n     # Test generate command with text only\n     kontext generate --prompt \"a beautiful sunset\" --process-mode fast\n     \n     # Test generate command with image upload\n     kontext generate --prompt \"enhance this image\" --image ./test_image.jpg --process-mode relax\n     \n     # Test action command\n     kontext action --task-id task123 --action upscale --index 2\n     \n     # Test list command\n     kontext list --limit 5 --status completed\n     ```\n   \n   - Verify that the GCS image upload works correctly:\n     - Test with various image formats (JPG, PNG, etc.)\n     - Verify that the uploaded image is accessible via the returned URL\n     - Test with large images to ensure proper handling\n\n4. Error Handling Testing:\n   - Test with invalid API keys\n   - Test with non-existent image files\n   - Test with invalid task IDs\n   - Test with network connectivity issues\n   - Verify appropriate error messages are displayed\n\n5. Performance Testing:\n   - Test the different process modes (relax, fast, turbo) and verify they behave as expected\n   - Measure and compare processing times for each mode\n   - Test with large images to ensure proper handling of upload times",
+        "status": "pending",
+        "dependencies": [
+          1,
+          2
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Document Environment Variables and Add Initial Scratch Log",
+        "description": "Update the kontext_integration/README.md to document all required environment variables and their usage, and create an initial scratch log entry for testing and development purposes.",
+        "details": "This task involves documenting the environment variables and creating an initial scratch log entry for the Kontext integration module:\n\n1. Update the kontext_integration/README.md file to include a comprehensive section on environment variables:\n   - Add a new section titled \"Environment Variables\"\n   - Document all required environment variables for the Kontext integration:\n     ```\n     ## Environment Variables\n     \n     The following environment variables are required for the Kontext integration:\n     \n     - `KONTEXT_API_KEY`: Your Kontext API authentication key\n     - `KONTEXT_BASE_URL`: Base URL for the Kontext API (defaults to \"https://api.kontext.com/v1\")\n     - `GCS_BUCKET_NAME`: Google Cloud Storage bucket for image uploads\n     - `GOOGLE_APPLICATION_CREDENTIALS`: Path to GCP service account credentials file\n     ```\n   - For each variable, include:\n     - Description of its purpose\n     - Format requirements (if any)\n     - Whether it's optional or required\n     - Default values (if applicable)\n     - Example usage\n\n2. Create an initial scratch log entry in kontext_integration/scratch/README.md:\n   - Document the initial setup and testing process\n   - Include examples of basic API calls and responses\n   - Add troubleshooting notes and common issues\n   - Provide sample commands for testing different features\n   \n3. Ensure the documentation is consistent with the implementation in Tasks #1, #2, and #3:\n   - Reference the correct environment variable names used in the KontextClient\n   - Match the CLI command structure and options\n   - Include examples that demonstrate image upload functionality\n\n4. Add a section on local development setup:\n   - Instructions for setting up a local .env file\n   - How to test the integration locally\n   - Tips for debugging environment variable issues",
+        "testStrategy": "To verify the correct documentation of environment variables and scratch log:\n\n1. Documentation Verification:\n   - Review the kontext_integration/README.md file to ensure all required environment variables are documented\n   - Verify that each environment variable has a clear description, format requirements, and usage examples\n   - Check that the documentation matches the actual implementation in the code\n   - Ensure the README includes information about optional vs. required variables\n\n2. Scratch Log Verification:\n   - Confirm that the initial scratch log entry in kontext_integration/scratch/README.md exists\n   - Verify that the scratch log includes examples of basic API calls\n   - Check that the log contains useful troubleshooting information\n   - Ensure the examples in the scratch log are accurate and executable\n\n3. Cross-Reference Testing:\n   - Test setting each documented environment variable and verify it works as described\n   - Try running the CLI commands using the examples provided in the documentation\n   - Verify that any default values mentioned in the documentation match the code implementation\n   - Check that error messages related to missing environment variables are helpful and match the documentation\n\n4. Peer Review:\n   - Have another team member review the documentation for clarity and completeness\n   - Ensure the documentation follows the project's style guidelines\n   - Verify that all technical terms are explained or linked to relevant resources",
+        "status": "pending",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-08T15:50:39.968Z",
+      "updated": "2025-08-08T15:52:35.841Z",
+      "description": "Add Kontext GoAPI integration mirroring midjourney_integration"
+    }
+  },
+  "brainrot": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Fix Failing Tests in Workflow Manager",
+        "description": "Resolve all failing tests in tests/test_workflow_manager.py to ensure the workflow orchestration system is functioning correctly.",
+        "details": "1. Run the test suite to identify specific failing tests\n2. Analyze each failing test to understand the root cause\n3. Fix implementation issues in the workflow manager module\n4. Focus on transaction handling, error recovery, and state management\n5. Ensure proper agent communication within workflows\n6. Verify that workflow persistence is working correctly\n7. Address any race conditions or timing issues in async operations",
+        "testStrategy": "Run the full test suite with pytest, focusing on tests/test_workflow_manager.py. Ensure all tests pass with 100% coverage. Add additional test cases for edge cases discovered during debugging.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Fix Agent Recovery Tests",
+        "description": "Address all failing tests in tests/test_agent_recovery.py to ensure agents can properly recover from failures and maintain state.",
+        "details": "1. Identify specific test failures in the agent recovery test suite\n2. Debug the agent recovery mechanism in the BaseAgent class\n3. Implement proper state persistence during agent lifecycle events\n4. Ensure clean shutdown and restart procedures\n5. Fix any issues with agent registration during recovery\n6. Verify capability routing works correctly after recovery\n7. Address any serialization issues for agent state",
+        "testStrategy": "Run tests/test_agent_recovery.py with various failure scenarios. Verify agents can recover from crashes, network issues, and other common failure modes. Test with both simple and complex agent states.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Resolve JSON Serialization Crisis",
+        "description": "Fix the JSON serialization issues that are blocking workflow persistence and agent state management.",
+        "details": "1. Identify all classes that need serialization/deserialization\n2. Implement custom JSON encoders/decoders for complex objects\n3. Ensure RDF graph data can be properly serialized and deserialized\n4. Add validation to prevent invalid states from being serialized\n5. Create helper functions for common serialization patterns\n6. Test serialization with various object types and nested structures\n7. Implement versioning for serialized data to support future changes",
+        "testStrategy": "Create comprehensive tests for serialization/deserialization of all major system objects. Verify round-trip serialization works correctly. Test with edge cases like circular references, large objects, and special characters.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Fix Constructor Mismatches in Agent Classes",
+        "description": "Resolve the critical issues related to constructor mismatches in agent classes as mentioned in the WORK-PACK BACKLOG.",
+        "details": "1. Review all agent class constructors for consistency\n2. Ensure BaseAgent and derived classes have compatible signatures\n3. Fix any parameter mismatches or incorrect default values\n4. Update documentation for constructor parameters\n5. Implement proper validation for constructor arguments\n6. Ensure backward compatibility where possible\n7. Add type hints to clarify expected parameter types",
+        "testStrategy": "Create tests that instantiate all agent types with various parameter combinations. Verify inheritance works correctly and all constructors can be called without errors.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Fix Comparison Errors in Core Components",
+        "description": "Address the comparison errors mentioned in the WORK-PACK BACKLOG that are causing issues in the system.",
+        "details": "1. Identify components with comparison errors\n2. Implement proper __eq__, __ne__, and __hash__ methods where needed\n3. Fix any type comparison issues (e.g., comparing incompatible types)\n4. Ensure consistent comparison behavior across the codebase\n5. Address any sorting-related issues in collections\n6. Fix identity vs. equality confusion in object comparisons\n7. Add validation to prevent invalid comparisons",
+        "testStrategy": "Create test cases specifically for object comparison, including edge cases. Verify that collections of objects can be properly sorted, compared, and used as dictionary keys where appropriate.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Consolidate Entry Points",
+        "description": "Consolidate main.py, main_agent.py, and main_api.py into a single entry point for improved maintainability.",
+        "details": "1. Analyze the functionality in each entry point file\n2. Design a unified command-line interface with subcommands\n3. Refactor shared code into common modules\n4. Implement a single main.py with command routing\n5. Ensure backward compatibility for existing scripts\n6. Add proper logging and error handling\n7. Update documentation to reflect the new entry point structure",
+        "testStrategy": "Create integration tests that verify all previous functionality is preserved. Test each subcommand and ensure proper error handling. Verify that all previous use cases are still supported.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Enhance Knowledge Graph Performance",
+        "description": "Optimize the RDF-based semantic store with improved caching, versioning, and validation mechanisms.",
+        "details": "1. Profile current knowledge graph operations to identify bottlenecks\n2. Implement an efficient caching layer for frequent queries\n3. Add proper versioning for graph changes\n4. Implement validation rules for graph modifications\n5. Optimize SPARQL query execution\n6. Add indexes for common query patterns\n7. Implement batch operations for better performance",
+        "testStrategy": "Create performance benchmarks for common operations. Verify that optimizations improve performance without breaking functionality. Test with large datasets to ensure scalability.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Performance Profiling and Bottleneck Identification",
+            "description": "Profile current knowledge graph operations to identify performance bottlenecks and establish baseline metrics for future comparison.",
+            "dependencies": [],
+            "details": "1. Set up performance monitoring tools for RDF operations\n2. Create test datasets of varying sizes for benchmarking\n3. Measure query execution times, memory usage, and I/O operations\n4. Identify the top 5 performance bottlenecks\n5. Document baseline performance metrics for common operations\n6. Create a performance report with recommendations\n\nAcceptance Criteria:\n- Comprehensive performance report with clear metrics\n- Identified bottlenecks with supporting data\n- Baseline benchmarks established for all key operations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Caching Layer for Frequent Queries",
+            "description": "Design and implement an efficient caching mechanism for frequently executed SPARQL queries to reduce database load and improve response times.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "1. Design cache invalidation strategy for RDF data\n2. Implement LRU cache for query results\n3. Add cache statistics and monitoring\n4. Create configuration options for cache size and TTL\n5. Implement cache warming for common queries\n\nAcceptance Criteria:\n- Cache hit rate >80% for repeated queries\n- Response time improvement of at least 70% for cached queries\n- Memory usage within defined limits\n- Proper cache invalidation when underlying data changes\n\nTesting Instructions:\n- Benchmark query performance with and without caching\n- Test cache behavior with concurrent modifications\n- Verify cache consistency after graph updates",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Graph Versioning System",
+            "description": "Add a versioning system for the knowledge graph that tracks changes, enables rollbacks, and maintains historical states.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "1. Design version tracking schema for RDF graphs\n2. Implement commit/transaction model for graph changes\n3. Create APIs for accessing historical graph states\n4. Add rollback functionality for reverting changes\n5. Implement efficient storage for version deltas\n\nAcceptance Criteria:\n- Complete history of graph changes accessible via API\n- Ability to rollback to any previous version\n- Version metadata including timestamp, author, and change description\n- Storage efficiency with delta-based versioning\n\nTesting Instructions:\n- Test version creation with various graph modifications\n- Verify rollback functionality restores correct graph state\n- Benchmark storage requirements for version history\n- Test concurrent version access",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Validation Rules Framework",
+            "description": "Implement a validation framework for graph modifications that ensures data integrity, schema compliance, and business rule enforcement.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "1. Design validation rule specification format\n2. Implement core validation engine\n3. Create standard validators for common constraints\n4. Add validation hooks for pre/post modification\n5. Implement error reporting and correction suggestions\n\nAcceptance Criteria:\n- Support for structural, semantic, and business rule validation\n- Clear error messages for validation failures\n- Performance impact <10% for typical operations\n- Ability to selectively enable/disable validation rules\n\nTesting Instructions:\n- Test validation with valid and invalid graph modifications\n- Verify all validation rules are correctly enforced\n- Benchmark performance impact of validation\n- Test validation in concurrent modification scenarios",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Optimize SPARQL Query Execution",
+            "description": "Improve SPARQL query performance through query optimization, execution planning, and result caching strategies.",
+            "dependencies": [
+              "7.1",
+              "7.2"
+            ],
+            "details": "1. Implement query plan optimization for SPARQL\n2. Add query rewriting for common patterns\n3. Optimize join operations in complex queries\n4. Implement query result pagination\n5. Add query timeout and resource limits\n\nAcceptance Criteria:\n- 50% average performance improvement for complex queries\n- Successful optimization of all benchmark queries\n- Query plan visualization for debugging\n- Resource usage within defined limits for all queries\n\nTesting Instructions:\n- Benchmark query performance before and after optimization\n- Test with various query complexities and data sizes\n- Verify correct results for all optimized queries\n- Test edge cases like highly connected nodes",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Advanced Indexing Strategies",
+            "description": "Design and implement specialized indexes for common query patterns to improve lookup performance and reduce scan operations.",
+            "dependencies": [
+              "7.1",
+              "7.5"
+            ],
+            "details": "1. Analyze common query patterns from profiling data\n2. Design specialized indexes for frequent access patterns\n3. Implement property-specific indexes\n4. Add full-text search capabilities\n5. Create maintenance routines for index optimization\n\nAcceptance Criteria:\n- 70% reduction in scan operations for indexed queries\n- Index size <20% of total graph size\n- Automatic index selection based on query patterns\n- Minimal impact on write performance\n\nTesting Instructions:\n- Benchmark query performance with and without indexes\n- Test index maintenance during large data modifications\n- Verify index consistency after system crashes\n- Measure index creation and update performance",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Add Batch Operations Support",
+            "description": "Implement efficient batch operations for graph modifications, queries, and exports to improve throughput and reduce overhead.",
+            "dependencies": [
+              "7.1",
+              "7.3",
+              "7.4"
+            ],
+            "details": "1. Design batch operation APIs for graph modifications\n2. Implement transaction support for batch operations\n3. Add batch query execution capabilities\n4. Create batch export/import functionality\n5. Implement progress tracking and resumable operations\n\nAcceptance Criteria:\n- 80% reduction in overhead for batch vs. individual operations\n- Atomic transaction support for all batch operations\n- Proper error handling with partial success reporting\n- Support for batches of at least 100,000 operations\n\nTesting Instructions:\n- Benchmark batch operations vs. individual operations\n- Test transaction rollback on partial failures\n- Verify data consistency after interrupted batch operations\n- Test with various batch sizes and operation types",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Complete Midjourney Integration",
+        "description": "Finish the integration with Midjourney for image generation capabilities as specified in the roadmap.",
+        "details": "1. Review the current Midjourney integration code\n2. Implement missing API endpoints for Midjourney communication\n3. Create a proper agent wrapper for Midjourney services\n4. Update the static/midjourney.html frontend to use the new integration\n5. Add proper error handling and rate limiting\n6. Implement image caching and management\n7. Add documentation for the Midjourney integration",
+        "testStrategy": "Create integration tests with Midjourney API mocks. Test the frontend with various image generation scenarios. Verify error handling works correctly for API failures and rate limits.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement 'Refine with AI' Frontend Functionality",
+        "description": "Develop the 'Refine with AI' feature for the frontend as mentioned in the future enhancements section.",
+        "details": "1. Design the user interface for AI refinement\n2. Implement the frontend components in HTML/JS\n3. Create backend API endpoints to support the refinement process\n4. Integrate with appropriate AI models for refinement\n5. Add proper feedback mechanisms during refinement\n6. Implement history tracking for refinement steps\n7. Add undo/redo capabilities for refinements",
+        "testStrategy": "Create end-to-end tests for the refinement workflow. Test with various input types and refinement scenarios. Verify that the UI properly reflects the refinement state and history.",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Address Missing Agent Methods",
+        "description": "Implement missing agent methods mentioned in the medium-priority integration issues section of the roadmap.",
+        "details": "1. Identify all agents with missing methods\n2. Implement the required methods according to interface specifications\n3. Ensure proper error handling in new methods\n4. Add appropriate logging for method calls\n5. Update agent documentation to reflect new methods\n6. Verify compatibility with existing workflows\n7. Add type hints and docstrings for all new methods",
+        "testStrategy": "Create unit tests for each new method. Verify that agents with the new methods work correctly in existing workflows. Test error handling and edge cases for each method.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Enhance Capability-Based Routing",
+        "description": "Improve the capability-based routing system for more efficient and accurate agent selection in workflows.",
+        "details": "1. Review the current capability registration and discovery mechanism\n2. Implement a more sophisticated matching algorithm for capabilities\n3. Add support for capability versioning and compatibility\n4. Implement capability negotiation between agents\n5. Add metrics for routing decisions\n6. Optimize routing performance for large agent networks\n7. Implement fallback mechanisms for missing capabilities",
+        "testStrategy": "Create tests with complex capability requirements. Verify that the routing system selects the most appropriate agents. Test with conflicting capabilities and version constraints.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Implement Comprehensive Monitoring System",
+        "description": "Develop a monitoring system for tracking performance, errors, and system health across all components.",
+        "details": "1. Design a metrics collection architecture\n2. Implement performance monitoring for critical operations\n3. Add error tracking and aggregation\n4. Create dashboards for system health visualization\n5. Implement alerting for critical issues\n6. Add resource usage monitoring (CPU, memory, etc.)\n7. Implement log aggregation and analysis",
+        "testStrategy": "Verify that metrics are correctly collected and reported. Test alerting with simulated failures. Ensure that monitoring has minimal performance impact on the system.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Enhance Google Cloud Integration",
+        "description": "Improve and extend the integration with Google Cloud services, particularly Vertex AI and Gmail.",
+        "details": "1. Review current Google Cloud integration code\n2. Update to latest API versions for Vertex AI and Gmail\n3. Implement proper authentication and credential management\n4. Add support for additional Vertex AI models\n5. Implement batching for efficient API usage\n6. Add proper error handling and retries\n7. Create comprehensive documentation for Google Cloud integration",
+        "testStrategy": "Create integration tests with Google Cloud API mocks. Test authentication flows, API calls, and error handling. Verify that the integration works with various Google Cloud configurations.",
+        "priority": "low",
+        "dependencies": [
+          3,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement Advanced Workflow Features",
+        "description": "Add advanced features to the workflow engine such as conditional branching, parallel execution, and dynamic workflow modification.",
+        "details": "1. Design an extended workflow definition format\n2. Implement conditional branching based on task results\n3. Add support for parallel task execution\n4. Implement dynamic workflow modification during execution\n5. Add workflow templates and reusable components\n6. Implement workflow versioning and migration\n7. Create a visual workflow editor for complex workflows",
+        "testStrategy": "Create tests for complex workflows with branching and parallelism. Verify that workflows execute correctly in all scenarios. Test workflow modifications during execution.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          3,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Implement Comprehensive Documentation System",
+        "description": "Develop a comprehensive documentation system covering API references, tutorials, and best practices.",
+        "details": "1. Design a documentation structure for the project\n2. Implement automatic API documentation generation\n3. Create tutorials for common use cases\n4. Document best practices for agent development\n5. Add examples for workflow creation and management\n6. Create troubleshooting guides for common issues\n7. Implement a search function for the documentation",
+        "testStrategy": "Verify that documentation is accurate and up-to-date. Test examples to ensure they work as documented. Get feedback from users on documentation clarity and completeness.",
+        "priority": "medium",
+        "dependencies": [
+          6,
+          10,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-11-21T00:00:00.000Z",
+      "updated": "2025-11-21T00:00:00.000Z",
+      "description": "Prioritized tasks for brainrot context"
+    }
+  }
+}

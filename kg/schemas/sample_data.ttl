@@ -1,0 +1,76 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <http://example.org/core#> .
+
+# Sample Machines
+:MachineA a :Machine ;
+    :hasStatus "Nominal" ;
+    :hasLocation "Building 1, Floor 2" ;
+    :hasVersion "1.2.3" .
+
+:MachineB a :Machine ;
+    :hasStatus "Maintenance" ;
+    :hasLocation "Building 1, Floor 3" ;
+    :hasVersion "1.1.0" .
+
+# Sample Sensors
+:Sensor1 a :TemperatureSensor ;
+    :attachedTo :MachineA ;
+    :latestReading "75.5"^^xsd:float .
+
+:Sensor2 a :PressureSensor ;
+    :attachedTo :MachineA ;
+    :latestReading "2.5"^^xsd:float .
+
+:Sensor3 a :VibrationSensor ;
+    :attachedTo :MachineB ;
+    :latestReading "0.8"^^xsd:float .
+
+# Sample Tasks
+:Task1 a :MaintenanceTask ;
+    :hasStatus "Pending" ;
+    :hasPriority "1"^^xsd:integer ;
+    :hasDeadline "2024-03-20T10:00:00"^^xsd:dateTime .
+
+:Task2 a :InspectionTask ;
+    :hasStatus "InProgress" ;
+    :hasPriority "2"^^xsd:integer ;
+    :hasDeadline "2024-03-21T15:00:00"^^xsd:dateTime .
+
+:Task3 a :DataProcessingTask ;
+    :hasStatus "Completed" ;
+    :hasPriority "3"^^xsd:integer ;
+    :hasDeadline "2024-03-19T12:00:00"^^xsd:dateTime .
+
+# Sample Agents
+:Agent1 a :Agent ;
+    :hasRole :MaintenanceAgent ;
+    :hasStatus "Idle" ;
+    :hasCPUUsage "0.2"^^xsd:float ;
+    :hasMemoryUsage "512.0"^^xsd:float .
+
+:Agent2 a :Agent ;
+    :hasRole :InspectionAgent ;
+    :hasStatus "Busy" ;
+    :hasCPUUsage "0.8"^^xsd:float ;
+    :hasMemoryUsage "1024.0"^^xsd:float .
+
+# Sample Events
+:Event1 a :Event ;
+    :hasTimestamp "2024-03-18T09:30:00"^^xsd:dateTime ;
+    :triggers :Task1 .
+
+:Event2 a :Event ;
+    :hasTimestamp "2024-03-18T10:15:00"^^xsd:dateTime ;
+    :triggers :Task2 .
+
+# Sample Alerts
+:Alert1 a :Alert ;
+    :hasConfidence "0.95"^^xsd:float ;
+    :hasStatus "Active" .
+
+:Alert2 a :Alert ;
+    :hasConfidence "0.75"^^xsd:float ;
+    :hasStatus "Resolved" . 

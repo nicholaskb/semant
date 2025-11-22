@@ -2,6 +2,9 @@ from typing import Any, Dict, List, Optional
 from agents.core.base_agent import BaseAgent, AgentMessage
 from loguru import logger
 import asyncio
+import uuid
+from datetime import datetime
+from agents.core.message_types import AgentMessage
 
 class CorporateKnowledgeAgent(BaseAgent):
     """Agent responsible for managing corporate knowledge and documents."""
@@ -15,21 +18,25 @@ class CorporateKnowledgeAgent(BaseAgent):
     async def initialize(self) -> None:
         """Initialize the agent with required resources."""
         try:
+            # Call parent initialize first
+            await super().initialize()
+            
             # Initialize embedding model
             # self.embedding_model = await self._load_embedding_model()
             
             # Initialize document store
             self.document_store = {}
             
-            # Register with knowledge graph
-            await self._register_agent()
+            # Register with knowledge graph if available
+            if self.knowledge_graph:
+                await self._register_agent()
             
             self.logger.info("Corporate Knowledge Agent initialized successfully")
         except Exception as e:
             self.logger.error(f"Error initializing agent: {str(e)}")
             raise
             
-    async def process_message(self, message: AgentMessage) -> AgentMessage:
+    async def _process_message_impl(self, message: AgentMessage) -> AgentMessage:
         """Process incoming messages and return appropriate responses."""
         try:
             if message.message_type == "document_ingest":
@@ -105,8 +112,8 @@ class CorporateKnowledgeAgent(BaseAgent):
             })
             
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={'status': 'success', 'doc_id': doc_id},
                 timestamp=message.timestamp,
                 message_type='document_ingest_response'
@@ -121,8 +128,8 @@ class CorporateKnowledgeAgent(BaseAgent):
             query_result = await self.query_knowledge_graph(message.content)
             
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={'status': 'success', 'results': query_result},
                 timestamp=message.timestamp,
                 message_type='knowledge_query_response'
@@ -150,8 +157,8 @@ class CorporateKnowledgeAgent(BaseAgent):
             })
             
             return AgentMessage(
-                sender=self.agent_id,
-                recipient=message.sender,
+                sender_id=self.agent_id,
+                recipient_id=message.sender_id,
                 content={'status': 'success', 'doc_id': doc_id},
                 timestamp=message.timestamp,
                 message_type='document_update_response'
@@ -163,8 +170,8 @@ class CorporateKnowledgeAgent(BaseAgent):
     async def _handle_unknown_message(self, message: AgentMessage) -> AgentMessage:
         """Handle unknown message types."""
         return AgentMessage(
-            sender=self.agent_id,
-            recipient=message.sender,
+            sender_id=self.agent_id,
+            recipient_id=message.sender_id,
             content={'status': 'error', 'message': 'Unknown message type'},
             timestamp=message.timestamp,
             message_type='error_response'

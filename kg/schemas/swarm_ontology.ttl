@@ -1,0 +1,92 @@
+@prefix swarm: <http://example.org/swarm#> .
+@prefix ex: <http://example.org/swarm-ex#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Classes
+swarm:Agent rdf:type owl:Class .
+swarm:Role rdf:type owl:Class .
+swarm:Capability rdf:type owl:Class .
+swarm:Workflow rdf:type owl:Class .
+swarm:Task rdf:type owl:Class .
+swarm:Event rdf:type owl:Class .
+swarm:KnowledgeGraph rdf:type owl:Class .
+swarm:SPARQLQuery rdf:type owl:Class .
+swarm:HumanAgent rdf:type owl:Class ;
+    rdfs:subClassOf swarm:Agent .
+swarm:SoftwareAgent rdf:type owl:Class ;
+    rdfs:subClassOf swarm:Agent .
+
+# Roles
+swarm:CodeReviewer rdf:type swarm:Role .
+swarm:Tester rdf:type swarm:Role .
+swarm:Diagnostician rdf:type swarm:Role .
+swarm:DataCurator rdf:type swarm:Role .
+swarm:Coordinator rdf:type swarm:Role .
+
+# Capabilities
+swarm:CodeAnalysis rdf:type swarm:Capability .
+swarm:GraphQuerying rdf:type swarm:Capability .
+swarm:DataIntegration rdf:type swarm:Capability .
+swarm:PeerReviewing rdf:type swarm:Capability .
+swarm:DiagnosticTesting rdf:type swarm:Capability .
+swarm:Collaboration rdf:type swarm:Capability .
+
+# Workflows
+swarm:PeerReviewWorkflow rdf:type swarm:Workflow .
+swarm:DiagnosticWorkflow rdf:type swarm:Workflow .
+
+# Tasks
+swarm:ReviewCodeTask rdf:type swarm:Task .
+swarm:CollectDataTask rdf:type swarm:Task .
+swarm:RunDiagnosticsTask rdf:type swarm:Task .
+
+# Events
+swarm:CodeSubmissionEvent rdf:type swarm:Event .
+swarm:DataLoadEvent rdf:type swarm:Event .
+swarm:DiagnosticEvent rdf:type swarm:Event .
+
+# Example Agents (with roles, capabilities, interactions)
+ex:Alice rdf:type swarm:HumanAgent ;
+    swarm:hasRole swarm:CodeReviewer ;
+    swarm:hasCapability swarm:CodeAnalysis, swarm:PeerReviewing ;
+    swarm:participatesIn swarm:PeerReviewWorkflow .
+ex:Bob rdf:type swarm:HumanAgent ;
+    swarm:hasRole swarm:Tester ;
+    swarm:hasCapability swarm:DataIntegration, swarm:GraphQuerying ;
+    swarm:participatesIn swarm:PeerReviewWorkflow .
+ex:DiagAgent rdf:type swarm:SoftwareAgent ;
+    swarm:hasRole swarm:Diagnostician ;
+    swarm:hasCapability swarm:GraphQuerying, swarm:DiagnosticTesting ;
+    swarm:participatesIn swarm:DiagnosticWorkflow .
+ex:DataLoaderAgent rdf:type swarm:SoftwareAgent ;
+    swarm:hasRole swarm:DataCurator ;
+    swarm:hasCapability swarm:DataIntegration ;
+    swarm:participatesIn swarm:DiagnosticWorkflow .
+ex:CoordinatorAgent rdf:type swarm:HumanAgent ;
+    swarm:hasRole swarm:Coordinator ;
+    swarm:hasCapability swarm:Collaboration ;
+    swarm:coordinates swarm:PeerReviewWorkflow .
+
+# Workflows and tasks roles
+swarm:PeerReviewWorkflow swarm:involvesRole swarm:CodeReviewer, swarm:Tester .
+swarm:DiagnosticWorkflow swarm:involvesRole swarm:Diagnostician, swarm:DataCurator .
+swarm:PeerReviewWorkflow swarm:hasTask swarm:ReviewCodeTask .
+swarm:DiagnosticWorkflow swarm:hasTask swarm:RunDiagnosticsTask .
+swarm:ReviewCodeTask swarm:requiresRole swarm:CodeReviewer .
+swarm:CollectDataTask swarm:requiresRole swarm:DataCurator .
+swarm:RunDiagnosticsTask swarm:requiresRole swarm:Diagnostician .
+
+# Events triggering workflows
+swarm:CodeSubmissionEvent swarm:triggers swarm:PeerReviewWorkflow .
+swarm:DataLoadEvent swarm:triggers swarm:DiagnosticWorkflow .
+swarm:DiagnosticEvent swarm:triggers swarm:DiagnosticWorkflow .
+
+# Knowledge Graph and SPARQL coordination
+ex:SwarmKG rdf:type swarm:KnowledgeGraph ;
+    swarm:generatedBy ex:CoordinatorAgent, ex:DataLoaderAgent, ex:DiagAgent ;
+    swarm:containsEntity ex:Alice, ex:Bob, swarm:CodeReviewer, swarm:Tester, swarm:Diagnostician .
+ex:InconsistencyQuery rdf:type swarm:SPARQLQuery ;
+    swarm:queriesGraph ex:SwarmKG .
+ex:DiagAgent swarm:usesQuery ex:InconsistencyQuery . 

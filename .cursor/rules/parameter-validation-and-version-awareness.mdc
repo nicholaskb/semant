@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+Validate all Midjourney parameters on the client side (CLI, API, and UI) before sending requests. Reject unsupported values with a clear error message.
+
+Detect when a user selects parameters that are incompatible with the chosen model version (e.g., flag --cref on v7) and either block the request or automatically fall back to a supported version.

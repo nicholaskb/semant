@@ -1,0 +1,30 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="semant",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=[
+        "rdflib>=6.3.2",
+        "SPARQLWrapper>=2.0.0",
+        "pydantic>=2.5.2",
+        "fastapi>=0.104.1",
+        "uvicorn>=0.24.0",
+        "langchain>=0.0.350",
+        "openai>=1.3.7",
+        "transformers>=4.35.2",
+        "torch>=2.1.1",
+        "networkx>=3.2.1",
+        "owlready2>=0.37",
+        "pyshacl>=0.20.0",
+        "pytest>=7.4.3",
+        "pytest-asyncio>=0.21.1",
+        "black>=23.11.0",
+        "isort>=5.12.0",
+        "mypy>=1.7.1",
+        "python-dotenv>=1.0.0",
+        "pyyaml>=6.0.1",
+        "loguru>=0.7.2",
+    ],
+    python_requires=">=3.8",
+) 

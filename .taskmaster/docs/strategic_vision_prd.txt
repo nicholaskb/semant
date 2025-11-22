@@ -1,0 +1,300 @@
+# Strategic Vision PRD: Semant Enterprise-Grade Multi-Agent Operating System
+
+## Vision Statement
+To create the first enterprise-grade, self-aware multi-agent operating system where AI entities do not just "chat," but autonomously collaborate, reason, and evolve within a scientifically rigorous, semantically grounded reality. We envision a system where agents are not transient scripts but persistent entities that understand their own capabilities, learn from their history (via the Knowledge Graph), and resiliently recover from failure without human intervention.
+
+## Mission Statement
+To build a robust, capability-based orchestration platform that fuses asynchronous agent autonomy with a strictly typed Knowledge Graph, ensuring that every agent interaction is observable, verifiable, and recoverable. We achieve this by strictly adhering to the "Six-Step Work-Pack Circuit"—prioritizing stability, testability, and semantic integrity over unrestrained feature growth.
+
+## Strategic Pillars
+
+### Pillar 1: Semantic Grounding (The "Brain")
+**Objective**: Maintain the Knowledge Graph as the "Single Source of Truth" where every task, event, and agent status is an ontological entity.
+
+**Current State**:
+- Knowledge Graph exists with RDF/SPARQL support (kg/schemas/core.ttl)
+- Agents can query the graph but don't fully leverage it for decision-making
+- Graph stores logs but not fully integrated into agent reasoning
+
+**Target State**:
+- All agent decisions must query the KG to understand the world
+- Agents use structured data, not just transient context windows
+- Complete semantic grounding of all system operations
+
+**Key Requirements**:
+1. Implement agent self-discovery via KG queries
+2. Create KG-based capability discovery system
+3. Build semantic workflow planning using KG data
+4. Ensure all agent state changes are semantically grounded in KG
+
+### Pillar 2: Radical Resilience (The "Immune System")
+**Objective**: Build systems that expect failure. Agents must be self-healing. If an agent crashes, the system should detect it, diagnose the root cause via the KG, and spin up a recovery strategy automatically.
+
+**Current State**:
+- AgentRecovery, FaultDetector exist
+- Strict "Master-Fix Roadmap" indicates zero-tolerance for brittleness
+- Some recovery mechanisms exist but not fully automated
+
+**Target State**:
+- Automatic failure detection and diagnosis
+- Self-healing agents that recover without human intervention
+- Root cause analysis via KG queries
+- Automatic recovery strategy generation
+
+**Key Requirements**:
+1. Enhance FaultDetector to automatically diagnose failures via KG
+2. Implement automatic recovery strategy selection
+3. Build agent health monitoring that queries KG for patterns
+4. Create self-healing workflows that adapt to failures
+
+### Pillar 3: Capability-Based Orchestration (The "Structure")
+**Objective**: Decouple goals from implementations. The workflow manager should assign tasks to _any_ agent with the required capability version, enabling fluid, scalable swarms.
+
+**Current State**:
+- Agents defined by CapabilityType
+- Dynamic swarms exist (StockAnalysis, ScientificSwarm)
+- Roles assigned based on verified skills
+
+**Target State**:
+- Complete decoupling of goals from implementations
+- Dynamic capability discovery and matching
+- Self-assembling agent swarms based on requirements
+- Version-aware capability routing
+
+**Key Requirements**:
+1. Implement dynamic capability discovery from KG
+2. Build capability-based task assignment system
+3. Create self-assembling swarm patterns
+4. Enable agents to discover and join swarms autonomously
+
+### Pillar 4: Rigorous Engineering Standards (The "Culture")
+**Objective**: Velocity comes from stability. We do not write "scripts"; we build engineered components. Every change is atomic, tested, and documented before integration.
+
+**Current State**:
+- Strict "Six-Step Debug Circuit" exists
+- "Regression Guard" enforced
+- Some test failures remain (85 failed, 21 errors out of 241)
+
+**Target State**:
+- 100% test pass rate
+- All changes follow six-step circuit
+- Complete documentation for all components
+- Zero technical debt accumulation
+
+**Key Requirements**:
+1. Fix all failing tests (85 failed, 21 errors)
+2. Resolve JSON serialization crisis
+3. Fix workflow persistence issues
+4. Implement comprehensive test coverage
+5. Establish continuous integration standards
+
+## Immediate Strategic Goals
+
+### Goal 1: Solidify the "Self-Discovery" Loop
+**Objective**: Move beyond simple tasks to agents that can query the KG to discover _new_ capabilities or workflows.
+
+**Requirements**:
+1. Implement KG-based capability discovery agent
+2. Create semantic workflow discovery system
+3. Build agent self-reflection capabilities via KG queries
+4. Enable agents to discover and adopt new capabilities autonomously
+
+**Success Criteria**:
+- Agents can query KG to discover available capabilities
+- Agents can self-assemble into swarms based on discovered capabilities
+- System can discover new workflows from KG patterns
+
+### Goal 2: Expand Multi-Modal Integration
+**Objective**: Fully stabilize the bridge between text (LLMs), vision (Midjourney/Qdrant), and action (Gmail/Twilio) to allow for truly immersive "World Building" (Book Generation).
+
+**Requirements**:
+1. Complete Midjourney integration with full GoAPI support
+2. Stabilize Gmail/Twilio action integrations
+3. Build multi-modal workflow orchestration
+4. Create unified multi-modal agent interface
+
+**Success Criteria**:
+- All multi-modal integrations fully functional
+- Agents can seamlessly switch between modalities
+- Multi-modal workflows execute reliably
+
+### Goal 3: Human-Agent Symbiosis
+**Objective**: Use TaskMaster not just to track work, but to let agents help _plan_ the work, turning the development process itself into a collaborative agentic workflow.
+
+**Requirements**:
+1. Integrate agents with TaskMaster planning
+2. Enable agents to create and manage tasks
+3. Build agent-driven development workflows
+4. Create collaborative planning interfaces
+
+**Success Criteria**:
+- Agents can create and update TaskMaster tasks
+- Development workflows involve agent collaboration
+- Human-agent planning sessions are productive
+
+## Technical Requirements
+
+### Phase 1: Foundation Stabilization (Weeks 1-4)
+1. **Fix All Failing Tests**
+   - Resolve 85 failed tests
+   - Fix 21 error cases
+   - Achieve 100% test pass rate
+   - Implement comprehensive test coverage
+
+2. **Resolve Critical Issues**
+   - Fix JSON serialization crisis
+   - Resolve workflow persistence failures
+   - Fix message processing issues
+   - Address agent initialization problems
+
+3. **Enhance Knowledge Graph Integration**
+   - Ensure all agent operations query KG
+   - Implement semantic state management
+   - Build KG-based decision making
+
+### Phase 2: Self-Discovery Implementation (Weeks 5-8)
+1. **KG-Based Capability Discovery**
+   - Implement capability discovery queries
+   - Build capability matching system
+   - Create self-discovery agent
+
+2. **Semantic Workflow Planning**
+   - Build KG-based workflow planning
+   - Implement semantic task decomposition
+   - Create workflow discovery from KG patterns
+
+3. **Agent Self-Reflection**
+   - Implement agent self-awareness via KG
+   - Build capability introspection
+   - Create performance self-analysis
+
+### Phase 3: Radical Resilience (Weeks 9-12)
+1. **Enhanced Fault Detection**
+   - Improve FaultDetector with KG integration
+   - Implement pattern-based failure detection
+   - Build predictive failure analysis
+
+2. **Automatic Recovery**
+   - Implement automatic recovery strategy selection
+   - Build self-healing workflows
+   - Create recovery orchestration
+
+3. **Health Monitoring**
+   - Build comprehensive health monitoring
+   - Implement KG-based health analysis
+   - Create predictive maintenance
+
+### Phase 4: Multi-Modal Integration (Weeks 13-16)
+1. **Complete Midjourney Integration**
+   - Finish GoAPI client implementation
+   - Complete all Midjourney features
+   - Stabilize image generation workflows
+
+2. **Stabilize Action Integrations**
+   - Complete Gmail integration
+   - Finish Twilio integration
+   - Build unified action interface
+
+3. **Multi-Modal Orchestration**
+   - Create multi-modal workflow engine
+   - Build modality switching system
+   - Implement unified agent interface
+
+### Phase 5: Human-Agent Symbiosis (Weeks 17-20)
+1. **TaskMaster Integration**
+   - Integrate agents with TaskMaster
+   - Enable agent task creation
+   - Build collaborative planning
+
+2. **Agent-Driven Development**
+   - Create development workflow agents
+   - Build code review automation
+   - Implement test generation agents
+
+3. **Collaborative Interfaces**
+   - Build human-agent planning UI
+   - Create development collaboration tools
+   - Implement feedback loops
+
+## Success Metrics
+
+### Technical Metrics
+- **Test Pass Rate**: 100% (currently ~56%)
+- **Test Coverage**: >90% for all core components
+- **Build Stability**: Zero failing builds
+- **Performance**: <100ms for KG queries, <50ms for agent creation
+
+### Functional Metrics
+- **Self-Discovery**: Agents can discover 100% of available capabilities
+- **Resilience**: 99.9% automatic recovery rate
+- **Multi-Modal**: 100% integration success rate
+- **Collaboration**: 50% reduction in manual planning time
+
+### Quality Metrics
+- **Code Quality**: Zero technical debt accumulation
+- **Documentation**: 100% API documentation coverage
+- **Stability**: Zero critical bugs in production
+- **Velocity**: Consistent delivery of features
+
+## Constraints and Assumptions
+
+### Constraints
+- Must maintain backward compatibility with existing agents
+- Cannot break existing workflows during migration
+- Must follow six-step debug circuit for all changes
+- All changes must be semantically grounded in KG
+
+### Assumptions
+- Knowledge Graph can scale to support all agent operations
+- Agents can effectively query and reason with KG data
+- Multi-modal integrations will stabilize with proper implementation
+- Human-agent collaboration will improve development velocity
+
+## Risks and Mitigation
+
+### Risk 1: KG Performance Degradation
+- **Mitigation**: Implement advanced caching and indexing
+- **Monitoring**: Track query performance metrics
+
+### Risk 2: Over-Engineering Self-Discovery
+- **Mitigation**: Start with simple discovery patterns, iterate
+- **Monitoring**: Measure discovery effectiveness
+
+### Risk 3: Integration Instability
+- **Mitigation**: Comprehensive testing and gradual rollout
+- **Monitoring**: Track integration success rates
+
+### Risk 4: Human-Agent Collaboration Friction
+- **Mitigation**: Iterative UI/UX improvements based on feedback
+- **Monitoring**: Measure collaboration effectiveness
+
+## Dependencies
+
+### External Dependencies
+- Midjourney GoAPI availability and stability
+- Google Cloud Platform services
+- TaskMaster tool availability
+
+### Internal Dependencies
+- Knowledge Graph performance and scalability
+- Agent framework stability
+- Workflow orchestration reliability
+
+## Timeline
+
+**Total Duration**: 20 weeks (5 months)
+
+**Milestones**:
+- Week 4: Foundation Stabilization Complete
+- Week 8: Self-Discovery Loop Operational
+- Week 12: Radical Resilience Implemented
+- Week 16: Multi-Modal Integration Complete
+- Week 20: Human-Agent Symbiosis Achieved
+
+## Next Steps
+
+1. Review and approve this PRD
+2. Create detailed task breakdown in TaskMaster
+3. Assign ownership for each strategic pillar
+4. Begin Phase 1: Foundation Stabilization
+5. Establish weekly progress reviews

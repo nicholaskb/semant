@@ -1,0 +1,1010 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <http://example.org/core#> .
+
+# Core Classes
+:Machine rdf:type owl:Class ;
+    rdfs:label "Machine"@en ;
+    rdfs:comment "A physical or virtual machine in the system"@en .
+
+:Sensor rdf:type owl:Class ;
+    rdfs:label "Sensor"@en ;
+    rdfs:comment "A sensor that monitors system parameters"@en .
+
+:Task rdf:type owl:Class ;
+    rdfs:label "Task"@en ;
+    rdfs:comment "A task that needs to be performed"@en .
+
+:Agent rdf:type owl:Class ;
+    rdfs:label "Agent"@en ;
+    rdfs:comment "An autonomous agent in the system"@en .
+
+:SystemMetric rdf:type owl:Class ;
+    rdfs:label "System Metric"@en ;
+    rdfs:comment "A metric measuring system performance"@en .
+
+:SecurityCheck rdf:type owl:Class ;
+    rdfs:label "Security Check"@en ;
+    rdfs:comment "A security check or validation"@en .
+
+:Alert rdf:type owl:Class ;
+    rdfs:label "Alert"@en ;
+    rdfs:comment "A system alert or notification"@en .
+
+:Event rdf:type owl:Class ;
+    rdfs:label "Event"@en ;
+    rdfs:comment "A system event that triggers actions"@en .
+
+:WorkflowState rdf:type owl:Class ;
+    rdfs:label "Workflow State"@en ;
+    rdfs:comment "A state in a workflow process"@en .
+
+:Resource rdf:type owl:Class ;
+    rdfs:label "Resource"@en ;
+    rdfs:comment "A system resource that can be allocated"@en .
+
+:Role rdf:type owl:Class ;
+    rdfs:label "Role"@en ;
+    rdfs:comment "A role that an agent can take"@en .
+
+:Capability rdf:type owl:Class ;
+    rdfs:label "Capability"@en ;
+    rdfs:comment "A capability that an agent can have"@en .
+
+:PerformanceMetric rdf:type owl:Class ;
+    rdfs:label "Performance Metric"@en ;
+    rdfs:comment "A metric measuring agent or system performance"@en .
+
+# Subclasses
+:TemperatureSensor rdf:type owl:Class ;
+    rdfs:subClassOf :Sensor ;
+    rdfs:label "Temperature Sensor"@en ;
+    rdfs:comment "A sensor that measures temperature"@en .
+
+:PressureSensor rdf:type owl:Class ;
+    rdfs:subClassOf :Sensor ;
+    rdfs:label "Pressure Sensor"@en ;
+    rdfs:comment "A sensor that measures pressure"@en .
+
+:VibrationSensor rdf:type owl:Class ;
+    rdfs:subClassOf :Sensor ;
+    rdfs:label "Vibration Sensor"@en ;
+    rdfs:comment "A sensor that measures vibration"@en .
+
+:MaintenanceTask rdf:type owl:Class ;
+    rdfs:subClassOf :Task ;
+    rdfs:label "Maintenance Task"@en ;
+    rdfs:comment "A task related to system maintenance"@en .
+
+:InspectionTask rdf:type owl:Class ;
+    rdfs:subClassOf :Task ;
+    rdfs:label "Inspection Task"@en ;
+    rdfs:comment "A task related to system inspection"@en .
+
+:DataProcessingTask rdf:type owl:Class ;
+    rdfs:subClassOf :Task ;
+    rdfs:label "Data Processing Task"@en ;
+    rdfs:comment "A task related to data processing"@en .
+
+# Object Properties
+:attachedTo rdf:type owl:ObjectProperty ;
+    rdfs:label "attached to"@en ;
+    rdfs:domain :Sensor ;
+    rdfs:range :Machine ;
+    rdfs:comment "Links a sensor to its host machine"@en .
+
+:assignedTo rdf:type owl:ObjectProperty ;
+    rdfs:label "assigned to"@en ;
+    rdfs:domain :Task ;
+    rdfs:range :Agent ;
+    rdfs:comment "Links a task to its assigned agent"@en .
+
+:hasRole rdf:type owl:ObjectProperty ;
+    rdfs:label "has role"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Role ;
+    rdfs:comment "Specifies the role of an agent"@en .
+
+:triggers rdf:type owl:ObjectProperty ;
+    rdfs:label "triggers"@en ;
+    rdfs:domain :Event ;
+    rdfs:range :Task ;
+    rdfs:comment "Links an event to a triggered task"@en .
+
+:hasCapability rdf:type owl:ObjectProperty ;
+    rdfs:label "has capability"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Capability ;
+    rdfs:comment "Specifies what tasks an agent can perform"@en .
+
+:monitors rdf:type owl:ObjectProperty ;
+    rdfs:label "monitors"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Sensor ;
+    rdfs:comment "Links an agent to a sensor it monitors"@en .
+
+:processes rdf:type owl:ObjectProperty ;
+    rdfs:label "processes"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Task ;
+    rdfs:comment "Links an agent to a task it processes"@en .
+
+:dependsOn rdf:type owl:ObjectProperty ;
+    rdfs:label "depends on"@en ;
+    rdfs:domain :Task ;
+    rdfs:range :Resource ;
+    rdfs:comment "Links a task to resources it depends on"@en .
+
+:generates rdf:type owl:ObjectProperty ;
+    rdfs:label "generates"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Event ;
+    rdfs:comment "Links an agent to events it generates"@en .
+
+:consumes rdf:type owl:ObjectProperty ;
+    rdfs:label "consumes"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Resource ;
+    rdfs:comment "Links an agent to resources it consumes"@en .
+
+# Data Properties
+:hasStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has status"@en ;
+    rdfs:domain :Machine ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The current status of a machine"@en .
+
+:hasLocation rdf:type owl:DatatypeProperty ;
+    rdfs:label "has location"@en ;
+    rdfs:domain :Machine ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The location of a machine"@en .
+
+:latestReading rdf:type owl:DatatypeProperty ;
+    rdfs:label "latest reading"@en ;
+    rdfs:domain :Sensor ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The most recent reading from a sensor"@en .
+
+:hasTimestamp rdf:type owl:DatatypeProperty ;
+    rdfs:label "has timestamp"@en ;
+    rdfs:domain :Event ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The timestamp of an event"@en .
+
+:hasVersion rdf:type owl:DatatypeProperty ;
+    rdfs:label "has version"@en ;
+    rdfs:domain :Machine ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The version of a machine's software"@en .
+
+:hasConfidence rdf:type owl:DatatypeProperty ;
+    rdfs:label "has confidence"@en ;
+    rdfs:domain :Alert ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The confidence score of an alert"@en .
+
+:hasPriority rdf:type owl:DatatypeProperty ;
+    rdfs:label "has priority"@en ;
+    rdfs:domain :Task ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The priority level of a task"@en .
+
+:hasDeadline rdf:type owl:DatatypeProperty ;
+    rdfs:label "has deadline"@en ;
+    rdfs:domain :Task ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The deadline for completing a task"@en .
+
+:hasCPUUsage rdf:type owl:DatatypeProperty ;
+    rdfs:label "has CPU usage"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The CPU usage of an agent"@en .
+
+:hasMemoryUsage rdf:type owl:DatatypeProperty ;
+    rdfs:label "has memory usage"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The memory usage of an agent"@en .
+
+:hasResponseTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has response time"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The response time of an agent"@en .
+
+:hasErrorCount rdf:type owl:DatatypeProperty ;
+    rdfs:label "has error count"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The number of errors encountered by an agent"@en .
+
+:hasLastError rdf:type owl:DatatypeProperty ;
+    rdfs:label "has last error"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The last error message from an agent"@en .
+
+:hasLastModified rdf:type owl:DatatypeProperty ;
+    rdfs:label "has last modified"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The last time an agent was modified"@en .
+
+# New Workflow Classes
+:Workflow rdf:type owl:Class ;
+    rdfs:label "Workflow"@en ;
+    rdfs:comment "A complete workflow process"@en .
+
+:WorkflowVersion rdf:type owl:Class ;
+    rdfs:label "Workflow Version"@en ;
+    rdfs:comment "A version of a workflow"@en .
+
+:WorkflowTransition rdf:type owl:Class ;
+    rdfs:label "Workflow Transition"@en ;
+    rdfs:comment "A transition between workflow states"@en .
+
+:WorkflowValidation rdf:type owl:Class ;
+    rdfs:label "Workflow Validation"@en ;
+    rdfs:comment "Validation of a workflow"@en .
+
+:WorkflowRecovery rdf:type owl:Class ;
+    rdfs:label "Workflow Recovery"@en ;
+    rdfs:comment "A recovery action for a workflow"@en .
+
+# New Event Classes
+:EventPriority rdf:type owl:Class ;
+    rdfs:label "Event Priority"@en ;
+    rdfs:comment "Priority level for event processing"@en .
+
+:EventValidation rdf:type owl:Class ;
+    rdfs:label "Event Validation"@en ;
+    rdfs:comment "Validation rules for events"@en .
+
+:EventRecovery rdf:type owl:Class ;
+    rdfs:label "Event Recovery"@en ;
+    rdfs:comment "Recovery actions for events"@en .
+
+# New State Classes
+:StateVersion rdf:type owl:Class ;
+    rdfs:label "State Version"@en ;
+    rdfs:comment "Version information for a state"@en .
+
+:StateTransition rdf:type owl:Class ;
+    rdfs:label "State Transition"@en ;
+    rdfs:comment "Transition between states"@en .
+
+:StateValidation rdf:type owl:Class ;
+    rdfs:label "State Validation"@en ;
+    rdfs:comment "Validation rules for states"@en .
+
+# New Object Properties
+:hasWorkflow rdf:type owl:ObjectProperty ;
+    rdfs:label "has workflow"@en ;
+    rdfs:domain :Task ;
+    rdfs:range :Workflow ;
+    rdfs:comment "Links a task to its workflow"@en .
+
+:hasVersion rdf:type owl:ObjectProperty ;
+    rdfs:label "has version"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range :WorkflowVersion ;
+    rdfs:comment "Links a workflow to its version"@en .
+
+:hasTransition rdf:type owl:ObjectProperty ;
+    rdfs:label "has transition"@en ;
+    rdfs:domain :WorkflowState ;
+    rdfs:range :WorkflowTransition ;
+    rdfs:comment "Links a state to its possible transitions"@en .
+
+:hasValidation rdf:type owl:ObjectProperty ;
+    rdfs:label "has validation"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range :WorkflowValidation ;
+    rdfs:comment "Links a workflow to its validation rules"@en .
+
+:hasRecovery rdf:type owl:ObjectProperty ;
+    rdfs:label "has recovery"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range :WorkflowRecovery ;
+    rdfs:comment "Links a workflow to its recovery actions"@en .
+
+:hasPriority rdf:type owl:ObjectProperty ;
+    rdfs:label "has priority"@en ;
+    rdfs:domain :Event ;
+    rdfs:range :EventPriority ;
+    rdfs:comment "Links an event to its priority level"@en .
+
+:hasEventValidation rdf:type owl:ObjectProperty ;
+    rdfs:label "has event validation"@en ;
+    rdfs:domain :Event ;
+    rdfs:range :EventValidation ;
+    rdfs:comment "Links an event to its validation rules"@en .
+
+:hasEventRecovery rdf:type owl:ObjectProperty ;
+    rdfs:label "has event recovery"@en ;
+    rdfs:domain :Event ;
+    rdfs:range :EventRecovery ;
+    rdfs:comment "Links an event to its recovery actions"@en .
+
+:hasStateVersion rdf:type owl:ObjectProperty ;
+    rdfs:label "has state version"@en ;
+    rdfs:domain :WorkflowState ;
+    rdfs:range :StateVersion ;
+    rdfs:comment "Links a state to its version information"@en .
+
+:hasStateTransition rdf:type owl:ObjectProperty ;
+    rdfs:label "has state transition"@en ;
+    rdfs:domain :WorkflowState ;
+    rdfs:range :StateTransition ;
+    rdfs:comment "Links a state to its transitions"@en .
+
+:hasStateValidation rdf:type owl:ObjectProperty ;
+    rdfs:label "has state validation"@en ;
+    rdfs:domain :WorkflowState ;
+    rdfs:range :StateValidation ;
+    rdfs:comment "Links a state to its validation rules"@en .
+
+# New Data Properties
+:hasWorkflowVersion rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workflow version"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The version identifier of a workflow"@en .
+
+:hasWorkflowStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workflow status"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The current status of a workflow"@en .
+
+:hasWorkflowPriority rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workflow priority"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The priority level of a workflow"@en .
+
+:hasWorkflowDeadline rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workflow deadline"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The deadline for completing a workflow"@en .
+
+:hasEventPriority rdf:type owl:DatatypeProperty ;
+    rdfs:label "has event priority"@en ;
+    rdfs:domain :Event ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The priority level of an event"@en .
+
+:hasEventOrder rdf:type owl:DatatypeProperty ;
+    rdfs:label "has event order"@en ;
+    rdfs:domain :Event ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The processing order of an event"@en .
+
+:hasStateVersion rdf:type owl:DatatypeProperty ;
+    rdfs:label "has state version"@en ;
+    rdfs:domain :WorkflowState ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The version identifier of a state"@en .
+
+:hasStateOrder rdf:type owl:DatatypeProperty ;
+    rdfs:label "has state order"@en ;
+    rdfs:domain :WorkflowState ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The order of a state in the workflow"@en .
+
+:hasValidationStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has validation status"@en ;
+    rdfs:domain :WorkflowValidation ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "The validation status of a workflow"@en .
+
+:hasRecoveryStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has recovery status"@en ;
+    rdfs:domain :WorkflowRecovery ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "The recovery status of a workflow"@en .
+
+:hasLastValidated rdf:type owl:DatatypeProperty ;
+    rdfs:label "has last validated"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The last time a workflow was validated"@en .
+
+:hasLastRecovered rdf:type owl:DatatypeProperty ;
+    rdfs:label "has last recovered"@en ;
+    rdfs:domain :Workflow ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The last time a workflow was recovered"@en .
+
+# New Agent Management Classes
+:AgentVersion rdf:type owl:Class ;
+    rdfs:label "Agent Version"@en ;
+    rdfs:comment "A version of an agent"@en .
+
+:RoleVersion rdf:type owl:Class ;
+    rdfs:label "Role Version"@en ;
+    rdfs:comment "A version of a role"@en .
+
+:WorkloadVersion rdf:type owl:Class ;
+    rdfs:label "Workload Version"@en ;
+    rdfs:comment "A version of a workload"@en .
+
+:AgentRecovery rdf:type owl:Class ;
+    rdfs:label "Agent Recovery"@en ;
+    rdfs:comment "A recovery process for an agent"@en .
+
+:RoleRecovery rdf:type owl:Class ;
+    rdfs:label "Role Recovery"@en ;
+    rdfs:comment "A recovery process for a role"@en .
+
+:WorkloadRecovery rdf:type owl:Class ;
+    rdfs:label "Workload Recovery"@en ;
+    rdfs:comment "A recovery process for a workload"@en .
+
+# New Object Properties
+:hasVersion rdf:type owl:ObjectProperty ;
+    rdfs:label "has version"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :AgentVersion ;
+    rdfs:comment "Links an agent to its version"@en .
+
+:hasRoleVersion rdf:type owl:ObjectProperty ;
+    rdfs:label "has role version"@en ;
+    rdfs:domain :Role ;
+    rdfs:range :RoleVersion ;
+    rdfs:comment "Links a role to its version"@en .
+
+:hasWorkloadVersion rdf:type owl:ObjectProperty ;
+    rdfs:label "has workload version"@en ;
+    rdfs:domain :Task ;
+    rdfs:range :WorkloadVersion ;
+    rdfs:comment "Links a task to its workload version"@en .
+
+:hasRecovery rdf:type owl:ObjectProperty ;
+    rdfs:label "has recovery"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :AgentRecovery ;
+    rdfs:comment "Links an agent to its recovery process"@en .
+
+:hasRoleRecovery rdf:type owl:ObjectProperty ;
+    rdfs:label "has role recovery"@en ;
+    rdfs:domain :Role ;
+    rdfs:range :RoleRecovery ;
+    rdfs:comment "Links a role to its recovery process"@en .
+
+:hasWorkloadRecovery rdf:type owl:ObjectProperty ;
+    rdfs:label "has workload recovery"@en ;
+    rdfs:domain :Task ;
+    rdfs:range :WorkloadRecovery ;
+    rdfs:comment "Links a task to its workload recovery process"@en .
+
+:hadRole rdf:type owl:ObjectProperty ;
+    rdfs:label "had role"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Role ;
+    rdfs:comment "Links an agent to its previous role"@en .
+
+:requiresCapability rdf:type owl:ObjectProperty ;
+    rdfs:label "requires capability"@en ;
+    rdfs:domain :Role ;
+    rdfs:range :Capability ;
+    rdfs:comment "Links a role to required capabilities"@en .
+
+# New Data Properties
+:hasCreationTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has creation time"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The time when an agent was created"@en .
+
+:hasRoleTransitionTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has role transition time"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The time when an agent's role was last changed"@en .
+
+:hasWorkloadPriority rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workload priority"@en ;
+    rdfs:domain :Task ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The priority of a workload"@en .
+
+:hasRecoveryStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has recovery status"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The status of an agent's recovery process"@en .
+
+:hasRoleRecoveryStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has role recovery status"@en ;
+    rdfs:domain :Role ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The status of a role's recovery process"@en .
+
+:hasWorkloadRecoveryStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workload recovery status"@en ;
+    rdfs:domain :Task ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The status of a workload's recovery process"@en .
+
+:isValid rdf:type owl:DatatypeProperty ;
+    rdfs:label "is valid"@en ;
+    rdfs:domain :Role ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Whether a role is currently valid"@en .
+
+:hasValidationStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has validation status"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The validation status of an agent"@en .
+
+:hasRoleValidationStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has role validation status"@en ;
+    rdfs:domain :Role ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The validation status of a role"@en .
+
+:hasWorkloadValidationStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workload validation status"@en ;
+    rdfs:domain :Task ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The validation status of a workload"@en .
+
+# New Fault Tolerance Classes
+:FaultDetector rdf:type owl:Class ;
+    rdfs:label "Fault Detector"@en ;
+    rdfs:comment "A component that detects system faults"@en .
+
+:RecoveryStrategy rdf:type owl:Class ;
+    rdfs:label "Recovery Strategy"@en ;
+    rdfs:comment "A strategy for recovering from system faults"@en .
+
+:ConsistencyCheck rdf:type owl:Class ;
+    rdfs:label "Consistency Check"@en ;
+    rdfs:comment "A check for system data consistency"@en .
+
+:MonitoringMetric rdf:type owl:Class ;
+    rdfs:label "Monitoring Metric"@en ;
+    rdfs:comment "A metric used for system monitoring"@en .
+
+# New Fault Tolerance Object Properties
+:detects rdf:type owl:ObjectProperty ;
+    rdfs:label "detects"@en ;
+    rdfs:domain :FaultDetector ;
+    rdfs:range :Event ;
+    rdfs:comment "Links a fault detector to events it detects"@en .
+
+:implements rdf:type owl:ObjectProperty ;
+    rdfs:label "implements"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :RecoveryStrategy ;
+    rdfs:comment "Links an agent to recovery strategies it implements"@en .
+
+:performs rdf:type owl:ObjectProperty ;
+    rdfs:label "performs"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :ConsistencyCheck ;
+    rdfs:comment "Links an agent to consistency checks it performs"@en .
+
+:tracks rdf:type owl:ObjectProperty ;
+    rdfs:label "tracks"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :MonitoringMetric ;
+    rdfs:comment "Links an agent to metrics it tracks"@en .
+
+# New Fault Tolerance Data Properties
+:hasDetectionTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has detection time"@en ;
+    rdfs:domain :FaultDetector ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The time taken to detect a fault"@en .
+
+:hasRecoveryTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has recovery time"@en ;
+    rdfs:domain :RecoveryStrategy ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The time taken to recover from a fault"@en .
+
+:hasCheckInterval rdf:type owl:DatatypeProperty ;
+    rdfs:label "has check interval"@en ;
+    rdfs:domain :ConsistencyCheck ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The interval between consistency checks"@en .
+
+:hasMetricValue rdf:type owl:DatatypeProperty ;
+    rdfs:label "has metric value"@en ;
+    rdfs:domain :MonitoringMetric ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The current value of a monitoring metric"@en .
+
+:hasMetricThreshold rdf:type owl:DatatypeProperty ;
+    rdfs:label "has metric threshold"@en ;
+    rdfs:domain :MonitoringMetric ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The threshold value for a monitoring metric"@en .
+
+:hasMetricTrend rdf:type owl:DatatypeProperty ;
+    rdfs:label "has metric trend"@en ;
+    rdfs:domain :MonitoringMetric ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The trend of a monitoring metric"@en .
+
+:hasLastCheck rdf:type owl:DatatypeProperty ;
+    rdfs:label "has last check"@en ;
+    rdfs:domain :ConsistencyCheck ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The timestamp of the last consistency check"@en .
+
+:hasCheckResult rdf:type owl:DatatypeProperty ;
+    rdfs:label "has check result"@en ;
+    rdfs:domain :ConsistencyCheck ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "The result of a consistency check"@en .
+
+:hasRecoveryStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has recovery status"@en ;
+    rdfs:domain :RecoveryStrategy ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The current status of a recovery strategy"@en .
+
+:hasRecoveryAttempts rdf:type owl:DatatypeProperty ;
+    rdfs:label "has recovery attempts"@en ;
+    rdfs:domain :RecoveryStrategy ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The number of recovery attempts made"@en .
+
+# New Reporting Classes
+:Report rdf:type owl:Class ;
+    rdfs:label "Report"@en ;
+    rdfs:comment "A system report containing metrics and analysis"@en .
+
+:ReportTemplate rdf:type owl:Class ;
+    rdfs:label "Report Template"@en ;
+    rdfs:comment "A template for generating reports"@en .
+
+:ReportSection rdf:type owl:Class ;
+    rdfs:label "Report Section"@en ;
+    rdfs:comment "A section within a report"@en .
+
+# New Testing Classes
+:TestSuite rdf:type owl:Class ;
+    rdfs:label "Test Suite"@en ;
+    rdfs:comment "A collection of related tests"@en .
+
+:TestCase rdf:type owl:Class ;
+    rdfs:label "Test Case"@en ;
+    rdfs:comment "An individual test case"@en .
+
+:TestResult rdf:type owl:Class ;
+    rdfs:label "Test Result"@en ;
+    rdfs:comment "The result of a test execution"@en .
+
+# New Deployment Classes
+:Deployment rdf:type owl:Class ;
+    rdfs:label "Deployment"@en ;
+    rdfs:comment "A system deployment instance"@en .
+
+:DeploymentConfig rdf:type owl:Class ;
+    rdfs:label "Deployment Configuration"@en ;
+    rdfs:comment "Configuration for a deployment"@en .
+
+:DeploymentLog rdf:type owl:Class ;
+    rdfs:label "Deployment Log"@en ;
+    rdfs:comment "Log of deployment activities"@en .
+
+# New Object Properties
+:contains rdf:type owl:ObjectProperty ;
+    rdfs:label "contains"@en ;
+    rdfs:domain :Report ;
+    rdfs:range :ReportSection ;
+    rdfs:comment "Links a report to its sections"@en .
+
+:usesTemplate rdf:type owl:ObjectProperty ;
+    rdfs:label "uses template"@en ;
+    rdfs:domain :Report ;
+    rdfs:range :ReportTemplate ;
+    rdfs:comment "Links a report to its template"@en .
+
+:hasTestSuite rdf:type owl:ObjectProperty ;
+    rdfs:label "has test suite"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :TestSuite ;
+    rdfs:comment "Links an agent to its test suite"@en .
+
+:hasTestCase rdf:type owl:ObjectProperty ;
+    rdfs:label "has test case"@en ;
+    rdfs:domain :TestSuite ;
+    rdfs:range :TestCase ;
+    rdfs:comment "Links a test suite to its test cases"@en .
+
+:hasResult rdf:type owl:ObjectProperty ;
+    rdfs:label "has result"@en ;
+    rdfs:domain :TestCase ;
+    rdfs:range :TestResult ;
+    rdfs:comment "Links a test case to its result"@en .
+
+:hasDeployment rdf:type owl:ObjectProperty ;
+    rdfs:label "has deployment"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Deployment ;
+    rdfs:comment "Links an agent to its deployment"@en .
+
+:hasConfig rdf:type owl:ObjectProperty ;
+    rdfs:label "has config"@en ;
+    rdfs:domain :Deployment ;
+    rdfs:range :DeploymentConfig ;
+    rdfs:comment "Links a deployment to its configuration"@en .
+
+:hasLog rdf:type owl:ObjectProperty ;
+    rdfs:label "has log"@en ;
+    rdfs:domain :Deployment ;
+    rdfs:range :DeploymentLog ;
+    rdfs:comment "Links a deployment to its log"@en .
+
+# New Data Properties
+:hasReportType rdf:type owl:DatatypeProperty ;
+    rdfs:label "has report type"@en ;
+    rdfs:domain :Report ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The type of report"@en .
+
+:hasReportFormat rdf:type owl:DatatypeProperty ;
+    rdfs:label "has report format"@en ;
+    rdfs:domain :Report ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The format of the report"@en .
+
+:hasTestStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has test status"@en ;
+    rdfs:domain :TestResult ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The status of a test result"@en .
+
+:hasTestDuration rdf:type owl:DatatypeProperty ;
+    rdfs:label "has test duration"@en ;
+    rdfs:domain :TestResult ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The duration of a test in seconds"@en .
+
+:hasDeploymentStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has deployment status"@en ;
+    rdfs:domain :Deployment ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The status of a deployment"@en .
+
+:hasDeploymentVersion rdf:type owl:DatatypeProperty ;
+    rdfs:label "has deployment version"@en ;
+    rdfs:domain :Deployment ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The version of a deployment"@en .
+
+:hasDeploymentTimestamp rdf:type owl:DatatypeProperty ;
+    rdfs:label "has deployment timestamp"@en ;
+    rdfs:domain :Deployment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The timestamp of a deployment"@en .
+
+# Knowledge Graph Classes
+:KnowledgeGraph rdf:type owl:Class ;
+    rdfs:label "Knowledge Graph"@en ;
+    rdfs:comment "A knowledge graph instance"@en .
+
+:Query rdf:type owl:Class ;
+    rdfs:label "Query"@en ;
+    rdfs:comment "A SPARQL query"@en .
+
+:QueryCache rdf:type owl:Class ;
+    rdfs:label "Query Cache"@en ;
+    rdfs:comment "A cache for query results"@en .
+
+:GraphVersion rdf:type owl:Class ;
+    rdfs:label "Graph Version"@en ;
+    rdfs:comment "A version of the knowledge graph"@en .
+
+:GraphMetric rdf:type owl:Class ;
+    rdfs:label "Graph Metric"@en ;
+    rdfs:comment "A metric for graph performance"@en .
+
+:GraphSecurity rdf:type owl:Class ;
+    rdfs:label "Graph Security"@en ;
+    rdfs:comment "Security settings for the graph"@en .
+
+:GraphAudit rdf:type owl:Class ;
+    rdfs:label "Graph Audit"@en ;
+    rdfs:comment "Audit log for graph operations"@en .
+
+# Knowledge Graph Object Properties
+:executesQuery rdf:type owl:ObjectProperty ;
+    rdfs:label "executes query"@en ;
+    rdfs:domain :Agent ;
+    rdfs:range :Query ;
+    rdfs:comment "Links an agent to a query it executes"@en .
+
+:hasCache rdf:type owl:ObjectProperty ;
+    rdfs:label "has cache"@en ;
+    rdfs:domain :KnowledgeGraph ;
+    rdfs:range :QueryCache ;
+    rdfs:comment "Links a graph to its query cache"@en .
+
+:hasVersion rdf:type owl:ObjectProperty ;
+    rdfs:label "has version"@en ;
+    rdfs:domain :KnowledgeGraph ;
+    rdfs:range :GraphVersion ;
+    rdfs:comment "Links a graph to its version"@en .
+
+:hasMetric rdf:type owl:ObjectProperty ;
+    rdfs:label "has metric"@en ;
+    rdfs:domain :KnowledgeGraph ;
+    rdfs:range :GraphMetric ;
+    rdfs:comment "Links a graph to its metrics"@en .
+
+:hasSecurity rdf:type owl:ObjectProperty ;
+    rdfs:label "has security"@en ;
+    rdfs:domain :KnowledgeGraph ;
+    rdfs:range :GraphSecurity ;
+    rdfs:comment "Links a graph to its security settings"@en .
+
+:hasAudit rdf:type owl:ObjectProperty ;
+    rdfs:label "has audit"@en ;
+    rdfs:domain :KnowledgeGraph ;
+    rdfs:range :GraphAudit ;
+    rdfs:comment "Links a graph to its audit log"@en .
+
+# Knowledge Graph Data Properties
+:hasQueryTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has query time"@en ;
+    rdfs:domain :Query ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The execution time of a query in milliseconds"@en .
+
+:hasCacheHit rdf:type owl:DatatypeProperty ;
+    rdfs:label "has cache hit"@en ;
+    rdfs:domain :Query ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Whether a query result was served from cache"@en .
+
+:hasVersionNumber rdf:type owl:DatatypeProperty ;
+    rdfs:label "has version number"@en ;
+    rdfs:domain :GraphVersion ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The version number of the graph"@en .
+
+:hasMetricValue rdf:type owl:DatatypeProperty ;
+    rdfs:label "has metric value"@en ;
+    rdfs:domain :GraphMetric ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The value of a graph metric"@en .
+
+:hasSecurityLevel rdf:type owl:DatatypeProperty ;
+    rdfs:label "has security level"@en ;
+    rdfs:domain :GraphSecurity ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The security level of the graph"@en .
+
+:hasAuditTimestamp rdf:type owl:DatatypeProperty ;
+    rdfs:label "has audit timestamp"@en ;
+    rdfs:domain :GraphAudit ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The timestamp of an audit entry"@en .
+
+:hasAuditUser rdf:type owl:DatatypeProperty ;
+    rdfs:label "has audit user"@en ;
+    rdfs:domain :GraphAudit ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The user who performed the audited action"@en .
+
+:hasAuditAction rdf:type owl:DatatypeProperty ;
+    rdfs:label "has audit action"@en ;
+    rdfs:domain :GraphAudit ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The action that was audited"@en .
+
+# New Module Classes
+:Module rdf:type owl:Class ;
+    rdfs:label "Module"@en ;
+    rdfs:comment "A system module that can be loaded and managed"@en .
+
+:ModuleVersion rdf:type owl:Class ;
+    rdfs:label "Module Version"@en ;
+    rdfs:comment "A version of a module"@en .
+
+:ModuleDependency rdf:type owl:Class ;
+    rdfs:label "Module Dependency"@en ;
+    rdfs:comment "A dependency between modules"@en .
+
+:ModuleContract rdf:type owl:Class ;
+    rdfs:label "Module Contract"@en ;
+    rdfs:comment "A contract defining module integration"@en .
+
+# New Integration Classes
+:Integration rdf:type owl:Class ;
+    rdfs:label "Integration"@en ;
+    rdfs:comment "An integration between modules"@en .
+
+:IntegrationMessage rdf:type owl:Class ;
+    rdfs:label "Integration Message"@en ;
+    rdfs:comment "A message passed between integrated modules"@en .
+
+:IntegrationMetric rdf:type owl:Class ;
+    rdfs:label "Integration Metric"@en ;
+    rdfs:comment "A metric measuring integration performance"@en .
+
+# New Object Properties
+:hasModule rdf:type owl:ObjectProperty ;
+    rdfs:label "has module"@en ;
+    rdfs:domain :System ;
+    rdfs:range :Module ;
+    rdfs:comment "Links a system to its modules"@en .
+
+:hasVersion rdf:type owl:ObjectProperty ;
+    rdfs:label "has version"@en ;
+    rdfs:domain :Module ;
+    rdfs:range :ModuleVersion ;
+    rdfs:comment "Links a module to its version"@en .
+
+:hasDependency rdf:type owl:ObjectProperty ;
+    rdfs:label "has dependency"@en ;
+    rdfs:domain :Module ;
+    rdfs:range :ModuleDependency ;
+    rdfs:comment "Links a module to its dependencies"@en .
+
+:hasContract rdf:type owl:ObjectProperty ;
+    rdfs:label "has contract"@en ;
+    rdfs:domain :Integration ;
+    rdfs:range :ModuleContract ;
+    rdfs:comment "Links an integration to its contract"@en .
+
+:hasMessage rdf:type owl:ObjectProperty ;
+    rdfs:label "has message"@en ;
+    rdfs:domain :Integration ;
+    rdfs:range :IntegrationMessage ;
+    rdfs:comment "Links an integration to its messages"@en .
+
+:hasMetric rdf:type owl:ObjectProperty ;
+    rdfs:label "has metric"@en ;
+    rdfs:domain :Integration ;
+    rdfs:range :IntegrationMetric ;
+    rdfs:comment "Links an integration to its metrics"@en .
+
+# New Data Properties
+:hasModuleId rdf:type owl:DatatypeProperty ;
+    rdfs:label "has module id"@en ;
+    rdfs:domain :Module ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The unique identifier of a module"@en .
+
+:hasModuleStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has module status"@en ;
+    rdfs:domain :Module ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The current status of a module"@en .
+
+:hasModuleLoadTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has module load time"@en ;
+    rdfs:domain :Module ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The time taken to load a module"@en .
+
+:hasIntegrationStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has integration status"@en ;
+    rdfs:domain :Integration ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The current status of an integration"@en .
+
+:hasMessageCount rdf:type owl:DatatypeProperty ;
+    rdfs:label "has message count"@en ;
+    rdfs:domain :Integration ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The number of messages passed through an integration"@en .
+
+:hasMessageLatency rdf:type owl:DatatypeProperty ;
+    rdfs:label "has message latency"@en ;
+    rdfs:domain :Integration ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The latency of messages in an integration"@en . 

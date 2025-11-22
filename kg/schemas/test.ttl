@@ -1,0 +1,11 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <http://example.org/test#> .
+
+:TestClass rdf:type rdfs:Class ;
+    rdfs:label "Test Class"@en ;
+    rdfs:comment "A test class for validation"@en .
+
+:TestInstance rdf:type :TestClass ;
+    rdfs:label "Test Instance"@en . 

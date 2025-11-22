@@ -1,0 +1,16 @@
+
+Test Execution Report
+====================
+Start Time: 2025-06-08 22:21:23.922315
+End Time: 2025-06-08 22:21:27.572570
+Total Duration: 3.650255 seconds
+
+Group Results:
+
+group1_core_framework:
+  Duration: 3.649277 seconds
+  Passed: 2
+  Failed: 1
+  Skipped: 0
+  Errors:
+    - Failed: test_agent_integrator.py

@@ -1601,3 +1601,139 @@ REMEMBER: Tests are your first line of defense. Never skip them, never ignore fa
 ---
 END OF GUIDE
 ---
+
+# KG Tools for Agent Collaboration
+Last Updated: 2025-10-30
+
+## Overview
+New comprehensive KG tools have been created to enable agents to dynamically create nodes and share work through SPARQL queries.
+
+## Key Components Created
+
+### 1. Core KG Tools (`agents/tools/kg_tools.py`)
+Provides comprehensive toolkit for agents:
+- `create_task_node()` - Create executable tasks in the KG
+- `create_workflow_node()` - Create workflows orchestrating multiple tasks
+- `share_task_with_agents()` - Assign tasks based on capabilities
+- `query_available_tasks()` - Find tasks matching agent capabilities
+- `claim_task()` - Claim a task for execution
+- `update_task_status()` - Update task progress
+- `discover_agents()` - Find agents and their capabilities
+- `broadcast_message()` - Send messages through the KG
+- `query_messages()` - Retrieve messages from the KG
+- `create_agent_node()` - Register new agents dynamically
+- `create_capability_node()` - Define new capabilities
+
+### 2. KG Orchestrator Agent (`agents/domain/kg_orchestrator_agent.py`)
+Specialized agent that uses KG tools to:
+- Handle task and workflow creation requests
+- Orchestrate multi-agent collaboration
+- Execute complex plans
+- Provide high-level interface to KG tools
+
+Supported message types:
+- `create_task` - Create a new task
+- `create_workflow` - Create a workflow with steps
+- `orchestrate_agents` - Discover agents, broadcast messages, create agents
+- `query_tasks` - Find available tasks
+- `execute_workflow` - Start workflow execution
+- `kg_tool` - Direct invocation of any KG tool
+
+### 3. Demonstration Scripts
+- `scripts/demo_kg_orchestration.py` - Shows all KG coordination features
+- `scripts/master_agent_kg_integration.py` - Master agent integration example
+
+### 4. Tests (`tests/test_kg_tools.py`)
+Comprehensive tests covering:
+- Task and workflow creation
+- Agent discovery and coordination
+- Message broadcasting
+- Status tracking and updates
+
+## Usage Examples
+
+### Creating a Task
+```python
+# Using KGTools directly
+kg_tools = KGTools(kg_manager, "my_agent")
+task_id = await kg_tools.create_task_node(
+    task_name="Analyze Sales Data",
+    task_type="analysis",
+    description="Perform statistical analysis",
+    priority="high",
+    metadata={"dataset": "sales_2024.csv"}
+)
+```
+
+### Agent Discovery and Coordination
+```python
+# Discover agents with specific capabilities
+agents = await kg_tools.discover_agents(
+    capabilities=["ml_training", "data_analysis"],
+    status="active"
+)
+
+# Share task with capable agents
+assigned = await kg_tools.share_task_with_agents(
+    task_id,
+    required_capabilities=["ml_training"],
+    max_agents=2
+)
+```
+
+### SPARQL Coordination
+```python
+# Custom SPARQL query for coordination
+query = """
+PREFIX core: <http://example.org/core#>
+SELECT ?task ?name ?priority WHERE {
+    ?task a core:Task ;
+          core:status "pending" ;
+          core:requiresCapability ?cap .
+    <my_agent_uri> core:hasCapability ?cap .
+}
+ORDER BY DESC(?priority)
+"""
+results = await kg.query_graph(query)
+```
+
+## Integration Benefits
+
+1. **Dynamic Task Distribution** - Tasks automatically assigned to capable agents
+2. **Decentralized Coordination** - Agents coordinate through shared KG
+3. **Flexible Workflows** - Complex plans built and executed dynamically
+4. **Capability-Based Routing** - Work routed based on agent capabilities
+5. **Persistent State** - All coordination state stored in the KG
+
+## Master Agent Integration
+
+The master agent can now:
+- Spawn new agents dynamically with specific capabilities
+- Create and execute strategic plans as workflows
+- Monitor system-wide performance through SPARQL
+- Coordinate multiple agents for complex objectives
+
+Example:
+```python
+# Master agent executing a plan
+plan_msg = AgentMessage(
+    sender_id="master",
+    message_type="execute_plan",
+    content={
+        "name": "Customer Analysis Project",
+        "objectives": [
+            {"type": "data_analysis", "name": "Analyze patterns"},
+            {"type": "model_training", "name": "Build predictor"},
+            {"type": "report_generation", "name": "Create report"}
+        ]
+    }
+)
+response = await master.process_message(plan_msg)
+```
+
+## Documentation
+Full documentation available in `scratch_space/kg_tools_documentation.md`
+
+---
+END OF KG TOOLS GUIDE
+---

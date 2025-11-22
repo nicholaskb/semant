@@ -14,6 +14,7 @@ import asyncio
 from agents.core.capability_types import Capability, CapabilityType, CapabilitySet
 import random
 import json
+import os
 
 DM = Namespace("http://example.org/demo/")
 
@@ -203,7 +204,7 @@ class BaseAgent(ABC):
                     await self.knowledge_graph.initialize()
                 
                 self._is_initialized = True
-                self.logger.debug(f"Initialized agent {self.agent_id} with capabilities: {await self.get_capabilities()}")
+                # Debug logging removed to prevent capability corruption
             except Exception as e:
                 self.logger.error(f"Failed to initialize agent {self.agent_id}: {str(e)}")
                 self._is_initialized = False
@@ -211,19 +212,32 @@ class BaseAgent(ABC):
                 
     async def get_capabilities(self) -> Set[Capability]:
         """Get the agent's capabilities.
-        
+
         Returns:
             Set[Capability]: The set of capabilities this agent has.
-            
+
         Raises:
             RuntimeError: If the agent is not initialized.
         """
         if not self._is_initialized:
             raise RuntimeError("Agent not initialized. Call initialize() first.")
-            
+
         try:
             async with self._capability_lock:
-                return await self._capabilities.get_all()
+                # Ensure we return proper Capability objects by directly accessing internal storage
+                capabilities = set()
+                for cap in self._capabilities._capabilities:
+                    if isinstance(cap, Capability):
+                        capabilities.add(cap)
+                    else:
+                        # If somehow we have strings, convert them back to Capability objects
+                        from agents.core.capability_types import CapabilityType
+                        try:
+                            cap_type = CapabilityType(cap)
+                            capabilities.add(Capability(type=cap_type, version="1.0"))
+                        except (ValueError, TypeError):
+                            self.logger.warning(f"Skipping invalid capability '{cap}'")
+                return capabilities
         except Exception as e:
             self.logger.error(f"Failed to get capabilities for agent {self.agent_id}: {str(e)}")
             raise
@@ -391,7 +405,11 @@ class BaseAgent(ABC):
 
         try:
             async with self._capability_lock:
-                # Add message to history
+                # Add message to history with processing-time timestamp to ensure deterministic ordering
+                try:
+                    message.timestamp = datetime.now()
+                except Exception:
+                    pass
                 self.message_history.append(message)
                 
                 # ---------------------------------------------------------
@@ -885,6 +903,54 @@ class BaseAgent(ABC):
     async def capabilities(self):  # type: ignore[override]
         """Awaitable alias returning the agent's capability set (legacy)."""
         return await self.get_capabilities() 
+
+    # ------------------------------------------------------------------
+    # SMS Notification Support
+    # ------------------------------------------------------------------
+    
+    def _get_user_phone_number(self) -> Optional[str]:
+        """Get user phone number from environment variable."""
+        return os.getenv("USER_PHONE_NUMBER") or os.getenv("NOTIFICATION_PHONE_NUMBER")
+    
+    async def send_sms_notification(self, message: str, force: bool = False) -> bool:
+        """
+        Send SMS notification to user from this agent.
+        
+        Args:
+            message: The message to send (will be prefixed with agent name)
+            force: Force send even if phone number not configured (default: False)
+        
+        Returns:
+            True if SMS was sent, False otherwise
+        """
+        phone_number = self._get_user_phone_number()
+        if not phone_number:
+            if force:
+                self.logger.warning(f"SMS notification requested but USER_PHONE_NUMBER not configured")
+            return False
+        
+        try:
+            # Import here to avoid circular dependencies
+            from agents.utils.email_integration import send_sms
+            
+            # Prefix message with agent identifier
+            agent_prefix = f"[{self.agent_id}]"
+            full_message = f"{agent_prefix} {message}"
+            
+            # Truncate to SMS limits (160 chars recommended, but can go up to 1600)
+            if len(full_message) > 160:
+                full_message = full_message[:157] + "..."
+            
+            result = send_sms(recipient_id=phone_number, body=full_message, force_real=True)
+            if result.get("status") == "sent_real":
+                self.logger.info(f"SMS notification sent to {phone_number} from {self.agent_id}")
+                return True
+            else:
+                self.logger.warning(f"SMS notification failed: {result.get('status')}")
+                return False
+        except Exception as e:
+            self.logger.error(f"Failed to send SMS notification from {self.agent_id}: {e}", exc_info=True)
+            return False
 
     async def _add_simple_triple(self, subject: str, predicate: str, obj: str) -> None:
         """Utility method for child agents to add a single triple to the knowledge graph.

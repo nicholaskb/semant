@@ -90,6 +90,10 @@ class AgentSystem:
             for agent_id, agent in self.agents.items():
                 # Add cleanup code for each agent
                 pass
+            
+            # Shutdown knowledge graph
+            if self.knowledge_graph:
+                await self.knowledge_graph.shutdown()
                 
             self.logger.info("Agent system shutdown complete")
         except Exception as e:

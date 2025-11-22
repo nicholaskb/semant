@@ -76,3 +76,38 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+
+# Large generated datasets (Images & Books)
+generated_books/
+uploads/
+complete_book_output/
+ai_directed_books/
+final_book/
+book_state/
+complete_quacky_book/
+gcs_quacky_book/
+instant_book_*/
+illustrated_book_*/
+agent_books/
+quacky_book_output/
+FINAL_AI_BOOK_*/
+FINAL_QUACKY_BOOK_*/
+
+# Knowledge Graph & Database Persistence
+knowledge_graph_persistent.n3
+knowledge_graph_persistent.n3.*
+*.ttl
+kg/data/
+qdrant_data/
+
+# Generated Reports & Logs
+ai_curator_report.html
+kg_graph.html
+workflow_viz_*.html
+test_run.log
+ingestion_log.txt
+test_execution_report.txt
+run_log.txt
+
+# System
+run_pid.txt

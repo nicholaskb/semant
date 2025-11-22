@@ -1,0 +1,77 @@
+{
+  "query_performance": {
+    "SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 100...": {
+      "average_duration": 2.0456314086914062e-05,
+      "min_duration": 9.298324584960938e-06,
+      "max_duration": 5.364418029785156e-05,
+      "iterations": 5
+    },
+    "SELECT ?s WHERE { ?s <http://example.org/core#type...": {
+      "average_duration": 1.1110305786132813e-05,
+      "min_duration": 8.106231689453125e-06,
+      "max_duration": 1.9311904907226562e-05,
+      "iterations": 5
+    },
+    "SELECT ?s ?p ?o WHERE { ?s ?p ?o . FILTER(?s = <ht...": {
+      "average_duration": 1.1730194091796876e-05,
+      "min_duration": 8.821487426757812e-06,
+      "max_duration": 1.8835067749023438e-05,
+      "iterations": 5
+    },
+    "SELECT ?s ?o WHERE { ?s <http://example.org/core#h...": {
+      "average_duration": 1.316070556640625e-05,
+      "min_duration": 7.867813110351562e-06,
+      "max_duration": 2.288818359375e-05,
+      "iterations": 5
+    }
+  },
+  "mutation_performance": {
+    "add_452": {
+      "average_duration": 0.001426378885904948,
+      "min_duration": 0.0001990795135498047,
+      "max_duration": 0.003834962844848633,
+      "iterations": 3
+    }
+  },
+  "bulk_performance": {
+    "bulk_add_time": 0.030962228775024414,
+    "bulk_query_time": 0.009756803512573242,
+    "avg_add_time": 0.0006192445755004883,
+    "avg_query_time": 0.0009756803512573243
+  },
+  "kg_stats": {
+    "metrics": {
+      "triple_count": 51,
+      "query_count": 14,
+      "update_count": 0,
+      "cache_hits": 20,
+      "cache_misses": 14,
+      "security_violations": 0,
+      "validation_errors": 0,
+      "version_count": 53,
+      "key_conversion_time": 0.0,
+      "total_query_time": 0.10884380340576172
+    },
+    "cache_stats": {
+      "size": 10,
+      "maxsize": 1000,
+      "hits": 20,
+      "misses": 14
+    },
+    "index_stats": {
+      "predicate_count": 2,
+      "type_count": 0,
+      "relationship_count": 2,
+      "total_triples": 51
+    },
+    "timestamp_count": 51,
+    "version_count": 53,
+    "security_stats": {
+      "access_rules": 0,
+      "audit_log_entries": 53,
+      "security_violations": 0
+    }
+  },
+  "report": "============================================================\nKNOWLEDGE GRAPH PERFORMANCE REPORT\n============================================================\n\nSUMMARY STATISTICS:\n  Total operations profiled: 23\n.4f\n.4f\n\nIDENTIFIED BOTTLENECKS:\n  add_triple:\n.4f\n    Severity: LOW\n    Recommendation: Acceptable performance.\n\n  query_751:\n.4f\n    Severity: LOW\n    Recommendation: Acceptable performance.\n\n  query_342:\n.4f\n    Severity: LOW\n    Recommendation: Acceptable performance.\n\n  query_917:\n.4f\n    Severity: LOW\n    Recommendation: Acceptable performance.\n\n  query_491:\n.4f\n    Severity: LOW\n    Recommendation: Acceptable performance.\n\nCACHE ANALYSIS:\n.2%\n",
+  "profiler_stats": "         2821 function calls (2816 primitive calls) in 0.005 seconds\n\n   Ordered by: cumulative time\n   List reduced from 268 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        3    0.000    0.000    0.004    0.001 /Users/nicholasbaro/Python/semant/kg/models/graph_manager.py:245(add_triple)\n        3    0.000    0.000    0.004    0.001 /Users/nicholasbaro/Python/semant/kg/models/graph_manager.py:456(export_graph)\n        3    0.000    0.000    0.004    0.001 /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/rdflib/graph.py:1336(serialize)\n        3    0.000    0.000    0.003    0.001 /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/rdflib/plugin.py:128(get)\n        3    0.000    0.000    0.003    0.001 /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/rdflib/plugin.py:99(getClass)\n      2/1    0.000    0.000    0.003    0.003 {built-in method builtins.__import__}\n      2/1    0.000    0.000    0.003    0.003 <frozen importlib._bootstrap>:1165(_find_and_load)\n      2/1    0.000    0.000    0.003    0.003 <frozen importlib._bootstrap>:1120(_find_and_load_unlocked)\n      5/3    0.000    0.000    0.002    0.001 <frozen importlib._bootstrap>:233(_call_with_frames_removed)\n        2    0.000    0.000    0.001    0.001 <frozen importlib._bootstrap>:666(_load_unlocked)\n        2    0.000    0.000    0.001    0.001 <frozen importlib._bootstrap_external>:934(exec_module)\n        2    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1007(get_code)\n        2    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap>:1054(_find_spec)\n        3    0.000    0.000    0.001    0.000 /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/rdflib/plugins/serializers/turtle.py:225(serialize)\n        2    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1496(find_spec)\n        2    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1464(_get_spec)\n        2    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1604(find_spec)\n        3    0.000    0.000    0.001    0.000 /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/rdflib/plugins/serializers/turtle.py:93(preprocess)\n        2    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1127(get_data)\n       15    0.000    0.000    0.001    0.000 /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/rdflib/plugins/serializers/turtle.py:278(getQName)\n\n\n"
+}

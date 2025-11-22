@@ -102,9 +102,14 @@ class TestCapabilityAgent(BaseAgent):
                 predicate = query.get("action")
                 if subject and predicate:
                     sparql = f"""
-                    SELECT ?object WHERE {{
+                    SELECT ?object ?timestamp WHERE {{
                         <http://example.org/agent/{subject}> <http://example.org/agent/{predicate}> ?object .
+                        OPTIONAL {{
+                            <http://example.org/agent/{subject}> <http://example.org/agent/timestamp> ?timestamp .
+                        }}
                     }}
+                    ORDER BY DESC(?timestamp)
+                    LIMIT 1
                     """
                     result = await self._knowledge_graph.query_graph(sparql)
                     # Convert result format for tests

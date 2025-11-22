@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+"""
+Demo: Agent Queries Knowledge Graph and Emails You
+
+This demonstrates that agents can query the knowledge graph from INSIDE their code
+and automatically email you the results. The agent:
+1. Queries the KG for stored information
+2. Processes the results
+3. Generates an email report
+4. Sends it automatically
+
+Usage:
+    python scripts/tools/test_kg_agent_email_demo.py
+"""
+
+import asyncio
+import sys
+import os
+from datetime import datetime
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from agents.domain.vertex_email_agent import VertexEmailAgent
+from kg.models.graph_manager import KnowledgeGraphManager
+from agents.utils.email_integration import EmailIntegration
+
+USER_EMAIL = os.getenv("EMAIL_SENDER", "nicholas.k.baro@gmail.com")
+
+def print_section(title: str):
+    """Print a formatted section header."""
+    print("\n" + "=" * 70)
+    print(f"🔬 {title}")
+    print("=" * 70)
+
+class KGQueryAgent(VertexEmailAgent):
+    """An agent that queries the knowledge graph and emails findings."""
+    
+    def __init__(self, agent_id: str = "kg_query_agent"):
+        super().__init__(agent_id)
+        self.kg_manager = None
+    
+    async def initialize(self) -> None:
+        """Initialize with knowledge graph access."""
+        await super().initialize()
+        
+        # Initialize knowledge graph manager
+        self.kg_manager = KnowledgeGraphManager(persistent_storage=True)
+        await self.kg_manager.initialize()
+        self.knowledge_graph = self.kg_manager
+        
+        self.logger.info("KG Query Agent initialized with KG access")
+    
+    async def query_kg_and_email(self) -> bool:
+        """Query the knowledge graph and email results."""
+        
+        print_section("Agent Querying Knowledge Graph")
+        
+        # Query for all triples to see what's in the KG
+        queries = [
+            {
+                "name": "Total Triples",
+                "query": """
+                SELECT (COUNT(*) as ?count)
+                WHERE {
+                    ?s ?p ?o .
+                }
+                """
+            },
+            {
+                "name": "Agent Activities",
+                "query": """
+                SELECT ?subject ?predicate ?object
+                WHERE {
+                    ?subject ?predicate ?object .
+                    FILTER(
+                        STRSTARTS(STR(?subject), "agent:") ||
+                        STRSTARTS(STR(?predicate), "http://example.org") ||
+                        CONTAINS(STR(?subject), "agent")
+                    )
+                }
+                LIMIT 20
+                """
+            },
+            {
+                "name": "Recent Activities",
+                "query": """
+                SELECT ?subject ?predicate ?object
+                WHERE {
+                    ?subject ?predicate ?object .
+                }
+                LIMIT 30
+                """
+            }
+        ]
+        
+        all_results = {}
+        
+        for query_info in queries:
+            try:
+                print(f"   Querying: {query_info['name']}...")
+                results = await self.query_knowledge_graph({"sparql": query_info['query']})
+                
+                if isinstance(results, dict) and 'results' in results:
+                    results = results['results']
+                elif not isinstance(results, list):
+                    results = [results] if results else []
+                
+                all_results[query_info['name']] = results
+                print(f"   ✅ {query_info['name']}: {len(results)} result(s)")
+                
+            except Exception as e:
+                print(f"   ⚠️  Query error: {e}")
+                all_results[query_info['name']] = []
+        
+        # Generate email report
+        email_body = self._create_email_report(all_results)
+        
+        # Send email
+        print_section("Agent Sending Email Report")
+        print(f"   Recipient: {USER_EMAIL}")
+        
+        try:
+            await self.send_email(
+                recipient=USER_EMAIL,
+                subject=f"Knowledge Graph Report from Agent - {datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                body=email_body
+            )
+            print("   ✅ Email sent successfully!")
+            return True
+        except Exception as e:
+            print(f"   ❌ Failed to send email: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def _create_email_report(self, results: dict) -> str:
+        """Create email report from query results."""
+        
+        report = f"""
+KNOWLEDGE GRAPH QUERY REPORT
+=============================
+
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Agent: KG Query Agent
+Source: Knowledge Graph (queried from inside agent code)
+
+This email was generated by an agent that queried the knowledge graph
+directly from within its own code. The agent discovered this information
+autonomously and is sharing it with you via email.
+
+QUERY RESULTS
+-------------
+
+"""
+        
+        for query_name, query_results in results.items():
+            report += f"\n{query_name}:\n"
+            report += "-" * 50 + "\n"
+            
+            if not query_results:
+                report += "No results found.\n"
+            else:
+                report += f"Found {len(query_results)} result(s):\n\n"
+                
+                for i, result in enumerate(query_results[:15], 1):  # Limit to 15 per query
+                    report += f"{i}. "
+                    
+                    if isinstance(result, dict):
+                        # Format nicely
+                        items = []
+                        for key, value in result.items():
+                            if value:
+                                # Truncate long values
+                                val_str = str(value)
+                                if len(val_str) > 80:
+                                    val_str = val_str[:77] + "..."
+                                items.append(f"{key}: {val_str}")
+                        report += " | ".join(items)
+                    else:
+                        val_str = str(result)
+                        if len(val_str) > 100:
+                            val_str = val_str[:97] + "..."
+                        report += val_str
+                    
+                    report += "\n"
+            
+            report += "\n"
+        
+        report += f"""
+HOW THIS WORKS
+--------------
+1. Agent initializes with access to the Knowledge Graph Manager
+2. Agent executes SPARQL queries directly from its code
+3. Agent processes query results
+4. Agent formats findings into a readable report
+5. Agent sends email automatically using EmailIntegration
+
+This demonstrates that agents can:
+✅ Query the knowledge graph independently
+✅ Discover stored information autonomously  
+✅ Process and format results intelligently
+✅ Send emails based on KG findings
+✅ Work completely autonomously without external triggers
+
+---
+Report generated by: KG Query Agent
+Knowledge Graph: {self.kg_manager.__class__.__name__ if self.kg_manager else 'N/A'}
+Total triples in KG: {len(self.kg_manager.graph) if self.kg_manager and hasattr(self.kg_manager, 'graph') else 'N/A'}
+"""
+        
+        return report
+
+async def main():
+    """Main demo function."""
+    print("\n" + "=" * 70)
+    print("🚀 AGENT QUERYING KNOWLEDGE GRAPH + EMAIL DEMO")
+    print("=" * 70)
+    print(f"Timestamp: {datetime.now().isoformat()}")
+    print(f"User Email: {USER_EMAIL}")
+    print("\nThis demo shows that agents can query the KG from INSIDE their code")
+    print("and automatically email you the results!")
+    
+    # Initialize agent
+    print_section("Initializing Agent")
+    
+    try:
+        agent = KGQueryAgent()
+        await agent.initialize()
+        print("   ✅ Agent initialized")
+        print("   ✅ Knowledge Graph access: Enabled")
+        print("   ✅ Email capability: Enabled")
+    except Exception as e:
+        print(f"   ❌ Failed to initialize: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+    
+    # Agent queries KG and emails
+    success = await agent.query_kg_and_email()
+    
+    if success:
+        print("\n" + "=" * 70)
+        print("📊 DEMO SUMMARY")
+        print("=" * 70)
+        print("✅ Agent Initialized: With KG and email access")
+        print("✅ Knowledge Graph: Queried from inside agent code")
+        print("✅ Email Report: Generated and sent automatically")
+        print(f"📧 Check your inbox at {USER_EMAIL}!")
+        print("\n🎉 **SUCCESS!** Agents CAN email you from inside the knowledge graph!")
+        print("\nThe agent:")
+        print("  1. Queried the KG autonomously")
+        print("  2. Processed the results")
+        print("  3. Generated a report")
+        print("  4. Sent you an email")
+        print("\nAll from inside its own code - no external triggers needed!")
+    else:
+        print("\n❌ Demo failed - check errors above")
+    
+    return success
+
+if __name__ == "__main__":
+    success = asyncio.run(main())
+    sys.exit(0 if success else 1)
+

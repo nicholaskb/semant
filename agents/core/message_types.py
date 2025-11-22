@@ -6,7 +6,8 @@ import uuid
 from datetime import datetime
 import time
 from typing import Any, Optional, Dict, Union
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
+from pydantic import field_validator
 
 class AgentMessage(BaseModel):
     """Base message class for agent communication.
@@ -28,9 +29,10 @@ class AgentMessage(BaseModel):
     timestamp: Union[datetime, float] = Field(default_factory=datetime.now)
     metadata: Optional[Dict[str, Any]] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-        validate_by_name = True
+    model_config = {
+        "arbitrary_types_allowed": True,
+        "validate_by_name": True,
+    }
         
     def __init__(self, **data):
         # Handle legacy field names
@@ -78,7 +80,7 @@ class AgentMessage(BaseModel):
             metadata=data.get("metadata")
         )
 
-    @validator('timestamp', pre=True)
+    @field_validator('timestamp', mode='before')
     def validate_timestamp(cls, v):
         """Convert timestamp to datetime if needed."""
         if isinstance(v, (int, float)):

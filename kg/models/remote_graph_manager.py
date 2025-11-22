@@ -38,6 +38,10 @@ class RemoteKnowledgeGraphManager:
                     self.logger.error(f"Failed to initialize remote graph: {str(e)}")
                     raise
 
+    async def is_initialized(self) -> bool:
+        """Mirror the in-memory manager API for compatibility."""
+        return self._is_initialized
+
     async def query_graph(self, sparql_query: str) -> List[Dict[str, str]]:
         """Execute a SPARQL query on the remote knowledge graph using SPARQLWrapper."""
         if not self._is_initialized:
@@ -101,6 +105,34 @@ class RemoteKnowledgeGraphManager:
         except Exception as e:
             self.logger.error(f"Error executing SPARQL update: {str(e)}")
             raise
+
+    async def add_triple(self, subject: str, predicate: str, obj: str) -> None:
+        """Compatibility helper to insert a single triple via SPARQL UPDATE.
+
+        - If obj looks like an HTTP(S) URI, it is treated as a URIRef.
+        - Otherwise it is inserted as a plain string literal (JSON-escaped).
+        """
+        if not self._is_initialized:
+            await self.initialize()
+
+        # Normalize subject/predicate as URIs
+        subj_n3 = f"<{subject}>" if not subject.startswith("<") else subject
+        pred_n3 = f"<{predicate}>" if not predicate.startswith("<") else predicate
+        # Prepare object
+        try:
+            if isinstance(obj, str) and (obj.startswith("http://") or obj.startswith("https://")):
+                obj_n3 = f"<{obj}>"
+            else:
+                # Use JSON encoding to safely escape
+                import json as _json
+                obj_n3 = _json.dumps(obj)
+        except Exception:
+            obj_n3 = f'"{str(obj)}"'
+
+        insert_query = f"""
+        INSERT DATA {{ {subj_n3} {pred_n3} {obj_n3} }}
+        """
+        await self.update_graph(insert_query)
 
     async def import_graph(self, data: str, format: str = 'turtle') -> None:
         """Import data into the remote knowledge graph (via SPARQL UPDATE)."""

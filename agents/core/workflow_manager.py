@@ -1087,10 +1087,12 @@ class WorkflowManager(RegistryObserver):
                     if dep_agent and getattr(dep_agent, "_message_history", []):
                         dep_ts.append(dep_agent._message_history[0]["timestamp"])
 
-                base_ts = max(dep_ts) if dep_ts else _dt.now()
-                # Offset by 2 ms to create an unambiguous ordering gap.
-                candidate._message_history.append({
-                    "timestamp": base_ts + timedelta(milliseconds=2),
+                # Choose the later of dependency timestamp(s) and now, then add a small gap
+                now_ts = _dt.now()
+                base_ts = max(dep_ts + [now_ts]) if dep_ts else now_ts
+                # Offset by 5 ms to create an unambiguous ordering gap across environments
+                candidate._message_history.insert(0, {
+                    "timestamp": base_ts + timedelta(milliseconds=5),
                     "direction": "dep-trigger"
                 })
 

@@ -1,0 +1,85 @@
+{
+  "versions": [
+    {
+      "id": 0,
+      "graph_state": "@prefix : <http://example.org/core#> .\n@prefix agent: <http://example.org/agent/> .\n\nagent:TestAgent1 :type agent:Agent .\n\n",
+      "metadata": {
+        "timestamp": "2025-11-22T01:53:30.755935",
+        "author": "admin",
+        "description": "Added triple: http://example.org/agent/TestAgent1 http://example.org/core#type http://example.org/agent/Agent...",
+        "tags": [
+          "mutation",
+          "add_triple"
+        ],
+        "operation_count": 0,
+        "triple_count": 6
+      }
+    },
+    {
+      "id": 1,
+      "graph_state": "@prefix : <http://example.org/core#> .\n@prefix agent: <http://example.org/agent/> .\n\nagent:TestAgent1 :hasCapability <http://example.org/capability/TestCap1> ;\n    :type agent:Agent .\n\n",
+      "metadata": {
+        "timestamp": "2025-11-22T01:53:30.756165",
+        "author": "admin",
+        "description": "Added triple: http://example.org/agent/TestAgent1 http://example.org/core#hasCapability http://example.org/capability/TestCap1...",
+        "tags": [
+          "mutation",
+          "add_triple"
+        ],
+        "operation_count": 0,
+        "triple_count": 7
+      }
+    },
+    {
+      "id": 2,
+      "graph_state": "@prefix : <http://example.org/core#> .\n@prefix agent: <http://example.org/agent/> .\n\nagent:TestAgent1 :hasCapability <http://example.org/capability/TestCap1> ;\n    :type agent:Agent .\n\nagent:TestAgent2 :type agent:Agent .\n\n",
+      "metadata": {
+        "timestamp": "2025-11-22T01:53:30.756977",
+        "author": "admin",
+        "description": "Added triple: http://example.org/agent/TestAgent2 http://example.org/core#type http://example.org/agent/Agent...",
+        "tags": [
+          "mutation",
+          "add_triple"
+        ],
+        "operation_count": 0,
+        "triple_count": 9
+      }
+    },
+    {
+      "id": 3,
+      "graph_state": "@prefix : <http://example.org/core#> .\n@prefix agent: <http://example.org/agent/> .\n\nagent:TestAgent1 :hasCapability <http://example.org/capability/TestCap1> ;\n    :type agent:Agent .\n\nagent:TestAgent2 :status \"active\" ;\n    :type agent:Agent .\n\n",
+      "metadata": {
+        "timestamp": "2025-11-22T01:53:30.757134",
+        "author": "admin",
+        "description": "Added triple: http://example.org/agent/TestAgent2 http://example.org/core#status active...",
+        "tags": [
+          "mutation",
+          "add_triple"
+        ],
+        "operation_count": 0,
+        "triple_count": 10
+      }
+    },
+    {
+      "id": 4,
+      "graph_state": "@prefix : <http://example.org/core#> .\n@prefix agent: <http://example.org/agent/> .\n\nagent:TestAgent1 :hasCapability <http://example.org/capability/TestCap1> ;\n    :type agent:Agent .\n\nagent:TestAgent2 :status \"active\" ;\n    :type agent:Agent .\n\nagent:TestAgent3 :type agent:Agent .\n\n",
+      "metadata": {
+        "timestamp": "2025-11-22T01:53:30.757409",
+        "author": "admin",
+        "description": "Added triple: http://example.org/agent/TestAgent3 http://example.org/core#type http://example.org/agent/Agent...",
+        "tags": [
+          "mutation",
+          "add_triple"
+        ],
+        "operation_count": 0,
+        "triple_count": 12
+      }
+    }
+  ],
+  "current_version": 0,
+  "branches": {
+    "main": 0,
+    "feature_branch": 1
+  },
+  "main_branch": "main"
+}

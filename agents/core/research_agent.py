@@ -95,10 +95,16 @@ class ResearchAgent(BaseAgent):
             )
             
             # Store findings in knowledge graph
+            # Use hash-based URI to avoid encoding issues with special characters
+            import hashlib
+            topic_hash = hashlib.md5(topic.encode('utf-8')).hexdigest()
+            research_uri = f"research:{topic_hash}"
+            
             await self.update_knowledge_graph({
-                'subject': f"research:{topic}",
+                'subject': research_uri,
                 'predicate': 'hasFindings',
-                'object': findings
+                'object': findings,
+                'topic': topic  # Store original topic as metadata
             })
             
             return AgentMessage(
@@ -251,9 +257,14 @@ class ResearchAgent(BaseAgent):
         """Retrieve stored research findings for a topic."""
         findings = []
         if self.knowledge_graph:
+            # Use hash-based URI lookup (same as storage)
+            import hashlib
+            topic_hash = hashlib.md5(topic.encode('utf-8')).hexdigest()
+            research_uri = f"research:{topic_hash}"
+            
             # Query for stored findings
             for s, p, o in self.knowledge_graph.graph:
-                if str(s) == f"research:{topic}" and str(p) == "hasFindings":
+                if str(s) == research_uri and str(p) == "hasFindings":
                     findings.append(o)
         return findings
 
@@ -262,13 +273,24 @@ class ResearchAgent(BaseAgent):
         try:
             self.logger.info(f"Updating knowledge graph with research findings: {update_data}")
             if self.knowledge_graph:
+                subject = update_data.get('subject', '')
+                predicate = update_data.get('predicate', '')
+                obj = update_data.get('object', '')
+                
+                # Add main triple
+                await self.knowledge_graph.add_triple(subject, predicate, obj)
+                
+                # Store topic as metadata if provided (for lookup)
+                if 'topic' in update_data:
+                    from rdflib import Literal
                 await self.knowledge_graph.add_triple(
-                    update_data.get('subject', ''),
-                    update_data.get('predicate', ''),
-                    update_data.get('object', '')
+                        subject,
+                        'http://example.org/core#researchTopic',
+                        Literal(update_data['topic'])
                 )
         except Exception as e:
             self.logger.error(f"Error updating knowledge graph: {str(e)}")
+            # Don't re-raise - allow workflow to continue
 
     # ------------------------------------------------------------------
     # Convenience wrapper: automatically initialize the agent if the test

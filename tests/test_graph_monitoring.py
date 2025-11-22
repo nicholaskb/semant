@@ -25,7 +25,7 @@ async def test_stats_collection(graph_manager):
         await graph_manager.add_triple(subject, predicate, object)
     
     # Get stats - await the coroutine
-    stats = await graph_manager.get_stats()
+    stats = graph_manager.get_stats()
     
     # Verify stats
     assert stats['metrics']['triple_count'] == 100
@@ -83,7 +83,7 @@ async def test_cache_monitoring(graph_manager):
         await graph_manager.query_graph(query)
     
     # Get stats - await the coroutine
-    stats = await graph_manager.get_stats()
+    stats = graph_manager.get_stats()
     cache_stats = stats['cache_stats']
     
     # Verify cache stats
@@ -142,7 +142,7 @@ async def test_performance_monitoring(graph_manager):
     assert query_time < 1.0  # Should complete within 1 second
     
     # Get stats after query - await the coroutine
-    stats = await graph_manager.get_stats()
+    stats = graph_manager.get_stats()
     cache_stats = stats['cache_stats']
     
     # Verify cache performance

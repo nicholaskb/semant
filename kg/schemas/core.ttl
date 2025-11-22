@@ -41,6 +41,26 @@
     rdfs:label "Workflow State"@en ;
     rdfs:comment "A state in a workflow process"@en .
 
+# Occurrent classes for tracking occurrences over time
+:Occurrent rdf:type owl:Class ;
+    rdfs:label "Occurrent"@en ;
+    rdfs:comment "An event or occurrence that happens at a specific time"@en .
+
+:WorkflowOccurrent rdf:type owl:Class ;
+    rdfs:subClassOf :Occurrent ;
+    rdfs:label "Workflow Occurrent"@en ;
+    rdfs:comment "A workflow occurrence that happens at a specific time"@en .
+
+:JobOccurrent rdf:type owl:Class ;
+    rdfs:subClassOf :Occurrent ;
+    rdfs:label "Job Occurrent"@en ;
+    rdfs:comment "A job occurrence that happens at a specific time"@en .
+
+:AgentOccurrent rdf:type owl:Class ;
+    rdfs:subClassOf :Occurrent ;
+    rdfs:label "Agent Occurrent"@en ;
+    rdfs:comment "An agent interaction occurrence"@en .
+
 :Resource rdf:type owl:Class ;
     rdfs:label "Resource"@en ;
     rdfs:comment "A system resource that can be allocated"@en .
@@ -1007,4 +1027,92 @@
     rdfs:label "has message latency"@en ;
     rdfs:domain :Integration ;
     rdfs:range xsd:float ;
-    rdfs:comment "The latency of messages in an integration"@en . 
+    rdfs:comment "The latency of messages in an integration"@en .
+
+# Occurrent Properties for tracking temporal occurrences
+:hasOccurrenceTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has occurrence time"@en ;
+    rdfs:domain :Occurrent ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The time when an occurrence happened"@en .
+
+:hasStartTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has start time"@en ;
+    rdfs:domain :Occurrent ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The start time of an occurrence"@en .
+
+:hasEndTime rdf:type owl:DatatypeProperty ;
+    rdfs:label "has end time"@en ;
+    rdfs:domain :Occurrent ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The end time of an occurrence"@en .
+
+:hasDuration rdf:type owl:DatatypeProperty ;
+    rdfs:label "has duration"@en ;
+    rdfs:domain :Occurrent ;
+    rdfs:range xsd:duration ;
+    rdfs:comment "The duration of an occurrence"@en .
+
+:hasStatus rdf:type owl:DatatypeProperty ;
+    rdfs:label "has status"@en ;
+    rdfs:domain :Occurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The status of an occurrence (e.g., pending, completed, failed)"@en .
+
+:hasResult rdf:type owl:DatatypeProperty ;
+    rdfs:label "has result"@en ;
+    rdfs:domain :Occurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The result or output of an occurrence"@en .
+
+:hasError rdf:type owl:DatatypeProperty ;
+    rdfs:label "has error"@en ;
+    rdfs:domain :Occurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Any error associated with an occurrence"@en .
+
+# Workflow-specific occurrent properties
+:hasTheme rdf:type owl:DatatypeProperty ;
+    rdfs:label "has theme"@en ;
+    rdfs:domain :WorkflowOccurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The theme or purpose of the workflow occurrence"@en .
+
+:hasWorkflowName rdf:type owl:DatatypeProperty ;
+    rdfs:label "has workflow name"@en ;
+    rdfs:domain :WorkflowOccurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The name of the workflow occurrence"@en .
+
+# Job-specific occurrent properties
+:hasJobType rdf:type owl:DatatypeProperty ;
+    rdfs:label "has job type"@en ;
+    rdfs:domain :JobOccurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The type of job (e.g., imagine, action, describe)"@en .
+
+:hasTaskId rdf:type owl:DatatypeProperty ;
+    rdfs:label "has task ID"@en ;
+    rdfs:domain :JobOccurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The unique identifier of the job task"@en .
+
+:hasProgress rdf:type owl:DatatypeProperty ;
+    rdfs:label "has progress"@en ;
+    rdfs:domain :JobOccurrent ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The progress percentage of the job"@en .
+
+# Agent-specific occurrent properties
+:hasAgentId rdf:type owl:DatatypeProperty ;
+    rdfs:label "has agent ID"@en ;
+    rdfs:domain :AgentOccurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The identifier of the agent involved"@en .
+
+:hasInteractionType rdf:type owl:DatatypeProperty ;
+    rdfs:label "has interaction type"@en ;
+    rdfs:domain :AgentOccurrent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The type of interaction (e.g., message, decision, action)"@en . 

@@ -102,6 +102,38 @@ class CapabilityType(str, Enum):
     DATA_COLLECTION = "data_collection"
     MODULE_MANAGEMENT = "module_management"
 
+    # Midjourney capabilities
+    IMAGE_GENERATION = "image_generation"
+    IMAGE_DESCRIPTION = "image_description"
+    IMAGE_BLENDING = "image_blending"
+    IMAGE_VARIATION = "image_variation"
+    BATCH_GENERATION = "batch_generation"
+    IMAGE_UPLOAD = "image_upload"
+
+    # Children's book capabilities
+    STORY_SEQUENCING = "story_sequencing"
+    IMAGE_ANALYSIS = "image_analysis"
+    NARRATIVE_PLANNING = "narrative_planning"
+    SPATIAL_ARRANGEMENT = "spatial_arrangement"
+    COLOR_ANALYSIS = "color_analysis"
+    IMAGE_PAIRING = "image_pairing"
+    SIMILARITY_MATCHING = "similarity_matching"
+    PATTERN_RECOGNITION = "pattern_recognition"
+    GRID_LAYOUT = "grid_layout"
+    OPTIMIZATION = "optimization"
+    STORY_WRITING = "story_writing"
+    PAGE_DESIGN = "page_design"
+    DESIGN_REVIEW = "design_review"
+    HTML_LAYOUT = "html_layout"
+    PDF_GENERATION = "pdf_generation"
+    IMAGE_INGESTION = "image_ingestion"
+    GCS_DOWNLOAD = "gcs_download"
+    EMBEDDING_GENERATION = "embedding_generation"
+
+    # Feature Z capabilities
+    FEATURE_Z_PROCESSING = "feature_z_processing"
+    DATA_VALIDATION = "data_validation"
+
     # Scientific Reasoning Workflow
     LOGO_ANALYSIS = "logo_analysis"
     AESTHETICS_ANALYSIS = "aesthetics_analysis"

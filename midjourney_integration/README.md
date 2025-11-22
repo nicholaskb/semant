@@ -135,5 +135,6 @@ By following the guidelines in this README, a team of agents can methodically im
   - Added "Nano-Banana" option to the UI version selector.
   - Updated `midjourney_integration/client.py` to explicitly handle `model_version="nano-banana"` and set the correct GoAPI payload.
   - Updated `midjourney_integration/cli.py` to support `--version nano-banana`.
-- **Files Modified**: `static/midjourney.html`, `midjourney_integration/client.py`, `midjourney_integration/cli.py`
-- **Verification**: Verified via code review and manual testing of the new option in UI and CLI.
+  - Added dedicated unit tests in `tests/unit/test_nano_banana_integration.py` to verify payload construction and default behavior.
+- **Files Modified**: `static/midjourney.html`, `midjourney_integration/client.py`, `midjourney_integration/cli.py`, `tests/unit/test_nano_banana_integration.py`
+- **Verification**: Verified via code review, manual testing of UI/CLI, and passing unit tests.

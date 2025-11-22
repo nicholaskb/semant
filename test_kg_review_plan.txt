@@ -1,0 +1,14 @@
+
+    Test Workflow Plan: Knowledge Graph Review
+    
+    This workflow will:
+    1. Query the knowledge graph for images
+    2. Review knowledge graph status
+    3. Send email notification with findings
+    
+    Steps:
+    - Step 1: Query KG for images
+    - Step 2: Count total triples
+    - Step 3: Generate email report
+    - Step 4: Send email notification
+    

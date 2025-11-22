@@ -131,7 +131,8 @@ async def test_agent_creation(factory):
     assert agent1 is not None
     capabilities1 = await agent1.get_capabilities()
     assert len(capabilities1) == 1
-    assert CapabilityType.KNOWLEDGE_GRAPH in capabilities1
+    capability_types1 = {cap.type for cap in capabilities1}
+    assert CapabilityType.KNOWLEDGE_GRAPH in capability_types1
     
     # Create agent with multiple capabilities
     capabilities2 = {
@@ -216,7 +217,8 @@ async def test_supervisor_agent(factory):
     
     # Verify supervisor capabilities
     capabilities = await supervisor.get_capabilities()
-    assert CapabilityType.MESSAGE_PROCESSING in capabilities
+    capability_types = {cap.type for cap in capabilities}
+    assert CapabilityType.MESSAGE_PROCESSING in capability_types
 
 @pytest.mark.asyncio
 async def test_workload_monitoring(factory):

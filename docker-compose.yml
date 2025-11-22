@@ -19,6 +19,15 @@ services:
       - NEO4J_AUTH=neo4j/password
     volumes:
       - neo4j_data:/data
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
 volumes:
   graphdb_data:
   neo4j_data:
+  qdrant_data:

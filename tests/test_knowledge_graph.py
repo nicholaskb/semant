@@ -459,7 +459,7 @@ async def test_performance_metrics(graph_manager):
     """)
     
     # Get stats
-    stats = await graph_manager.get_stats()
+    stats = graph_manager.get_stats()
     metrics = stats['metrics']
     
     # Verify metrics
@@ -545,7 +545,7 @@ async def test_cache_metrics(graph_manager):
     """)
     
     # Get stats
-    stats = await graph_manager.get_stats()
+    stats = graph_manager.get_stats()
     metrics = stats['metrics']
     
     # Verify cache metrics
@@ -566,7 +566,7 @@ async def test_clear_metrics(graph_manager):
     await graph_manager.clear()
     
     # Get stats
-    stats = await graph_manager.get_stats()
+    stats = graph_manager.get_stats()
     metrics = stats['metrics']
     
     # Verify metrics are reset
@@ -940,7 +940,7 @@ async def test_enhanced_metrics(graph_manager):
         pass
     
     # Get stats
-    stats = await graph_manager.get_stats()
+    stats = graph_manager.get_stats()
     
     # Verify metrics
     assert stats['version_count'] > 0

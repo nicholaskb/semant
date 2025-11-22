@@ -1,0 +1,75 @@
+{
+  "version": "1.0.0",
+  "created": "2025-01-23",
+  "midjourney": {
+    "api_token": "",
+    "process_mode": "relax",
+    "default_version": "v6",
+    "aspect_ratio": "16:9",
+    "quality": "standard",
+    "style": "vivid",
+    "max_pages": 6,
+    "timeout": 180
+  },
+  "gcs": {
+    "bucket_name": "",
+    "credentials_file": "",
+    "auto_upload": true,
+    "public_access": true
+  },
+  "output": {
+    "base_dir": "consolidated_books",
+    "auto_open": true,
+    "format": [
+      "html",
+      "markdown",
+      "json"
+    ],
+    "include_images": true,
+    "include_metadata": true
+  },
+  "modes": {
+    "quick": {
+      "description": "Simple template editing",
+      "max_pages": 5,
+      "fallback_to_placeholders": true,
+      "auto_save_state": true
+    },
+    "universal": {
+      "description": "Any story with AI prompts",
+      "interactive": true,
+      "max_pages": 10,
+      "ai_prompt_generation": true
+    },
+    "one_click": {
+      "description": "Pre-built Quacky story",
+      "pages": 6,
+      "character_reference": true,
+      "auto_fallback": true
+    },
+    "complete": {
+      "description": "Full Quacky with KG integration",
+      "pages": 12,
+      "knowledge_graph": true,
+      "gcs_upload": true
+    },
+    "agent_tool": {
+      "description": "Programmatic agent use",
+      "max_pages": 6,
+      "knowledge_graph": true,
+      "cost_control": true
+    }
+  },
+  "quality": {
+    "image_resolution": "4K",
+    "prompt_complexity": "high",
+    "character_consistency": true,
+    "style_consistency": true
+  },
+  "performance": {
+    "rate_limiting": true,
+    "batch_size": 3,
+    "retry_attempts": 3,
+    "timeout_seconds": 300
+  }
+}

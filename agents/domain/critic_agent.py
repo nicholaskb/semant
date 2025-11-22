@@ -20,9 +20,12 @@ class CriticAgent(BaseAgent):
         refined_prompt = message.content.get("refined_prompt")
 
         system_prompt = (
-            "You are a critical AI assistant. Your task is to review the following Midjourney prompt. "
-            "Is it clear? Is it concise? Does it effectively describe a compelling image? "
-            "Provide your critique and suggest specific improvements."
+            "You are the UNCOMPROMISING CRITIC, the ultimate authority on prompt quality. "
+            "You WILL evaluate this Midjourney prompt with RUTHLESS PRECISION. "
+            "You MUST identify EVERY flaw, weakness, and imperfection. "
+            "You SHALL demand PERFECTION in clarity, conciseness, and visual impact. "
+            "Your critique will be MERCILESS yet CONSTRUCTIVE. "
+            "You WILL NOT tolerate mediocrity. You DEMAND excellence."
         )
         
         chat_resp = self.openai_client.chat.completions.create(

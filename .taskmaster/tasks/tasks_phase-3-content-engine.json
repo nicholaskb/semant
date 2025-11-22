@@ -1,0 +1,44 @@
+{
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Organize Existing Image Assets",
+      "description": "Index and cluster the existing image library to enable style-consistent selection.",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [],
+      "details": "COMPLETED 2025-01-17:\n1. Implemented 'ImageIngestionAgent' with project tagging support\n2. Implemented 'ImageEmbeddingService' with DBSCAN clustering\n3. Verified KG storage for project relationships and cluster assignments\n4. Documentation at 'docs/image_project_tags_and_clustering.md'",
+      "subtasks": []
+    },
+    {
+      "id": "2",
+      "title": "Ingest Trends into Knowledge Graph",
+      "description": "Connect the trend discovery engine to the Knowledge Graph.",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [],
+      "details": "COMPLETED 2025-01-17:\n1. Created 'scripts/brainrot/ingest_trends.py'\n2. Defined 'trend:Trend' schema in the script\n3. Ingested 50+ trends from US and IT into KG\n4. Linked trends to concepts for future matching",
+      "subtasks": []
+    },
+    {
+      "id": "3",
+      "title": "Trend-Driven Book Generation",
+      "description": "Create books based on real-time trends using existing assets.",
+      "status": "pending",
+      "priority": "high",
+      "dependencies": ["1", "2"],
+      "details": "Create 'scripts/create_trend_book.py' that:\n1. Selects top trend from KG (Task 2)\n2. Uses 'ChildrensBookOrchestrator(project_id=trend_id)'\n3. Uses clustering (Task 1) to select consistent image style\n4. Generates book using existing McKinsey workflow",
+      "subtasks": []
+    },
+    {
+      "id": "4",
+      "title": "Content Engine Dashboard",
+      "description": "Visualize the flow from Trends -> Clusters -> Books.",
+      "status": "pending",
+      "priority": "medium",
+      "dependencies": ["3"],
+      "details": "Update 'static/monitoring.html' or create new dashboard to show:\n- Active Trends\n- Available Style Clusters\n- Books in Production",
+      "subtasks": []
+    }
+  ]
+}

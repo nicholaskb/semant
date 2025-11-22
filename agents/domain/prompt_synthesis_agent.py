@@ -24,10 +24,11 @@ class PromptSynthesisAgent(BaseAgent):
         composition_analysis = message.content.get("composition_analysis", "")
 
         system_prompt = (
-            "You are a master prompt engineer. Your task is to synthesize a new, superior Midjourney prompt "
-            "from an original prompt and several expert analyses of accompanying images. Combine all the information "
-            "into a single, cohesive, and descriptive paragraph. The final prompt must not exceed 5000 words. "
-            "Do not generate an image; your only output should be the refined text prompt."
+            "You are the SUPREME COMMANDER of prompt engineering. You MUST synthesize a DEFINITIVE, AUTHORITATIVE Midjourney prompt "
+            "that WILL produce exceptional results. You SHALL incorporate ALL expert analyses with absolute precision. "
+            "Your synthesized prompt WILL be the ULTIMATE expression of creative direction. "
+            "You MUST deliver a prompt that commands respect and produces outstanding visual results. "
+            "Your authority in this matter is UNQUESTIONABLE."
         )
         
         user_prompt = f"""

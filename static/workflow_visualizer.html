@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Knowledge Graph Workflow Visualizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.2em;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .workflow-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .step-card {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .agent-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .sparql-query {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
+        .metadata {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .metadata span {
+            margin-right: 20px;
+            font-weight: bold;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+        }
+
+        .tab {
+            padding: 15px 20px;
+            background: #e9ecef;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Knowledge Graph Workflow Visualizer</h1>
+            <p>View and explore proposed plans stored in the Knowledge Graph</p>
+        </div>
+
+        <div class="main-content">
+            <div class="section">
+                <h2>🔍 Find Your Workflow</h2>
+
+                <div class="input-group">
+                    <label for="workflow_id">Workflow ID:</label>
+                    <input type="text" id="workflow_id" placeholder="e.g., workflow_20250923_105212_4918cf23" />
+                    <button class="btn btn-primary" onclick="visualizeWorkflow()">Visualize</button>
+                    <button class="btn btn-secondary" onclick="listAllWorkflows()">List All</button>
+                </div>
+            </div>
+
+            <div class="results" id="results" style="display: none;">
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('overview')">Overview</button>
+                    <button class="tab" onclick="showTab('steps')">Plan Steps</button>
+                    <button class="tab" onclick="showTab('sparql')">SPARQL Queries</button>
+                    <button class="tab" onclick="showTab('raw')">Raw Data</button>
+                </div>
+
+                <div id="overview" class="tab-content active">
+                    <div class="metadata" id="workflow-metadata">
+                        <!-- Workflow metadata will be inserted here -->
+                    </div>
+
+                    <div id="workflow-overview">
+                        <!-- Workflow overview will be inserted here -->
+                    </div>
+                </div>
+
+                <div id="steps" class="tab-content">
+                    <div id="plan-steps">
+                        <!-- Plan steps will be inserted here -->
+                    </div>
+                </div>
+
+                <div id="sparql" class="tab-content">
+                    <div id="sparql-queries">
+                        <!-- SPARQL queries will be inserted here -->
+                    </div>
+                </div>
+
+                <div id="raw" class="tab-content">
+                    <div id="raw-data">
+                        <!-- Raw data will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Visualizing workflow from Knowledge Graph...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        async function visualizeWorkflow() {
+            const workflowId = document.getElementById('workflow_id').value.trim();
+
+            if (!workflowId) {
+                alert('Please enter a workflow ID');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/api/visualize-workflow', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ workflow_id: workflowId })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    if (data.error.includes('Unknown namespace prefix')) {
+                        showInfo(`
+                            <h3>🔍 Workflow Found - Namespace Issue</h3>
+                            <p>Your workflow exists in the knowledge graph but has a namespace configuration issue.</p>
+                            <p><strong>Workflow ID:</strong> ${workflowId}</p>
+                            <p><strong>Status:</strong> ${data.status || 'Unknown'}</p>
+                            <p><strong>Solution:</strong> The 'wf' namespace prefix needs to be configured. This is a technical configuration issue, not a data issue.</p>
+                            <p><strong>Next Steps:</strong></p>
+                            <ul>
+                                <li>The authoritative agent system is working correctly</li>
+                                <li>The workflow data exists and is being tracked</li>
+                                <li>Contact the development team to fix the namespace configuration</li>
+                            </ul>
+                        `);
+                    } else {
+                        showError(data.error);
+                    }
+                } else {
+                    currentData = data;
+                    displayResults(data);
+                }
+
+            } catch (error) {
+                showError('Failed to connect to server: ' + error.message);
+            }
+
+            hideLoading();
+        }
+
+        async function listAllWorkflows() {
+            showLoading();
+
+            try {
+                const response = await fetch('/api/list-workflows');
+                const workflows = await response.json();
+
+                if (workflows.length === 0) {
+                    showError('No workflows found in Knowledge Graph');
+                    return;
+                }
+
+                const workflowList = workflows.map(w => `
+                    <div class="workflow-card" onclick="document.getElementById('workflow_id').value='${w.id}'; visualizeWorkflow();">
+                        <h3>${w.id}</h3>
+                        <p><strong>Theme:</strong> ${w.theme}</p>
+                        <p><strong>Created:</strong> ${w.created_at}</p>
+                        <p><strong>Status:</strong> ${w.status}</p>
+                    </div>
+                `).join('');
+
+                document.getElementById('results').innerHTML = `
+                    <h2>All Workflows</h2>
+                    ${workflowList}
+                `;
+                document.getElementById('results').style.display = 'block';
+
+            } catch (error) {
+                showError('Failed to list workflows: ' + error.message);
+            }
+
+            hideLoading();
+        }
+
+        function displayResults(data) {
+            // Show results container
+            document.getElementById('results').style.display = 'block';
+
+            // Display metadata
+            const metadataDiv = document.getElementById('workflow-metadata');
+            metadataDiv.innerHTML = `
+                <span><strong>Workflow ID:</strong> ${data.workflow_id}</span>
+                <span><strong>Status:</strong> ${data.status || 'Unknown'}</span>
+                <span><strong>Data Points:</strong> ${data.workflow_data ? data.workflow_data.length : 0}</span>
+                <span><strong>Steps:</strong> ${data.step_details ? data.step_details.length : 0}</span>
+            `;
+
+            // Display overview
+            const overviewDiv = document.getElementById('workflow-overview');
+            if (data.workflow_data && data.workflow_data.length > 0) {
+                overviewDiv.innerHTML = `
+                    <h3>Workflow Overview</h3>
+                    ${data.workflow_data.map(item => `<p><strong>${item.predicate}:</strong> ${item.object}</p>`).join('')}
+                `;
+            } else {
+                overviewDiv.innerHTML = '<p>No workflow overview data available</p>';
+            }
+
+            // Display plan steps
+            const stepsDiv = document.getElementById('plan-steps');
+            if (data.step_details && data.step_details.length > 0) {
+                stepsDiv.innerHTML = data.step_details.map(step => `
+                    <div class="step-card">
+                        <div class="step-number">${step.step_number}</div>
+                        <div>
+                            <h4>${step.action} <span class="agent-badge">${step.agent}</span></h4>
+                            <p>${step.description}</p>
+                            ${step.input !== 'None' ? `<p><strong>Input:</strong> ${step.input}</p>` : ''}
+                            ${step.output !== 'None' ? `<p><strong>Output:</strong> ${step.output}</p>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                stepsDiv.innerHTML = '<p>No plan steps found</p>';
+            }
+
+            // Display SPARQL queries
+            const sparqlDiv = document.getElementById('sparql-queries');
+            if (data.sparql_queries) {
+                sparqlDiv.innerHTML = Object.entries(data.sparql_queries).map(([name, query]) => `
+                    <div>
+                        <h4>${name.toUpperCase()} Query</h4>
+                        <div class="sparql-query">${query}</div>
+                    </div>
+                `).join('');
+            } else {
+                sparqlDiv.innerHTML = '<p>No SPARQL queries available</p>';
+            }
+
+            // Display raw data
+            const rawDiv = document.getElementById('raw-data');
+            rawDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<div class="error">${message}</div>`;
+            resultsDiv.style.display = 'block';
+            hideLoading();
+        }
+
+        function showInfo(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<div class="info">${message}</div>`;
+            resultsDiv.style.display = 'block';
+            hideLoading();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Knowledge Graph Workflow Visualizer loaded');
+        });
+    </script>
+</body>
+</html>

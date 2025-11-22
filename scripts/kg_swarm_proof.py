@@ -132,10 +132,16 @@ async def run_diagnostic_queries(kg):
 
 async def main():
     """Main function to load sample data and run diagnostic queries."""
-    kg = KnowledgeGraphManager()
-    kg.initialize_namespaces()
-    await load_sample_data(kg)
-    await run_diagnostic_queries(kg)
+    kg = None
+    try:
+        kg = KnowledgeGraphManager()
+        kg.initialize_namespaces()
+        await kg.initialize()
+        await load_sample_data(kg)
+        await run_diagnostic_queries(kg)
+    finally:
+        if kg:
+            await kg.shutdown()
 
 if __name__ == "__main__":
     asyncio.run(main()) 

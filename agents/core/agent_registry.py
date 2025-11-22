@@ -450,9 +450,16 @@ class AgentRegistry:
             raise
             
     def __del__(self):
-        """Cleanup on deletion."""
-        if self._is_initialized:
-            asyncio.create_task(self.cleanup())
+        """Best-effort cleanup on GC without spawning tasks when no loop is running."""
+        if not self._is_initialized:
+            return
+        try:
+            loop = asyncio.get_running_loop()
+            if not loop.is_closed():
+                loop.create_task(self.cleanup())
+        except RuntimeError:
+            # No running loop (e.g., interpreter shutdown) → skip to avoid warnings
+            pass
             
     @property
     def agents(self) -> Dict[str, BaseAgent]:

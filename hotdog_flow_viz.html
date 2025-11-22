@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hot Dog Mission Flow Visualization</title>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 5px 5px 0 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .viz-container {
+            display: none;
+            min-height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            background: #fafafa;
+        }
+        
+        .viz-container.active {
+            display: block;
+        }
+        
+        #network {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        
+        #timeline {
+            width: 100%;
+            overflow-x: auto;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .timeline-time {
+            min-width: 100px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .timeline-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            margin: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .timeline-marker.decision {
+            background: #45b7d1;
+        }
+        
+        .timeline-marker.task {
+            background: #4ecdc4;
+        }
+        
+        .timeline-marker.image {
+            background: #96ceb4;
+        }
+        
+        .timeline-marker.complete {
+            background: #feca57;
+        }
+        
+        .timeline-content {
+            flex: 1;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .timeline-description {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 130px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #ddd;
+            z-index: 1;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        #mermaid-diagram {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌭 Hot Dog Mission Flow Visualization</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">11</div>
+                <div class="stat-label">Decisions</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Images</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Retries</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Flier</div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showViz('timeline')">📅 Timeline Flow</button>
+            <button class="tab" onclick="showViz('network')">🕸️ Network Graph</button>
+            <button class="tab" onclick="showViz('flowchart')">📊 Flowchart</button>
+        </div>
+        
+        <!-- Timeline View -->
+        <div id="timeline" class="viz-container active">
+            <h3>Mission Timeline</h3>
+            <div style="position: relative;">
+                <div class="timeline-line"></div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">START</div>
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">🚀 Mission Initiated</div>
+                        <div class="timeline-description">Hot dog flier generation mission started</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">DECISION 1</div>
+                    <div class="timeline-marker decision"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Choose Flier Style</div>
+                        <div class="timeline-description">✅ Selected: Professional Commercial</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">DECISION 2</div>
+                    <div class="timeline-marker decision"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Choose Layout</div>
+                        <div class="timeline-description">✅ Selected: Three-Panel Horizontal</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">DECISION 3</div>
+                    <div class="timeline-marker decision"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Choose Color Palette</div>
+                        <div class="timeline-description">✅ Selected: Vibrant and Appetizing</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">TASK 1</div>
+                    <div class="timeline-marker task"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Generate Hero Shot</div>
+                        <div class="timeline-description">🔄 4 retries due to quality threshold (0.85)</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">IMAGE 1</div>
+                    <div class="timeline-marker image"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Hero Image Complete</div>
+                        <div class="timeline-description">✅ Quality: 0.95</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">TASK 2</div>
+                    <div class="timeline-marker task"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Generate Ingredients</div>
+                        <div class="timeline-description">🔄 1 retry due to quality threshold</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">IMAGE 2</div>
+                    <div class="timeline-marker image"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Ingredients Image Complete</div>
+                        <div class="timeline-description">✅ Quality: 0.92</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">TASK 3</div>
+                    <div class="timeline-marker task"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Generate Atmosphere</div>
+                        <div class="timeline-description">🔄 1 retry due to quality threshold</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">IMAGE 3</div>
+                    <div class="timeline-marker image"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Atmosphere Image Complete</div>
+                        <div class="timeline-description">✅ Quality: 0.93</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">DECISION 10</div>
+                    <div class="timeline-marker decision"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Choose Headline</div>
+                        <div class="timeline-description">✅ Selected: FRESH HOT DOGS DAILY!</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">DECISION 11</div>
+                    <div class="timeline-marker decision"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Choose Tagline</div>
+                        <div class="timeline-description">✅ Selected: Made with Premium Ingredients</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-time">COMPLETE</div>
+                    <div class="timeline-marker complete"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">🎉 Flier Created</div>
+                        <div class="timeline-description">hot_dog_flier.png generated successfully</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #667eea;"></div>
+                    <span>Start/End</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #45b7d1;"></div>
+                    <span>Decision</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>Task</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #96ceb4;"></div>
+                    <span>Image</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #feca57;"></div>
+                    <span>Complete</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Network Graph View -->
+        <div id="network-container" class="viz-container">
+            <h3>Mission Network Graph</h3>
+            <div id="network"></div>
+        </div>
+        
+        <!-- Flowchart View -->
+        <div id="flowchart" class="viz-container">
+            <h3>Mission Flowchart</h3>
+            <div id="mermaid-diagram">
+                <div class="mermaid">
+                    graph TD
+                        Start([🚀 Mission Start]) --> D1{Choose Style}
+                        D1 -->|Professional Commercial| D2{Choose Layout}
+                        D2 -->|Three-Panel| D3{Choose Palette}
+                        D3 -->|Vibrant| T1[Generate Hero Shot]
+                        
+                        T1 --> Q1{Quality Check}
+                        Q1 -->|Below 0.85| R1[Retry x4]
+                        R1 --> Q1
+                        Q1 -->|Pass 0.95| I1[✅ Hero Image]
+                        
+                        I1 --> T2[Generate Ingredients]
+                        T2 --> Q2{Quality Check}
+                        Q2 -->|Below 0.85| R2[Retry x1]
+                        R2 --> Q2
+                        Q2 -->|Pass 0.92| I2[✅ Ingredients Image]
+                        
+                        I2 --> T3[Generate Atmosphere]
+                        T3 --> Q3{Quality Check}
+                        Q3 -->|Below 0.85| R3[Retry x1]
+                        R3 --> Q3
+                        Q3 -->|Pass 0.93| I3[✅ Atmosphere Image]
+                        
+                        I3 --> D4{Choose Headline}
+                        D4 -->|FRESH HOT DOGS DAILY!| D5{Choose Tagline}
+                        D5 -->|Premium Ingredients| F[Compose Flier]
+                        F --> End([🎉 Flier Complete])
+                        
+                        style Start fill:#667eea,color:#fff
+                        style End fill:#feca57,color:#333
+                        style I1 fill:#96ceb4,color:#333
+                        style I2 fill:#96ceb4,color:#333
+                        style I3 fill:#96ceb4,color:#333
+                        style D1 fill:#45b7d1,color:#fff
+                        style D2 fill:#45b7d1,color:#fff
+                        style D3 fill:#45b7d1,color:#fff
+                        style D4 fill:#45b7d1,color:#fff
+                        style D5 fill:#45b7d1,color:#fff
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ startOnLoad: true });
+        
+        // Tab switching
+        function showViz(vizId) {
+            // Hide all viz containers
+            document.querySelectorAll('.viz-container').forEach(v => {
+                v.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            
+            // Show selected viz
+            if (vizId === 'network') {
+                document.getElementById('network-container').classList.add('active');
+                initNetwork();
+            } else {
+                document.getElementById(vizId).classList.add('active');
+            }
+            
+            // Mark tab as active
+            event.target.classList.add('active');
+        }
+        
+        // Initialize network graph
+        function initNetwork() {
+            // Create nodes
+            var nodes = new vis.DataSet([
+                {id: 1, label: 'supreme-hot-dog-commander', group: 'agent', size: 30},
+                {id: 2, label: 'Mission Start', group: 'start'},
+                {id: 3, label: 'Choose Style', group: 'decision'},
+                {id: 4, label: 'Choose Layout', group: 'decision'},
+                {id: 5, label: 'Choose Palette', group: 'decision'},
+                {id: 6, label: 'Generate Hero', group: 'task'},
+                {id: 7, label: 'Hero Image', group: 'image'},
+                {id: 8, label: 'Generate Ingredients', group: 'task'},
+                {id: 9, label: 'Ingredients Image', group: 'image'},
+                {id: 10, label: 'Generate Atmosphere', group: 'task'},
+                {id: 11, label: 'Atmosphere Image', group: 'image'},
+                {id: 12, label: 'Choose Headline', group: 'decision'},
+                {id: 13, label: 'Choose Tagline', group: 'decision'},
+                {id: 14, label: 'Compose Flier', group: 'task'},
+                {id: 15, label: 'hot_dog_flier.png', group: 'complete', size: 25}
+            ]);
+            
+            // Create edges showing the flow
+            var edges = new vis.DataSet([
+                {from: 1, to: 2, label: 'initiates'},
+                {from: 2, to: 3, arrows: 'to'},
+                {from: 3, to: 4, arrows: 'to'},
+                {from: 4, to: 5, arrows: 'to'},
+                {from: 5, to: 6, arrows: 'to'},
+                {from: 1, to: 3, label: 'decides', dashes: true},
+                {from: 1, to: 4, label: 'decides', dashes: true},
+                {from: 1, to: 5, label: 'decides', dashes: true},
+                {from: 6, to: 7, arrows: 'to', label: 'generates'},
+                {from: 7, to: 8, arrows: 'to'},
+                {from: 8, to: 9, arrows: 'to', label: 'generates'},
+                {from: 9, to: 10, arrows: 'to'},
+                {from: 10, to: 11, arrows: 'to', label: 'generates'},
+                {from: 11, to: 12, arrows: 'to'},
+                {from: 1, to: 12, label: 'decides', dashes: true},
+                {from: 12, to: 13, arrows: 'to'},
+                {from: 1, to: 13, label: 'decides', dashes: true},
+                {from: 13, to: 14, arrows: 'to'},
+                {from: 7, to: 14, arrows: 'to', dashes: true, label: 'used in'},
+                {from: 9, to: 14, arrows: 'to', dashes: true, label: 'used in'},
+                {from: 11, to: 14, arrows: 'to', dashes: true, label: 'used in'},
+                {from: 14, to: 15, arrows: 'to', label: 'creates'}
+            ]);
+            
+            // Create network
+            var container = document.getElementById('network');
+            var data = {
+                nodes: nodes,
+                edges: edges
+            };
+            
+            var options = {
+                groups: {
+                    agent: {color: {background: '#ff6b6b'}, shape: 'box'},
+                    start: {color: {background: '#667eea'}},
+                    decision: {color: {background: '#45b7d1'}, shape: 'diamond'},
+                    task: {color: {background: '#4ecdc4'}, shape: 'box'},
+                    image: {color: {background: '#96ceb4'}, shape: 'circle'},
+                    complete: {color: {background: '#feca57'}, shape: 'star'}
+                },
+                layout: {
+                    hierarchical: {
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        levelSeparation: 100
+                    }
+                },
+                physics: {
+                    hierarchicalRepulsion: {
+                        nodeDistance: 150
+                    }
+                },
+                edges: {
+                    smooth: {
+                        type: 'cubicBezier',
+                        roundness: 0.4
+                    },
+                    font: {
+                        size: 10,
+                        color: '#666'
+                    }
+                },
+                nodes: {
+                    font: {
+                        size: 12
+                    }
+                }
+            };
+            
+            var network = new vis.Network(container, data, options);
+        }
+    </script>
+</body>
+</html>

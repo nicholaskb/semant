@@ -139,6 +139,15 @@ class CodeReviewAgent(ScientificSwarmAgent):
                     }
                 })
             
+            # Send SMS notification on review completion
+            try:
+                quality_score = review_result['metrics']['quality_score']
+                findings_count = len(review_result['findings'])
+                sms_msg = f"Code review complete: {review_id[:12]}... | Quality: {quality_score:.1f}/100 | Findings: {findings_count}"
+                await self.send_sms_notification(sms_msg)
+            except Exception as sms_err:
+                self.logger.warning(f"SMS notification failed: {sms_err}")
+            
             return review_result
             
         except Exception as e:

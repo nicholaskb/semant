@@ -168,9 +168,27 @@ mamma mia with iPhone, Starbucks, meme-style, surreal, vibrant colors, high qual
 3. **Scale Up**: Increase `combinations_per_run` for more output
 4. **A/B Test**: Try different image styles and aspect ratios
 
+## Output Sanitization
+
+**All AI-generated outputs are automatically sanitized** to remove inner-monologue, thinking patterns, and reasoning processes before being saved or exposed. This ensures investor-facing content is clean and professional.
+
+- Multiple layers of sanitization (prompt level, response level, output level, storage level)
+- Comprehensive pattern matching to catch AI thinking patterns
+- Safe fallbacks if sanitization removes content
+- See `README_SANITIZATION.md` for details
+
 ## Recent Updates & Bug Fixes
 
-### Security & Robustness Improvements (Latest)
+### Output Sanitization (Latest)
+
+**Investor-Facing Content Protection:**
+- ✅ All AI outputs sanitized to remove inner-monologue
+- ✅ Multiple sanitization layers for redundancy
+- ✅ Comprehensive pattern matching (30+ patterns)
+- ✅ Safe fallbacks for edge cases
+- ✅ Full test coverage
+
+### Security & Robustness Improvements
 
 **20+ errors fixed across all modules:**
 

@@ -29,6 +29,7 @@ from scripts.brainrot.pytrends_fallback import PytrendsTrendsQuery, PYTRENDS_AVA
 from scripts.brainrot.tokenize_trends import TrendTokenizer
 from scripts.brainrot.ai_pairing import AIPairingEngine
 from scripts.brainrot.generate_images import ImageGenerator
+from scripts.brainrot.sanitize_outputs import sanitize_combinations
 
 load_dotenv()
 
@@ -244,6 +245,9 @@ class BrainRotPipeline:
                 it_tokens,
                 num_combinations=config.combinations_per_run
             )
+            
+            # Ensure all combinations are sanitized before saving (double-check)
+            combinations = sanitize_combinations(combinations)
             
             # Save to GCS
             engine.save_to_gcs(combinations)

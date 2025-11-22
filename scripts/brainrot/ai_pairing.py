@@ -19,6 +19,7 @@ from google.cloud import storage
 from loguru import logger
 
 from scripts.brainrot.config import config
+from scripts.brainrot.sanitize_outputs import sanitize_combinations, sanitize_ai_response
 from integrations.vertex_ai_client import get_vertex_client, VertexAIModel
 
 load_dotenv()
@@ -97,7 +98,11 @@ class AIPairingEngine:
             )
             
             if response.success and response.content:
-                combinations = self._parse_ai_response(response.content, num_combinations)
+                # Sanitize AI response before parsing
+                sanitized_content = sanitize_ai_response(response.content)
+                combinations = self._parse_ai_response(sanitized_content, num_combinations)
+                # Sanitize combinations to remove any inner-monologue from explanations
+                combinations = sanitize_combinations(combinations)
                 logger.info(f"Generated {len(combinations)} combinations")
                 return combinations
             else:
@@ -135,9 +140,11 @@ Guidelines for "best" combinations:
 For each combination, provide:
 - 2-3 American objects/words
 - 1-2 Italian phrases/words
-- A brief explanation of why it's funny/viral-worthy
+- A brief explanation of why it's funny/viral-worthy (write directly, no thinking process)
 - A humor score (1-10)
 - A viral potential score (1-10)
+
+IMPORTANT: Return ONLY valid JSON. Do not include any thinking process, reasoning, or explanations outside the JSON structure. Start directly with the opening brace.
 
 Format your response as JSON:
 {{
@@ -273,6 +280,8 @@ Make them:
 - Can include abbreviations/slang
 - Humorous when combined with American objects
 
+IMPORTANT: Return ONLY a valid JSON array. Do not include any thinking process, reasoning, or explanations. Start directly with the opening bracket.
+
 Return as JSON array: ["phrase1", "phrase2", ...]"""
         
         try:
@@ -284,13 +293,15 @@ Return as JSON array: ["phrase1", "phrase2", ...]"""
             )
             
             if response.success and response.content:
+                # Sanitize response before parsing
+                sanitized_content = sanitize_ai_response(response.content)
                 # Parse JSON array
-                json_start = response.content.find('[')
-                json_end = response.content.rfind(']') + 1
+                json_start = sanitized_content.find('[')
+                json_end = sanitized_content.rfind(']') + 1
                 
                 if json_start >= 0 and json_end > json_start:
                     try:
-                        phrases_json = response.content[json_start:json_end]
+                        phrases_json = sanitized_content[json_start:json_end]
                         phrases = json.loads(phrases_json)
                         if isinstance(phrases, list):
                             return phrases[:num_phrases]
@@ -314,6 +325,9 @@ Return as JSON array: ["phrase1", "phrase2", ...]"""
         data_type: str = "ai_selections"
     ) -> str:
         """Save combinations to GCS."""
+        # Ensure all combinations are sanitized before saving
+        sanitized_combinations = sanitize_combinations(combinations)
+        
         storage_client = storage.Client()
         bucket = storage_client.bucket(config.gcs_bucket_name)
         
@@ -323,11 +337,11 @@ Return as JSON array: ["phrase1", "phrase2", ...]"""
         
         blob = bucket.blob(filename)
         blob.upload_from_string(
-            json.dumps(combinations, indent=2),
+            json.dumps(sanitized_combinations, indent=2),
             content_type="application/json"
         )
         
-        logger.info(f"Saved {len(combinations)} combinations to gs://{config.gcs_bucket_name}/{filename}")
+        logger.info(f"Saved {len(sanitized_combinations)} combinations to gs://{config.gcs_bucket_name}/{filename}")
         return filename
 
 
